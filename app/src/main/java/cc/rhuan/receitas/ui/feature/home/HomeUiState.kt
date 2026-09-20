@@ -1,55 +1,66 @@
 package cc.rhuan.receitas.ui.feature.home
 
+import cc.rhuan.receitas.domain.model.DailyDoseItem
 import cc.rhuan.receitas.domain.model.MedicationItem
-import cc.rhuan.receitas.domain.model.ReceitaItem
-
-data class AlertItem(
-    val id: String,
-    val title: String,
-    val description: String,
-    val isCritical: Boolean,
-)
+import cc.rhuan.receitas.domain.model.NotificationItem
+import cc.rhuan.receitas.domain.model.PrescriptionItem
 
 data class HomeUiState(
     val userName: String = "Rhuan",
-    val receitas: List<ReceitaItem> = emptyList(),
+    val searchQuery: String = "",
+    val prescriptions: List<PrescriptionItem> = emptyList(),
     val medicamentos: List<MedicationItem> = emptyList(),
+    val notifications: List<NotificationItem> = emptyList(),
+    val dailyDoses: List<DailyDoseItem> = emptyList(),
+    val unreadNotificationsCount: Int = 0,
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val dismissedAlerts: Set<String> = emptySet(),
     val errorMessage: String? = null,
+    val snackbarMessage: String? = null,
 ) {
 
-    val urgentReceitas: List<ReceitaItem>
-        get() = receitas.asSequence().filter { it.daysUntilExpiration <= 30 }
-            .sortedBy { it.daysUntilExpiration }.toList()
+    val totalDosesCount: Int
+        get() = dailyDoses.size
+
+    val takenDosesCount: Int
+        get() = dailyDoses.count { it.isTaken }
+
+    val adherencePercentage: Float
+        get() = if (totalDosesCount > 0) takenDosesCount.toFloat() / totalDosesCount else 0f
+
+    val urgentPrescriptions: List<PrescriptionItem>
+        get() = filteredPrescriptions.sortedBy { it.daysUntilExpiration }
 
     val urgentMedications: List<MedicationItem>
-        get() = medicamentos.sortedBy { if (it.isAvailable) 999 else it.daysUntilAvailable }
+        get() = filteredMedications.sortedWith(
+            compareByDescending<MedicationItem> { it.isAvailable }
+                .thenBy { it.daysUntilAvailable }
+                .thenBy { it.title },
+        )
 
-    val activeAlerts: List<AlertItem>
-        get() = buildList {
-            val expiredCount = receitas.count { it.isExpired }
-            if (("receitas" !in dismissedAlerts) && (expiredCount > 0)) {
-                add(
-                    AlertItem(
-                        id = "receitas",
-                        title = "Receita Vencida",
-                        description = "Você possui receitas ($expiredCount) que necessitam de renovação médica.",
-                        isCritical = true,
-                    )
-                )
+    val activeNotifications: List<NotificationItem>
+        get() = notifications.filter { !it.isRead && (it.id !in dismissedAlerts) }
+
+    val filteredPrescriptions: List<PrescriptionItem>
+        get() = if (searchQuery.isBlank()) {
+            prescriptions
+        } else {
+            prescriptions.filter {
+                it.title.contains(searchQuery, ignoreCase = true) ||
+                    it.specialty.contains(searchQuery, ignoreCase = true) ||
+                    it.doctorName.contains(searchQuery, ignoreCase = true)
             }
-            val unavailableCount = medicamentos.count { !it.isAvailable }
-            if (("medications" !in dismissedAlerts) && (unavailableCount > 0)) {
-                add(
-                    AlertItem(
-                        id = "medications",
-                        title = "Reposição de Remédios",
-                        description = "Você possui medicamentos ($unavailableCount) que precisam ser repostos.",
-                        isCritical = false,
-                    )
-                )
+        }
+
+    val filteredMedications: List<MedicationItem>
+        get() = if (searchQuery.isBlank()) {
+            medicamentos
+        } else {
+            medicamentos.filter {
+                it.title.contains(searchQuery, ignoreCase = true) ||
+                    it.category.contains(searchQuery, ignoreCase = true) ||
+                    it.dosage.contains(searchQuery, ignoreCase = true)
             }
         }
 }
