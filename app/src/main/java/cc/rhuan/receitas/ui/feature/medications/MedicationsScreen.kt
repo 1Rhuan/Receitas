@@ -179,101 +179,97 @@ fun MedicationsScreenContent(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Filter Chips & Sort
-                Row(
+                LazyRow(
                     modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    LazyRow(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(MedicationFilter.entries) { filter ->
+                    item {
+                        var sortMenuExpanded by remember { mutableStateOf(value = false) }
+
+                        Box {
                             FilterChip(
-                                selected = uiState.selectedFilter == filter,
-                                onClick = { onFilterSelected(filter) },
-                                label = { Text(filter.label) },
+                                selected = uiState.selectedSortOrder != MedicationSortOrder.DEFAULT,
+                                onClick = { sortMenuExpanded = true },
+                                label = {
+                                    Text(
+                                        text = uiState.selectedSortOrder.label,
+                                        style = MaterialTheme.typography.labelMedium,
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_sort_vertical),
+                                        contentDescription = "Ordenar",
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                                     selectedLabelColor = Color.White,
+                                    selectedLeadingIconColor = Color.White,
                                     containerColor = Color.White,
                                     labelColor = Color(0xFF4A4E5A),
+                                    iconColor = Color(0xFF4A4E5A),
                                 ),
                                 shape = RoundedCornerShape(20.dp),
                             )
+
+                            DropdownMenu(
+                                expanded = sortMenuExpanded,
+                                onDismissRequest = { sortMenuExpanded = false },
+                                modifier = Modifier.background(Color.White),
+                            ) {
+                                Text(
+                                    text = "ORDENAR POR",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF6C7280),
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                )
+                                MedicationSortOrder.entries.forEach { sortOption ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = sortOption.label,
+                                                fontWeight = if (uiState.selectedSortOrder == sortOption) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (uiState.selectedSortOrder == sortOption) MaterialTheme.colorScheme.primary else Color(0xFF333846),
+                                            )
+                                        },
+                                        trailingIcon = if (uiState.selectedSortOrder == sortOption) {
+                                            {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(18.dp),
+                                                )
+                                            }
+                                        } else null,
+                                        onClick = {
+                                            onSortOrderSelected(sortOption)
+                                            sortMenuExpanded = false
+                                        },
+                                    )
+                                }
+                            }
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    var sortMenuExpanded by remember { mutableStateOf(value = false) }
-
-                    Box {
+                    items(MedicationFilter.entries) { filter ->
                         FilterChip(
-                            selected = uiState.selectedSortOrder != MedicationSortOrder.DEFAULT,
-                            onClick = { sortMenuExpanded = true },
-                            label = {
-                                Text(
-                                    text = uiState.selectedSortOrder.label,
-                                    style = MaterialTheme.typography.labelMedium,
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_sort_vertical),
-                                    contentDescription = "Ordenar",
-                                    modifier = Modifier.size(16.dp),
-                                )
-                            },
+                            selected = uiState.selectedFilter == filter,
+                            onClick = { onFilterSelected(filter) },
+                            label = { Text(filter.label) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary,
                                 selectedLabelColor = Color.White,
-                                selectedLeadingIconColor = Color.White,
                                 containerColor = Color.White,
                                 labelColor = Color(0xFF4A4E5A),
-                                iconColor = Color(0xFF4A4E5A),
                             ),
                             shape = RoundedCornerShape(20.dp),
                         )
-
-                        DropdownMenu(
-                            expanded = sortMenuExpanded,
-                            onDismissRequest = { sortMenuExpanded = false },
-                            modifier = Modifier.background(Color.White),
-                        ) {
-                            Text(
-                                text = "ORDENAR POR",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF6C7280),
-                                ),
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            )
-                            MedicationSortOrder.entries.forEach { sortOption ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = sortOption.label,
-                                            fontWeight = if (uiState.selectedSortOrder == sortOption) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (uiState.selectedSortOrder == sortOption) MaterialTheme.colorScheme.primary else Color(0xFF333846),
-                                        )
-                                    },
-                                    trailingIcon = if (uiState.selectedSortOrder == sortOption) {
-                                        {
-                                            Icon(
-                                                imageVector = Icons.Default.Check,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(18.dp),
-                                            )
-                                        }
-                                    } else null,
-                                    onClick = {
-                                        onSortOrderSelected(sortOption)
-                                        sortMenuExpanded = false
-                                    },
-                                )
-                            }
-                        }
                     }
                 }
             }
