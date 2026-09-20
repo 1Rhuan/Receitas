@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,12 +26,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -43,7 +46,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -70,6 +75,7 @@ fun MedicationsScreen(
         uiState = uiState,
         onSearchQueryChange = viewModel::onSearchQueryChanged,
         onFilterSelected = viewModel::onFilterSelected,
+        onSortOrderSelected = viewModel::onSortOrderSelected,
         modifier = modifier,
     )
 }
@@ -80,6 +86,7 @@ fun MedicationsScreenContent(
     onSearchQueryChange: (String) -> Unit,
     onFilterSelected: (MedicationFilter) -> Unit,
     modifier: Modifier = Modifier,
+    onSortOrderSelected: (MedicationSortOrder) -> Unit = {},
     onMedicationClick: (MedicationItem) -> Unit = {},
 ) {
     val lazyListState = rememberLazyListState()
@@ -171,23 +178,102 @@ fun MedicationsScreenContent(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Filter Chips
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                // Filter Chips & Sort
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    items(MedicationFilter.entries) { filter ->
+                    LazyRow(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(MedicationFilter.entries) { filter ->
+                            FilterChip(
+                                selected = uiState.selectedFilter == filter,
+                                onClick = { onFilterSelected(filter) },
+                                label = { Text(filter.label) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = Color.White,
+                                    containerColor = Color.White,
+                                    labelColor = Color(0xFF4A4E5A),
+                                ),
+                                shape = RoundedCornerShape(20.dp),
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    var sortMenuExpanded by remember { mutableStateOf(value = false) }
+
+                    Box {
                         FilterChip(
-                            selected = uiState.selectedFilter == filter,
-                            onClick = { onFilterSelected(filter) },
-                            label = { Text(filter.label) },
+                            selected = uiState.selectedSortOrder != MedicationSortOrder.DEFAULT,
+                            onClick = { sortMenuExpanded = true },
+                            label = {
+                                Text(
+                                    text = uiState.selectedSortOrder.label,
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_sort_vertical),
+                                    contentDescription = "Ordenar",
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary,
                                 selectedLabelColor = Color.White,
+                                selectedLeadingIconColor = Color.White,
                                 containerColor = Color.White,
                                 labelColor = Color(0xFF4A4E5A),
+                                iconColor = Color(0xFF4A4E5A),
                             ),
                             shape = RoundedCornerShape(20.dp),
                         )
+
+                        DropdownMenu(
+                            expanded = sortMenuExpanded,
+                            onDismissRequest = { sortMenuExpanded = false },
+                            modifier = Modifier.background(Color.White),
+                        ) {
+                            Text(
+                                text = "ORDENAR POR",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF6C7280),
+                                ),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            )
+                            MedicationSortOrder.entries.forEach { sortOption ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = sortOption.label,
+                                            fontWeight = if (uiState.selectedSortOrder == sortOption) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (uiState.selectedSortOrder == sortOption) MaterialTheme.colorScheme.primary else Color(0xFF333846),
+                                        )
+                                    },
+                                    trailingIcon = if (uiState.selectedSortOrder == sortOption) {
+                                        {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                        }
+                                    } else null,
+                                    onClick = {
+                                        onSortOrderSelected(sortOption)
+                                        sortMenuExpanded = false
+                                    },
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -250,6 +336,10 @@ private fun MedicationCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val iconBg = if (medication.isAvailable) Color(0xFFE3F2FD) else Color(0xFFFFEBEE)
+    val iconColor = if (medication.isAvailable) Color(0xFF0288D1) else Color(0xFFD32F2F)
+    val iconRes = if (!medication.isAvailable) R.drawable.ic_box else R.drawable.ic_bold_pills
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -262,13 +352,23 @@ private fun MedicationCard(
             modifier = Modifier.padding(16.dp),
         ) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_medical_pills),
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                )
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = iconBg,
+                    modifier = Modifier.size(38.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(id = iconRes),
+                            contentDescription = null,
+                            tint = iconColor,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
@@ -276,71 +376,94 @@ private fun MedicationCard(
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(
+                        text = medication.category.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                            color = iconColor,
+                        ),
+                    )
+                    Text(
                         text = medication.title,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
+                            fontSize = 15.sp,
                         ),
                         color = Color(0xFF333846),
-                    )
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Text(
-                        text = "${medication.dosage} • ${medication.category}",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                        color = Color(0xFF6C7280),
                     )
                 }
 
                 MedicationStatusBadge(medication = medication)
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = Color(0xFFF8F9FA),
-                modifier = Modifier.fillMaxWidth(),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFF1F5F9),
                 ) {
                     Text(
-                        text = "Quantidade: ${medication.quantity}",
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                        color = Color(0xFF4A4E5A),
+                        text = "${medication.dosage} • ${medication.quantity}",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF475569),
+                        ),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     )
+                }
 
-                    if (medication.frequency.isNotEmpty()) {
+                if (medication.frequency.isNotEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFFF1F5F9),
+                    ) {
                         Text(
                             text = medication.frequency,
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                            color = Color(0xFF6C7280),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF475569),
+                            ),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         )
                     }
                 }
             }
 
-            medication.instructions?.let { note ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+            if (!medication.instructions.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFF1F5F9),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = Color(0xFF8B93A7),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = note,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF8B93A7),
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_info_circle),
+                            contentDescription = null,
+                            tint = Color(0xFF475569),
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            text = medication.instructions,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF333846),
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
         }

@@ -37,7 +37,7 @@ class MedicationsViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = e.message ?: "Erro ao carregar medicamentos"
+                        errorMessage = e.message ?: "Erro ao carregar medicamentos",
                     )
                 }
             }
@@ -50,5 +50,9 @@ class MedicationsViewModel(
 
     fun onFilterSelected(filter: MedicationFilter) {
         _uiState.update { it.copy(selectedFilter = filter) }
+    }
+
+    fun onSortOrderSelected(sortOrder: MedicationSortOrder) {
+        _uiState.update { it.copy(selectedSortOrder = sortOrder) }
     }
 }
