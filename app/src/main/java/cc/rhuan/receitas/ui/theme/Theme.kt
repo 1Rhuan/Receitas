@@ -1,6 +1,5 @@
 package cc.rhuan.receitas.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +32,7 @@ private val DarkColorScheme = darkColorScheme(
     outline = LatteOverlay0,
 
     error = LatteRed,
-    onError = LatteBase
+    onError = LatteBase,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -58,18 +57,18 @@ private val LightColorScheme = lightColorScheme(
     outline = LatteOverlay0,
 
     error = LatteRed,
-    onError = LatteBase
+    onError = LatteBase,
 )
 
 @Composable
 fun ReceitasTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = false ,
-    content: @Composable () -> Unit
+    dynamicColor: Boolean = false,
+    content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        dynamicColor && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
@@ -81,6 +80,6 @@ fun ReceitasTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
+        content = content,
     )
 }

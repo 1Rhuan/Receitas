@@ -5,14 +5,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import cc.rhuan.receitas.R
 
 private val Poppins = FontFamily(
     Font(R.font.poppins_regular, FontWeight.Normal),
     Font(R.font.poppins_medium, FontWeight.Medium),
     Font(R.font.poppins_semi_bold, FontWeight.SemiBold),
-    Font(R.font.poppins_bold, FontWeight.Bold)
+    Font(R.font.poppins_bold, FontWeight.Bold),
 )
 
 val Typography = Typography(
@@ -20,80 +19,80 @@ val Typography = Typography(
     // Títulos principais
     displayLarge = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
     ),
 
     displayMedium = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
     ),
 
     displaySmall = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
     ),
 
     // Títulos de telas
     headlineLarge = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
     ),
 
     headlineMedium = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.SemiBold
+        fontWeight = FontWeight.SemiBold,
     ),
 
     headlineSmall = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.SemiBold
+        fontWeight = FontWeight.SemiBold,
     ),
 
     // Títulos de componentes
     titleLarge = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.SemiBold
+        fontWeight = FontWeight.SemiBold,
     ),
 
     titleMedium = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.Medium
+        fontWeight = FontWeight.Medium,
     ),
 
     titleSmall = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.Medium
+        fontWeight = FontWeight.Medium,
     ),
 
     // Texto
     bodyLarge = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.Normal
+        fontWeight = FontWeight.Normal,
     ),
 
     bodyMedium = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.Normal
+        fontWeight = FontWeight.Normal,
     ),
 
     bodySmall = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.Normal
+        fontWeight = FontWeight.Normal,
     ),
 
     // Labels / botões
     labelLarge = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.SemiBold
+        fontWeight = FontWeight.SemiBold,
     ),
 
     labelMedium = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.Medium
+        fontWeight = FontWeight.Medium,
     ),
 
     labelSmall = TextStyle(
         fontFamily = Poppins,
-        fontWeight = FontWeight.Medium
-    )
+        fontWeight = FontWeight.Medium,
+    ),
 )

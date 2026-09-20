@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package cc.rhuan.receitas.ui.theme
 
 import androidx.compose.ui.graphics.Color
@@ -43,7 +45,6 @@ val LatteBlue = Color(0xFF1E66F5)
 
 // Catppuccin Latte - Lavender
 val LatteLavender = Color(0xFF7287FD)
-
 
 // Neutrals
 
