@@ -29,7 +29,7 @@ import cc.rhuan.receitas.ui.feature.home.HomeScreen
 import cc.rhuan.receitas.ui.feature.medications.MedicationsScreen
 import cc.rhuan.receitas.ui.feature.menu.MenuScreen
 import cc.rhuan.receitas.ui.feature.notifications.NotificationsScreen
-import cc.rhuan.receitas.ui.feature.records.RecordsScreen
+import cc.rhuan.receitas.ui.feature.prescriptions.PrescriptionsScreen
 
 @Composable
 fun MainScreen() {
@@ -46,14 +46,14 @@ fun MainScreen() {
                 contentColor = MaterialTheme.colorScheme.onBackground,
                 tonalElevation = 0.dp,
             ) {
-                Screen.bottomNavItems.forEach { screen ->
-                    val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                NavRoute.bottomNavItems.forEach { navRoute ->
+                    val isSelected = currentDestination?.hierarchy?.any { it.route == navRoute.route } == true
 
                     NavigationBarItem(
                         selected = isSelected,
                         onClick = {
                             if (!isSelected) {
-                                navController.navigate(screen.route) {
+                                navController.navigate(navRoute.route) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -65,7 +65,7 @@ fun MainScreen() {
                         icon = {
                             BadgedBox(
                                 badge = {
-                                    screen.badgeCount?.let { count ->
+                                    navRoute.badgeCount?.let { count ->
                                         if (count > 0) {
                                             Badge(
                                                 containerColor = MaterialTheme.colorScheme.primary,
@@ -79,14 +79,14 @@ fun MainScreen() {
                                 },
                             ) {
                                 Icon(
-                                    painter = painterResource(id = if (isSelected) screen.selectedIconRes else screen.iconRes),
-                                    contentDescription = screen.title,
+                                    painter = painterResource(id = if (isSelected) navRoute.selectedIconRes else navRoute.iconRes),
+                                    contentDescription = navRoute.title,
                                 )
                             }
                         },
                         label = {
                             Text(
-                                text = screen.title,
+                                text = navRoute.title,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                 maxLines = 1,
@@ -107,13 +107,13 @@ fun MainScreen() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = NavRoute.Home.route,
             modifier = Modifier.padding(innerPadding),
         ) {
-            composable(Screen.Home.route) {
+            composable(NavRoute.Home.route) {
                 HomeScreen(
                     onNotificationClick = {
-                        navController.navigate(Screen.Notifications.route) {
+                        navController.navigate(NavRoute.Notifications.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
@@ -121,8 +121,8 @@ fun MainScreen() {
                             restoreState = true
                         }
                     },
-                    onNavigateToRecords = {
-                        navController.navigate(Screen.Records.route) {
+                    onNavigateToPrescriptions = {
+                        navController.navigate(NavRoute.Prescriptions.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
@@ -131,7 +131,7 @@ fun MainScreen() {
                         }
                     },
                     onNavigateToMedications = {
-                        navController.navigate(Screen.Medications.route) {
+                        navController.navigate(NavRoute.Medications.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
@@ -141,19 +141,37 @@ fun MainScreen() {
                     },
                 )
             }
-            composable(Screen.Medications.route) {
+            composable(NavRoute.Medications.route) {
                 MedicationsScreen()
             }
-            composable(Screen.Records.route) {
-                RecordsScreen()
+            composable(NavRoute.Prescriptions.route) {
+                PrescriptionsScreen()
             }
-            composable(Screen.Menu.route) {
+            composable(NavRoute.Menu.route) {
                 MenuScreen {
-                    navController.navigate(Screen.Notifications.route)
+                    navController.navigate(NavRoute.Notifications.route)
                 }
             }
-            composable(Screen.Notifications.route) {
-                NotificationsScreen()
+            composable(NavRoute.Notifications.route) {
+                NotificationsScreen(
+                    onNavigateToPrescription = {
+                        navController.navigate(NavRoute.Prescriptions.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                ) {
+                    navController.navigate(NavRoute.Medications.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             }
         }
     }
