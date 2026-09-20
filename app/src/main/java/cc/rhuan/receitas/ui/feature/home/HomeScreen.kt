@@ -52,6 +52,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -137,8 +138,8 @@ fun HomeScreenContent(
 
     LaunchedEffect(uiState.snackbarMessage) {
         uiState.snackbarMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
             onDismissSnackbar()
+            snackbarHostState.showSnackbar(message)
         }
     }
 
@@ -423,7 +424,14 @@ fun HomeScreenContent(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 16.dp),
-            )
+            ) { snackbarData ->
+                Snackbar(
+                    snackbarData = snackbarData,
+                    containerColor = Color(0xFF333846),
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(12.dp),
+                )
+            }
         }
     }
 }

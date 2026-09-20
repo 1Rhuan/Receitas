@@ -29,6 +29,9 @@ private val DarkColorScheme = darkColorScheme(
     surfaceVariant = LatteSurface0,
     onSurfaceVariant = LatteSubtext0,
 
+    inverseSurface = LatteText,
+    inverseOnSurface = LatteBase,
+
     outline = LatteOverlay0,
 
     error = LatteRed,
@@ -53,6 +56,9 @@ private val LightColorScheme = lightColorScheme(
 
     surfaceVariant = LatteSurface0,
     onSurfaceVariant = LatteSubtext0,
+
+    inverseSurface = LatteText,
+    inverseOnSurface = LatteBase,
 
     outline = LatteOverlay0,
 
