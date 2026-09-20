@@ -1,34 +1,34 @@
-package cc.rhuan.receitas.ui.feature.records
+package cc.rhuan.receitas.ui.feature.prescriptions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cc.rhuan.receitas.data.repository.FakeReceitaRepository
-import cc.rhuan.receitas.data.repository.ReceitaRepository
+import cc.rhuan.receitas.data.repository.FakePrescriptionRepository
+import cc.rhuan.receitas.data.repository.PrescriptionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class RecordsViewModel(
-    private val repository: ReceitaRepository = FakeReceitaRepository(),
+class PrescriptionsViewModel(
+    private val repository: PrescriptionRepository = FakePrescriptionRepository(),
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(RecordsUiState(isLoading = true))
-    val uiState: StateFlow<RecordsUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(PrescriptionsUiState(isLoading = true))
+    val uiState: StateFlow<PrescriptionsUiState> = _uiState.asStateFlow()
 
     init {
-        loadReceitas()
+        loadPrescriptions()
     }
 
-    fun loadReceitas() {
+    fun loadPrescriptions() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                repository.getReceitas().collect { list ->
+                repository.getPrescriptions().collect { list ->
                     _uiState.update {
                         it.copy(
-                            receitas = list,
+                            prescriptions = list,
                             isLoading = false,
                         )
                     }
@@ -37,7 +37,7 @@ class RecordsViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = e.message ?: "Erro ao carregar receitas"
+                        errorMessage = e.message ?: "Erro ao carregar receitas",
                     )
                 }
             }
@@ -48,7 +48,11 @@ class RecordsViewModel(
         _uiState.update { it.copy(searchQuery = query) }
     }
 
-    fun onFilterSelected(filter: ReceitaFilter) {
+    fun onFilterSelected(filter: PrescriptionFilter) {
         _uiState.update { it.copy(selectedFilter = filter) }
+    }
+
+    fun onSortOrderSelected(sortOrder: PrescriptionSortOrder) {
+        _uiState.update { it.copy(selectedSortOrder = sortOrder) }
     }
 }
