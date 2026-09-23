@@ -3,27 +3,26 @@ package cc.rhuan.receitas.ui.feature.notifications
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.rhuan.receitas.data.repository.DailyDoseRepository
-import cc.rhuan.receitas.data.repository.FakeDailyDoseRepository
-import cc.rhuan.receitas.data.repository.FakeMedicationRepository
-import cc.rhuan.receitas.data.repository.FakeNotificationRepository
-import cc.rhuan.receitas.data.repository.FakePrescriptionRepository
 import cc.rhuan.receitas.data.repository.MedicationRepository
 import cc.rhuan.receitas.data.repository.NotificationRepository
 import cc.rhuan.receitas.data.repository.PrescriptionRepository
 import cc.rhuan.receitas.domain.model.NotificationAction
+import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
-class NotificationsViewModel(
-    private val repository: NotificationRepository = FakeNotificationRepository(),
-    private val prescriptionRepository: PrescriptionRepository = FakePrescriptionRepository(),
-    private val medicationRepository: MedicationRepository = FakeMedicationRepository(),
-    private val dailyDoseRepository: DailyDoseRepository = FakeDailyDoseRepository(),
+@HiltViewModel
+class NotificationsViewModel @Inject constructor(
+    private val repository: NotificationRepository,
+    private val prescriptionRepository: PrescriptionRepository,
+    private val medicationRepository: MedicationRepository,
+    private val dailyDoseRepository: DailyDoseRepository,
 ) : ViewModel() {
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")

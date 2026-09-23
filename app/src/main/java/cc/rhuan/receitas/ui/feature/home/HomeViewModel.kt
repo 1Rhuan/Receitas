@@ -1,12 +1,9 @@
 package cc.rhuan.receitas.ui.feature.home
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cc.rhuan.receitas.data.repository.DailyDoseRepository
-import cc.rhuan.receitas.data.repository.FakeDailyDoseRepository
-import cc.rhuan.receitas.data.repository.FakeMedicationRepository
-import cc.rhuan.receitas.data.repository.FakeNotificationRepository
-import cc.rhuan.receitas.data.repository.FakePrescriptionRepository
 import cc.rhuan.receitas.data.repository.MedicationRepository
 import cc.rhuan.receitas.data.repository.NotificationRepository
 import cc.rhuan.receitas.data.repository.PrescriptionRepository
@@ -16,6 +13,11 @@ import cc.rhuan.receitas.domain.model.NotificationAction
 import cc.rhuan.receitas.domain.model.NotificationItem
 import cc.rhuan.receitas.domain.model.NotificationType
 import cc.rhuan.receitas.domain.model.PrescriptionItem
+import cc.rhuan.receitas.domain.usecase.GenerateNotificationsUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,15 +25,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
-class HomeViewModel(
-    private val prescriptionRepository: PrescriptionRepository = FakePrescriptionRepository(),
-    private val medicationRepository: MedicationRepository = FakeMedicationRepository(),
-    private val notificationRepository: NotificationRepository = FakeNotificationRepository(),
-    private val dailyDoseRepository: DailyDoseRepository = FakeDailyDoseRepository(),
-) : ViewModel() {
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    application: Application,
+    private val prescriptionRepository: PrescriptionRepository,
+    private val medicationRepository: MedicationRepository,
+    private val notificationRepository: NotificationRepository,
+    private val dailyDoseRepository: DailyDoseRepository,
+) : AndroidViewModel(application) {
+
+    private val generateNotificationsUseCase: GenerateNotificationsUseCase = GenerateNotificationsUseCase()
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -57,6 +61,13 @@ class HomeViewModel(
                 ) { prescriptions, medicamentos, notifications, dailyDoses ->
                     HomeData(prescriptions, medicamentos, notifications, dailyDoses)
                 }.collect { data ->
+                    generateNotificationsUseCase(
+                        context = getApplication(),
+                        medications = data.medicamentos,
+                        prescriptions = data.prescriptions,
+                        notificationRepository = notificationRepository,
+                    )
+
                     val unreadCount = data.notifications.count { !it.isRead }
                     _uiState.update { currentState ->
                         currentState.copy(

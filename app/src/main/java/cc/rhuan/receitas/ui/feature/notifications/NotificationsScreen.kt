@@ -61,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -156,7 +157,7 @@ fun NotificationsScreenContent(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(
-                                text = "Notificações",
+                                text = stringResource(R.string.notifications_title),
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 24.sp,
@@ -194,7 +195,7 @@ fun NotificationsScreenContent(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "Marcar lidas",
+                                        text = stringResource(R.string.mark_as_read),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.SemiBold,
                                     )
@@ -205,7 +206,7 @@ fun NotificationsScreenContent(
                                 IconButton(onClick = onClearAll) {
                                     Icon(
                                         imageVector = Icons.Default.ClearAll,
-                                        contentDescription = "Limpar todas as notificações",
+                                        contentDescription = stringResource(R.string.clear_all_notifications),
                                         tint = Color(0xFF6C7280),
                                     )
                                 }
@@ -219,7 +220,7 @@ fun NotificationsScreenContent(
                         exit = shrinkVertically() + fadeOut(),
                     ) {
                         Text(
-                            text = "Lembretes de medicamentos, avisos e vencimentos",
+                            text = stringResource(R.string.notifications_subtitle),
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
                             color = Color(0xFF6C7280),
                             modifier = Modifier.padding(top = 2.dp),
@@ -250,7 +251,7 @@ fun NotificationsScreenContent(
                                 onClick = { onFilterSelected(filter) },
                                 label = {
                                     Text(
-                                        text = "${filter.label} ($count)",
+                                        text = "${stringResource(filter.labelRes)} ($count)",
                                         fontSize = 13.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     )
@@ -369,25 +370,47 @@ private fun NotificationCard(
             R.drawable.ic_bold_pills,
             Color(0xFF0288D1),
             Color(0xFFE3F2FD),
-            "LEMBRETE DE DOSE",
+            stringResource(R.string.category_medication_reminder),
         )
-        NotificationType.PRESCRIPTION_EXPIRING -> Quadruple(
-            R.drawable.ic_bold_document_medicine,
-            Color(0xFFF57C00),
-            Color(0xFFFFF3E0),
-            "RECEITA",
-        )
-        NotificationType.MEDICATION_STOCK -> Quadruple(
-            R.drawable.ic_box,
-            Color(0xFFD32F2F),
-            Color(0xFFFFEBEE),
-            "ESTOQUE DE REMÉDIO",
-        )
+        NotificationType.PRESCRIPTION_EXPIRING -> {
+            if (item.title.contains("Vencida", ignoreCase = true)) {
+                Quadruple(
+                    R.drawable.ic_bold_document_medicine,
+                    Color(0xFFD32F2F),
+                    Color(0xFFFFEBEE),
+                    stringResource(R.string.category_prescription_expired),
+                )
+            } else {
+                Quadruple(
+                    R.drawable.ic_bold_document_medicine,
+                    Color(0xFFD97706),
+                    Color(0xFFFFF3E0),
+                    stringResource(R.string.category_prescription_renewal),
+                )
+            }
+        }
+        NotificationType.MEDICATION_STOCK -> {
+            if (item.title.contains("Liberada", ignoreCase = true) || item.title.contains("Retirar", ignoreCase = true)) {
+                Quadruple(
+                    R.drawable.ic_box,
+                    Color(0xFF1E8E3E),
+                    Color(0xFFE6F4EA),
+                    stringResource(R.string.category_stock_available),
+                )
+            } else {
+                Quadruple(
+                    R.drawable.ic_box,
+                    Color(0xFFE65100),
+                    Color(0xFFFFF3E0),
+                    stringResource(R.string.category_stock_low),
+                )
+            }
+        }
         NotificationType.SYSTEM_ALERT -> Quadruple(
             R.drawable.ic_bold_bell_bing,
             Color(0xFF7B1FA2),
             Color(0xFFF3E5F5),
-            "AVISO DO SISTEMA",
+            stringResource(R.string.category_system_alert),
         )
     }
 
@@ -465,7 +488,7 @@ private fun NotificationCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Excluir notificação",
+                        contentDescription = stringResource(R.string.delete_notification),
                         tint = Color(0xFF94A3B8),
                         modifier = Modifier.size(18.dp),
                     )
@@ -546,7 +569,7 @@ private fun NotificationCard(
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = "Tomar", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                Text(text = stringResource(R.string.action_take_medication), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                             }
 
                             OutlinedButton(
@@ -561,7 +584,7 @@ private fun NotificationCard(
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = "Adiar 15m", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                Text(text = stringResource(R.string.action_snooze_medication), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
 
@@ -578,7 +601,7 @@ private fun NotificationCard(
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = "Marcar como Renovada", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                Text(text = stringResource(R.string.action_renew_prescription), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
 
@@ -595,7 +618,7 @@ private fun NotificationCard(
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = "Marcar como Reposto", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                Text(text = stringResource(R.string.action_replenish_stock), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
 
@@ -610,7 +633,7 @@ private fun NotificationCard(
                                         modifier = Modifier.size(16.dp),
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text(text = "Marcar como lida", fontSize = 13.sp)
+                                    Text(text = stringResource(R.string.action_mark_read), fontSize = 13.sp)
                                 }
                             }
                         }
@@ -653,10 +676,10 @@ private fun EmptyNotificationsState(
 
             Text(
                 text = when (filter) {
-                    NotificationFilter.ALL -> "Nenhuma notificação por aqui"
-                    NotificationFilter.UNREAD -> "Todas as notificações foram lidas!"
-                    NotificationFilter.MEDICATIONS -> "Nenhum aviso de medicamento"
-                    NotificationFilter.PRESCRIPTIONS -> "Nenhum aviso de receita"
+                    NotificationFilter.ALL -> stringResource(R.string.empty_notifications_all)
+                    NotificationFilter.UNREAD -> stringResource(R.string.empty_notifications_unread)
+                    NotificationFilter.MEDICATIONS -> stringResource(R.string.empty_notifications_medications)
+                    NotificationFilter.PRESCRIPTIONS -> stringResource(R.string.empty_notifications_prescriptions)
                 },
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
@@ -669,8 +692,8 @@ private fun EmptyNotificationsState(
 
             Text(
                 text = when (filter) {
-                    NotificationFilter.UNREAD -> "Você está em dia com seus avisos e lembretes."
-                    else -> "Seus avisos, lembretes de doses e vencimentos de receitas aparecerão nesta lista."
+                    NotificationFilter.UNREAD -> stringResource(R.string.empty_notifications_unread_desc)
+                    else -> stringResource(R.string.empty_notifications_desc)
                 },
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
                 color = Color(0xFF64748B),

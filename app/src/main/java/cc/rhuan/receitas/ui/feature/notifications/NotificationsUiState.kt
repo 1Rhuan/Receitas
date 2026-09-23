@@ -1,13 +1,15 @@
 package cc.rhuan.receitas.ui.feature.notifications
 
+import androidx.annotation.StringRes
+import cc.rhuan.receitas.R
 import cc.rhuan.receitas.domain.model.NotificationItem
 import cc.rhuan.receitas.domain.model.NotificationType
 
-enum class NotificationFilter(val label: String) {
-    ALL("Todas"),
-    UNREAD("Não Lidas"),
-    MEDICATIONS("Medicamentos"),
-    PRESCRIPTIONS("Receitas"),
+enum class NotificationFilter(@StringRes val labelRes: Int) {
+    ALL(R.string.filter_all),
+    UNREAD(R.string.filter_unread),
+    MEDICATIONS(R.string.filter_medications),
+    PRESCRIPTIONS(R.string.filter_prescriptions),
 }
 
 data class NotificationsUiState(

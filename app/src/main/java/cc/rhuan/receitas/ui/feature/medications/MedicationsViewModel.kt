@@ -2,16 +2,18 @@ package cc.rhuan.receitas.ui.feature.medications
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cc.rhuan.receitas.data.repository.FakeMedicationRepository
 import cc.rhuan.receitas.data.repository.MedicationRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class MedicationsViewModel(
-    private val repository: MedicationRepository = FakeMedicationRepository(),
+@HiltViewModel
+class MedicationsViewModel @Inject constructor(
+    private val repository: MedicationRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MedicationsUiState(isLoading = true))

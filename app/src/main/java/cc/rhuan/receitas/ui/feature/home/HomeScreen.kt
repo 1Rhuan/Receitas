@@ -31,13 +31,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -50,8 +48,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -85,6 +81,7 @@ import cc.rhuan.receitas.domain.model.NotificationItem
 import cc.rhuan.receitas.domain.model.NotificationType
 import cc.rhuan.receitas.domain.model.PrescriptionItem
 import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun HomeScreen(
@@ -100,7 +97,6 @@ fun HomeScreen(
 
     HomeScreenContent(
         uiState = uiState,
-        onSearchQueryChange = viewModel::onSearchQueryChanged,
         onMarkDoseAsTaken = viewModel::markDoseAsTaken,
         onPrescriptionClick = onPrescriptionClick,
         onMedicationClick = onMedicationClick,
@@ -121,7 +117,6 @@ fun HomeScreen(
 fun HomeScreenContent(
     uiState: HomeUiState,
     modifier: Modifier = Modifier,
-    onSearchQueryChange: (String) -> Unit = {},
     onMarkDoseAsTaken: (String) -> Unit = {},
     onPrescriptionClick: (PrescriptionItem) -> Unit = {},
     onMedicationClick: (MedicationItem) -> Unit = {},
@@ -160,7 +155,7 @@ fun HomeScreenContent(
             Column(
                 modifier = Modifier.fillMaxSize(),
             ) {
-                // Header com Saudação & Busca Rápida
+                // Header com Saudação
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -215,57 +210,6 @@ fun HomeScreenContent(
                                     tint = Color(0xFF333846),
                                 )
                             }
-                        }
-                    }
-
-                    // Busca Rápida na Home (Recolhe ao deslizar a tela)
-                    AnimatedVisibility(
-                        visible = !isScrolled || uiState.searchQuery.isNotEmpty(),
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically(),
-                    ) {
-                        Column {
-                            Spacer(modifier = Modifier.height(10.dp))
-                            OutlinedTextField(
-                                value = uiState.searchQuery,
-                                onValueChange = onSearchQueryChange,
-                                modifier = Modifier.fillMaxWidth(),
-                                placeholder = {
-                                    Text(
-                                        text = "Buscar receitas, remédios, médicos...",
-                                        fontSize = 13.sp,
-                                        color = Color(0xFF8B93A7),
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Search,
-                                        contentDescription = "Buscar",
-                                        tint = Color(0xFF8B93A7),
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                },
-                                trailingIcon = {
-                                    if (uiState.searchQuery.isNotEmpty()) {
-                                        IconButton(onClick = { onSearchQueryChange("") }) {
-                                            Icon(
-                                                imageVector = Icons.Default.Clear,
-                                                contentDescription = "Limpar busca",
-                                                tint = Color(0xFF8B93A7),
-                                                modifier = Modifier.size(18.dp),
-                                            )
-                                        }
-                                    }
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = Color.Transparent,
-                                ),
-                                singleLine = true,
-                            )
                         }
                     }
                 }
@@ -760,18 +704,40 @@ private fun HomeNotificationCard(
             Color(0xFFE3F2FD),
             "LEMBRETE DE DOSE",
         )
-        NotificationType.PRESCRIPTION_EXPIRING -> Quadruple(
-            R.drawable.ic_bold_document_medicine,
-            Color(0xFFF57C00),
-            Color(0xFFFFF3E0),
-            "RECEITA",
-        )
-        NotificationType.MEDICATION_STOCK -> Quadruple(
-            R.drawable.ic_box,
-            Color(0xFFD32F2F),
-            Color(0xFFFFEBEE),
-            "ESTOQUE DE REMÉDIO",
-        )
+        NotificationType.PRESCRIPTION_EXPIRING -> {
+            if (item.title.contains("Vencida", ignoreCase = true)) {
+                Quadruple(
+                    R.drawable.ic_bold_document_medicine,
+                    Color(0xFFD32F2F),
+                    Color(0xFFFFEBEE),
+                    "RECEITA VENCIDA",
+                )
+            } else {
+                Quadruple(
+                    R.drawable.ic_bold_document_medicine,
+                    Color(0xFFD97706),
+                    Color(0xFFFFF3E0),
+                    "RENOVAÇÃO DE RECEITA",
+                )
+            }
+        }
+        NotificationType.MEDICATION_STOCK -> {
+            if (item.title.contains("Liberada", ignoreCase = true) || item.title.contains("Retirar", ignoreCase = true)) {
+                Quadruple(
+                    R.drawable.ic_box,
+                    Color(0xFF1E8E3E),
+                    Color(0xFFE6F4EA),
+                    "REPOSIÇÃO DISPONÍVEL",
+                )
+            } else {
+                Quadruple(
+                    R.drawable.ic_box,
+                    Color(0xFFE65100),
+                    Color(0xFFFFF3E0),
+                    "ESTOQUE BAIXO",
+                )
+            }
+        }
         NotificationType.SYSTEM_ALERT -> Quadruple(
             R.drawable.ic_bold_bell_bing,
             Color(0xFF7B1FA2),
@@ -1150,9 +1116,12 @@ private fun PrescriptionItemCard(
     modifier: Modifier = Modifier,
 ) {
     val isExpired = item.isExpired
-    val containerBg = if (isExpired) Color(0xFFFFF8F8) else Color.White
-    val iconBg = if (isExpired) Color(0xFFFFEBEE) else Color(0xFFFFF3E0)
-    val iconColor = if (isExpired) Color(0xFFD32F2F) else Color(0xFFF57C00)
+    val isExpiringSoon = item.daysUntilExpiration in 1..30
+    val (containerBg, iconBg, iconColor) = when {
+        isExpired -> Triple(Color(0xFFFFF8F8), Color(0xFFFFEBEE), Color(0xFFD32F2F))
+        isExpiringSoon -> Triple(Color(0xFFFFFAF0), Color(0xFFFFF3E0), Color(0xFFD97706))
+        else -> Triple(Color.White, Color(0xFFE6F4EA), Color(0xFF1E8E3E))
+    }
 
     Card(
         modifier = modifier
@@ -1210,50 +1179,48 @@ private fun PrescriptionItemCard(
                 ExpirationBadge(daysUntilExpiration = item.daysUntilExpiration)
             }
 
-            if (item.doctorName.isNotEmpty() || item.issueDate.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
-                    if (item.doctorName.isNotEmpty()) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null,
-                                tint = Color(0xFF6C7280),
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Text(
-                                text = item.doctorName,
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = Color(0xFF6C7280),
-                            )
-                        }
-                    }
+            val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
 
-                    if (item.issueDate.isNotEmpty()) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Schedule,
-                                contentDescription = null,
-                                tint = Color(0xFF6C7280),
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Text(
-                                text = "Emitida em ${item.issueDate}",
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = Color(0xFF6C7280),
-                            )
-                        }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                if (item.doctorName.isNotEmpty()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = Color(0xFF6C7280),
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            text = item.doctorName,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = Color(0xFF6C7280),
+                        )
                     }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        tint = Color(0xFF6C7280),
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        text = "Emitida em ${item.issueDate.format(dateFormatter)}",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                        color = Color(0xFF6C7280),
+                    )
                 }
             }
 
@@ -1451,7 +1418,6 @@ private fun HomeScreenPreview() {
                         title = "Receita Cardiologia",
                         specialty = "Cardiologista",
                         doctorName = "Dr. Carlos Eduardo",
-                        daysUntilExpiration = 0,
                     ),
                 ),
                 medicamentos = listOf(

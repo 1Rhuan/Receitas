@@ -63,6 +63,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cc.rhuan.receitas.R
 import cc.rhuan.receitas.domain.model.MedicationItem
 import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import java.time.LocalDate
 
 @Composable
 fun MedicationsScreen(
@@ -387,6 +388,17 @@ private fun MedicationCard(
                         ),
                         color = Color(0xFF333846),
                     )
+                    if (!medication.activeIngredient.isNullOrBlank()) {
+                        Text(
+                            text = medication.activeIngredient,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 11.sp,
+                                color = Color(0xFF64748B),
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
 
                 MedicationStatusBadge(medication = medication)
@@ -403,7 +415,7 @@ private fun MedicationCard(
                     color = Color(0xFFF1F5F9),
                 ) {
                     Text(
-                        text = "${medication.dosage} • ${medication.quantity}",
+                        text = "${medication.form.label} • ${medication.dosage} • ${medication.quantity}",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -549,7 +561,7 @@ private fun MedicationsScreenPreview() {
                         frequency = "1x ao dia",
                         category = "Uso Contínuo",
                         isAvailable = false,
-                        daysUntilAvailable = 3,
+                        lastRefillDate = LocalDate.now().minusDays(27),
                     ),
                 ),
             ),
