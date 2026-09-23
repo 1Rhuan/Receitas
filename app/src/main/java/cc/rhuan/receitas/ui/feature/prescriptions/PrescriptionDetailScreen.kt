@@ -1,0 +1,700 @@
+package cc.rhuan.receitas.ui.feature.prescriptions
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cc.rhuan.receitas.R
+import cc.rhuan.receitas.domain.model.MedicationItem
+import cc.rhuan.receitas.domain.model.PrescriptionItem
+import cc.rhuan.receitas.domain.model.RefillStatus
+import java.time.format.DateTimeFormatter
+
+@Composable
+fun PrescriptionDetailScreen(
+    viewModel: PrescriptionDetailViewModel,
+    onBackClick: () -> Unit,
+    onEditClick: (String) -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState.actionMessage) {
+        uiState.actionMessage?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            viewModel.clearActionMessage()
+        }
+    }
+
+    PrescriptionDetailContent(
+        uiState = uiState,
+        onBackClick = onBackClick,
+        onRenewClick = viewModel::renewPrescription,
+        onReplenishClick = viewModel::replenishMedication,
+        onEditClick = { uiState.prescription?.id?.let { onEditClick(it) } },
+        snackbarHostState = snackbarHostState,
+        modifier = modifier,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PrescriptionDetailContent(
+    uiState: PrescriptionDetailUiState,
+    onBackClick: () -> Unit,
+    onRenewClick: () -> Unit,
+    onReplenishClick: (String) -> Unit,
+    onEditClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+) {
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
+
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        containerColor = Color(0xFFE8ECEF),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Detalhes da Receita",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF333846),
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Voltar",
+                            tint = Color(0xFF333846),
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFFE8ECEF),
+                ),
+            )
+        },
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+
+                uiState.errorMessage != null -> {
+                    Text(
+                        text = uiState.errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                }
+
+                uiState.prescription != null -> {
+                    val prescription = uiState.prescription
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            horizontal = 16.dp,
+                            vertical = 8.dp,
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        item {
+                            PrescriptionHeaderCard(
+                                prescription = prescription,
+                                dateFormatter = dateFormatter,
+                                onRenewClick = onRenewClick,
+                                onEditClick = onEditClick,
+                            )
+                        }
+
+                        item {
+                            Text(
+                                text = "MEDICAMENTOS NA RECEITA",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF6C7280),
+                                ),
+                                modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
+                            )
+                        }
+
+                        if (uiState.medications.isEmpty()) {
+                            item {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                ) {
+                                    Text(
+                                        text = "Nenhum medicamento vinculado a esta receita.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFF6C7280),
+                                        modifier = Modifier.padding(16.dp),
+                                    )
+                                }
+                            }
+                        } else {
+                            items(
+                                items = uiState.medications,
+                                key = { it.medication.id },
+                            ) { itemDetail ->
+                                MedicationDetailCard(
+                                    medication = itemDetail.medication,
+                                    refillStatus = itemDetail.refillStatus,
+                                    dateFormatter = dateFormatter,
+                                    onReplenishClick = { onReplenishClick(itemDetail.medication.id) },
+                                )
+                            }
+                        }
+
+                        item {
+                            Spacer(modifier = Modifier.height(24.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailExpirationBadge(daysUntilExpiration: Int) {
+    val isExpired = daysUntilExpiration <= 0
+    val (bgColor, textColor, labelText) = when {
+        isExpired -> Triple(Color(0xFFFFDADE), Color(0xFFC01535), "Vencida")
+        daysUntilExpiration <= 30 -> {
+            val daysText = if (daysUntilExpiration == 1) "dia" else "dias"
+            Triple(Color(0xFFFFF3E0), Color(0xFFD97706), "Venc. $daysUntilExpiration $daysText")
+        }
+        else -> Triple(Color(0xFFE6F4EA), Color(0xFF1E8E3E), "Válida")
+    }
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = bgColor,
+    ) {
+        Text(
+            text = labelText,
+            color = textColor,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+            ),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+        )
+    }
+}
+
+@Composable
+private fun PrescriptionHeaderCard(
+    prescription: PrescriptionItem,
+    dateFormatter: DateTimeFormatter,
+    onRenewClick: () -> Unit,
+    onEditClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isExpired = prescription.isExpired
+    val isExpiringSoon = prescription.daysUntilExpiration in 1..30
+    
+    val (containerBg, iconBg, iconColor) = when {
+        isExpired -> Triple(Color(0xFFFFF8F8), Color(0xFFFFEBEE), Color(0xFFD32F2F))
+        isExpiringSoon -> Triple(Color(0xFFFFFAF0), Color(0xFFFFF3E0), Color(0xFFD97706))
+        else -> Triple(Color.White, Color(0xFFE6F4EA), Color(0xFF1E8E3E))
+    }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = containerBg),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(modifier = Modifier.weight(1f)) {
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = iconBg,
+                        modifier = Modifier.size(48.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_bold_document_medicine),
+                                contentDescription = null,
+                                tint = iconColor,
+                                modifier = Modifier.size(26.dp),
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column {
+                        Text(
+                            text = prescription.specialty.uppercase(),
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 0.5.sp,
+                                color = iconColor,
+                            ),
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = prescription.title,
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                            ),
+                            color = Color(0xFF1E293B),
+                        )
+                    }
+                }
+
+                IconButton(onClick = onEditClick) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Editar Receita",
+                        tint = Color(0xFF6C7280)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = if (isExpired || isExpiringSoon) Color.White else Color(0xFFF8FAFC),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    if (prescription.doctorName.isNotEmpty()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_info_circle),
+                                contentDescription = null,
+                                tint = Color(0xFF94A3B8),
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "MÉDICO PRESCRITOR",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = Color(0xFF94A3B8),
+                                )
+                                Text(
+                                    text = prescription.doctorName,
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = Color(0xFF334155),
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_info_circle),
+                                contentDescription = null,
+                                tint = Color(0xFF94A3B8),
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "EMISSÃO",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = Color(0xFF94A3B8),
+                                )
+                                Text(
+                                    text = prescription.issueDate.format(dateFormatter),
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = Color(0xFF334155),
+                                )
+                            }
+                        }
+                        
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "STATUS",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = Color(0xFF94A3B8),
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            DetailExpirationBadge(daysUntilExpiration = prescription.daysUntilExpiration)
+                        }
+                    }
+                }
+            }
+
+            if (prescription.notes != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                        .padding(12.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_info_circle),
+                        contentDescription = null,
+                        tint = Color(0xFF64748B),
+                        modifier = Modifier.size(18.dp).padding(top = 2.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = prescription.notes,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF475569),
+                    )
+                }
+            }
+
+            // Legal note for prescription validity type
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                verticalAlignment = Alignment.Top,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFFFF3E0), RoundedCornerShape(12.dp))
+                    .padding(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = Color(0xFFD97706),
+                    modifier = Modifier.size(18.dp).padding(top = 2.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = prescription.type?.label ?: "Sem Tipo Especificado",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFFD97706),
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = prescription.type?.legalNote ?: "Receita sem classificação regulatória especificada.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF92400E),
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                onClick = onRenewClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isExpired) Color(0xFFDC2626) else MaterialTheme.colorScheme.primary,
+                ),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_sort_vertical), // or a refresh icon
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (isExpired) "Solicitar Nova Receita" else "Renovar Receita",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun MedicationDetailCard(
+    medication: MedicationItem,
+    refillStatus: RefillStatus,
+    dateFormatter: DateTimeFormatter,
+    onReplenishClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = medication.title,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFF333846),
+                    )
+                    Text(
+                        text = "${medication.dosage} • ${medication.frequency}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF6C7280),
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFF1F5F9),
+                ) {
+                    Text(
+                        text = "Estoque: ${medication.stockQuantity}",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (medication.isStockLow) Color(0xFFD97706) else Color(0xFF333846),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            medication.lastRefillDate?.let { lastDate ->
+                Text(
+                    text = "Última retirada: ${lastDate.format(dateFormatter)} (Ciclo: ${medication.refillCycleDays} dias)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF6C7280),
+                )
+            }
+
+            medication.nextAvailableRefillDate?.let { nextDate ->
+                Text(
+                    text = "Próxima reposição permitida: ${nextDate.format(dateFormatter)}",
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                    color = Color(0xFF333846),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Status Banner
+            when (refillStatus) {
+                is RefillStatus.PrescriptionExpiresBeforeRefill -> {
+                    RefillWarningBanner(
+                        title = "Atenção: Receita Vencerá Antes da Reposição",
+                        message = "A receita expira em ${refillStatus.expirationDate.format(dateFormatter)}, mas a próxima retirada só é liberada em ${refillStatus.nextRefillDate.format(dateFormatter)}. Solicite nova receita a tempo.",
+                        bgColor = Color(0xFFFFF3E0),
+                        iconColor = Color(0xFFD97706),
+                    )
+                }
+
+                is RefillStatus.PrescriptionExpired -> {
+                    RefillWarningBanner(
+                        title = "Receita Vencida",
+                        message = "A receita vinculada já expirou. Você precisará de uma nova consulta.",
+                        bgColor = Color(0xFFFFEBEE),
+                        iconColor = Color(0xFFD32F2F),
+                    )
+                }
+
+                is RefillStatus.RefillAvailable -> {
+                    RefillSuccessBanner(
+                        title = "Reposição Liberada na Farmácia",
+                        message = "Você já pode retirar uma nova caixa na farmácia.",
+                        onReplenishClick = onReplenishClick,
+                    )
+                }
+
+                is RefillStatus.LowStock -> {
+                    RefillWarningBanner(
+                        title = "Estoque Baixo",
+                        message = "Restam apenas ${refillStatus.remainingStock} unidades.",
+                        bgColor = Color(0xFFFFFBEB),
+                        iconColor = Color(0xFFD97706),
+                    )
+                }
+
+                else -> {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFE6F4EA),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF1E8E3E),
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Receita válida e dentro do prazo de reposição.",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF1E8E3E),
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RefillWarningBanner(
+    title: String,
+    message: String,
+    bgColor: Color,
+    iconColor: Color,
+) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = bgColor,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = iconColor,
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF333846),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RefillSuccessBanner(
+    title: String,
+    message: String,
+    onReplenishClick: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = Color(0xFFE6F4EA),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF1E8E3E),
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFF1E8E3E),
+                    )
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF333846),
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = onReplenishClick,
+                modifier = Modifier.align(Alignment.End),
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Text(text = "Registrar Retirada")
+            }
+        }
+    }
+}

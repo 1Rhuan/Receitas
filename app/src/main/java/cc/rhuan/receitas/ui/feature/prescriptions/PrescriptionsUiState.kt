@@ -1,19 +1,21 @@
 package cc.rhuan.receitas.ui.feature.prescriptions
 
+import androidx.annotation.StringRes
+import cc.rhuan.receitas.R
 import cc.rhuan.receitas.domain.model.PrescriptionItem
 
-enum class PrescriptionFilter(val label: String) {
-    ALL("Todas"),
-    VALID("Válidas"),
-    EXPIRED("Vencidas"),
+enum class PrescriptionFilter(@StringRes val labelRes: Int) {
+    ALL(R.string.filter_all),
+    VALID(R.string.filter_valid),
+    EXPIRED(R.string.filter_expired),
 }
 
-enum class PrescriptionSortOrder(val label: String) {
-    EXPIRATION("Validade"),
-    NAME_ASC("Nome (A-Z)"),
-    NAME_DESC("Nome (Z-A)"),
-    SPECIALTY("Especialidade"),
-    DOCTOR("Médico"),
+enum class PrescriptionSortOrder(@StringRes val labelRes: Int) {
+    EXPIRATION(R.string.sort_expiration),
+    NAME_ASC(R.string.sort_name_asc),
+    NAME_DESC(R.string.sort_name_desc),
+    SPECIALTY(R.string.sort_specialty),
+    DOCTOR(R.string.sort_doctor),
 }
 
 data class PrescriptionsUiState(
