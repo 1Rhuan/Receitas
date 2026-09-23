@@ -1,3 +1,74 @@
 <resources>
     <string name="app_name">Receitas</string>
+    <string name="add_prescription">Adicionar Receita</string>
+    <string name="medical_prescriptions">Receitas Médicas</string>
+    <string name="track_and_consult_prescriptions">Acompanhe e consulte suas receitas e prescrições</string>
+    <string name="search_prescription_or_doctor">Buscar receita ou médico…</string>
+    <string name="search">Buscar</string>
+    <string name="clear_search">Limpar busca</string>
+    <string name="sort">Ordenar</string>
+    <string name="sort_by">ORDENAR POR</string>
+    <string name="issued_on">Emitida em %s</string>
+    <string name="expired">Vencida</string>
+    <string name="day">dia</string>
+    <string name="days">dias</string>
+    <string name="expires_in">Venc. %1$d %2$s</string>
+    <string name="valid">Válida</string>
+    <string name="no_prescription_found">Nenhuma receita encontrada</string>
+    <string name="no_prescription_registered">Nenhuma receita cadastrada</string>
+    <string name="try_searching_different_term">Tente buscar por outro termo ou alterar os filtros.</string>
+    <string name="registered_prescriptions_appear_here">Suas receitas cadastradas aparecerão aqui.</string>
+
+    <string name="filter_all">Todas</string>
+    <string name="filter_valid">Válidas</string>
+    <string name="filter_expired">Vencidas</string>
+
+    <string name="sort_expiration">Validade</string>
+    <string name="sort_name_asc">Nome (A-Z)</string>
+    <string name="sort_name_desc">Nome (Z-A)</string>
+    <string name="sort_specialty">Especialidade</string>
+    <string name="sort_doctor">Médico</string>
+
+    <string name="notifications_title">Notificações</string>
+    <string name="mark_as_read">Marcar lidas</string>
+    <string name="clear_all_notifications">Limpar todas as notificações</string>
+    <string name="notifications_subtitle">Lembretes de medicamentos, avisos e vencimentos</string>
+
+    <string name="filter_unread">Não Lidas</string>
+    <string name="filter_medications">Medicamentos</string>
+    <string name="filter_prescriptions">Receitas</string>
+
+    <string name="category_medication_reminder">LEMBRETE DE DOSE</string>
+    <string name="category_prescription_expired">RECEITA VENCIDA</string>
+    <string name="category_prescription_renewal">RENOVAÇÃO DE RECEITA</string>
+    <string name="category_stock_available">REPOSIÇÃO DISPONÍVEL</string>
+    <string name="category_stock_low">ESTOQUE BAIXO</string>
+    <string name="category_system_alert">AVISO DO SISTEMA</string>
+    <string name="delete_notification">Excluir notificação</string>
+    <string name="action_take_medication">Tomar</string>
+    <string name="action_snooze_medication">Adiar 15m</string>
+    <string name="action_renew_prescription">Marcar como Renovada</string>
+    <string name="action_replenish_stock">Marcar como Reposto</string>
+    <string name="action_mark_read">Marcar como lida</string>
+
+    <string name="empty_notifications_all">Nenhuma notificação por aqui</string>
+    <string name="empty_notifications_unread">Todas as notificações foram lidas!</string>
+    <string name="empty_notifications_medications">Nenhum aviso de medicamento</string>
+    <string name="empty_notifications_prescriptions">Nenhum aviso de receita</string>
+    <string name="empty_notifications_unread_desc">Você está em dia com seus avisos e lembretes.</string>
+    <string name="empty_notifications_desc">Seus avisos, lembretes de doses e vencimentos de receitas aparecerão nesta lista.</string>
+
+    <string name="notif_renewal_title">Renovação de receita</string>
+    <string name="notif_renewal_msg_single">Não se esqueça de renovar a receita %1$s antes da reposição do medicamento %2$s.</string>
+    <string name="notif_renewal_msg_multiple">Não se esqueça de renovar a receita %1$s antes da reposição dos seus medicamentos (%2$s).</string>
+
+    <string name="notif_expired_title">Receita Vencida</string>
+    <string name="notif_expired_msg_single">A receita %1$s venceu. Solicite a renovação para continuar a reposição do medicamento %2$s.</string>
+    <string name="notif_expired_msg_multiple">A receita %1$s venceu. Solicite a renovação para continuar a reposição dos seus medicamentos (%2$s).</string>
+
+    <string name="notif_refill_title">Reposição Liberada</string>
+    <string name="notif_refill_msg_single">O medicamento %s já está disponível para retirada na farmácia.</string>
+    <string name="notif_refill_msg_multiple">Os seus medicamentos (%s) já estão disponíveis para retirada na farmácia.</string>
+    <string name="now">Agora</string>
+
 </resources>
