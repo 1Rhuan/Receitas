@@ -46,6 +46,13 @@ sealed class NavRoute(
         badgeCount = 2,
     )
 
+    data object PrescriptionWizard : NavRoute(
+        route = "prescription_wizard?prescriptionId={prescriptionId}",
+        title = "Nova Receita",
+        iconRes = R.drawable.ic_document_medicine,
+        selectedIconRes = R.drawable.ic_bold_document_medicine,
+    )
+
     companion object {
         val bottomNavItems = listOf(
             Home,

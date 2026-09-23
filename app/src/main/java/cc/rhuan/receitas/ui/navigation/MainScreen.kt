@@ -19,17 +19,22 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import cc.rhuan.receitas.ui.feature.home.HomeScreen
 import cc.rhuan.receitas.ui.feature.medications.MedicationsScreen
 import cc.rhuan.receitas.ui.feature.menu.MenuScreen
 import cc.rhuan.receitas.ui.feature.notifications.NotificationsScreen
+import cc.rhuan.receitas.ui.feature.prescriptions.PrescriptionDetailScreen
 import cc.rhuan.receitas.ui.feature.prescriptions.PrescriptionsScreen
+import cc.rhuan.receitas.ui.feature.prescriptions.wizard.PrescriptionWizardScreen
 
 @Composable
 fun MainScreen() {
@@ -112,6 +117,7 @@ fun MainScreen() {
         ) {
             composable(NavRoute.Home.route) {
                 HomeScreen(
+                    viewModel = hiltViewModel(),
                     onNotificationClick = {
                         navController.navigate(NavRoute.Notifications.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
@@ -142,10 +148,44 @@ fun MainScreen() {
                 )
             }
             composable(NavRoute.Medications.route) {
-                MedicationsScreen()
+                MedicationsScreen(
+                    viewModel = hiltViewModel()
+                )
             }
             composable(NavRoute.Prescriptions.route) {
-                PrescriptionsScreen()
+                PrescriptionsScreen(
+                    viewModel = hiltViewModel(),
+                    onPrescriptionClick = { prescription ->
+                        navController.navigate("prescription_detail/${prescription.id}")
+                    },
+                    onCreatePrescriptionClick = {
+                        navController.navigate(NavRoute.PrescriptionWizard.route)
+                    }
+                )
+            }
+            composable(
+                route = NavRoute.PrescriptionWizard.route,
+                arguments = listOf(navArgument("prescriptionId") {
+                    type = NavType.StringType
+                    nullable = true
+                })
+            ) {
+                PrescriptionWizardScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateUp = { navController.popBackStack() }
+                )
+            }
+            composable(
+                route = "prescription_detail/{prescriptionId}",
+                arguments = listOf(navArgument("prescriptionId") { type = NavType.StringType }),
+            ) {
+                PrescriptionDetailScreen(
+                    viewModel = hiltViewModel(),
+                    onBackClick = { navController.popBackStack() },
+                    onEditClick = { id -> 
+                        navController.navigate("prescription_wizard?prescriptionId=$id") 
+                    }
+                )
             }
             composable(NavRoute.Menu.route) {
                 MenuScreen {
@@ -154,6 +194,7 @@ fun MainScreen() {
             }
             composable(NavRoute.Notifications.route) {
                 NotificationsScreen(
+                    viewModel = hiltViewModel(),
                     onNavigateToPrescription = {
                         navController.navigate(NavRoute.Prescriptions.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
