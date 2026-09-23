@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.update
 
 interface NotificationRepository {
     fun getNotifications(): Flow<List<NotificationItem>>
+    suspend fun addNotification(notification: NotificationItem)
     suspend fun markAsRead(id: String)
     suspend fun markAllAsRead()
     suspend fun deleteNotification(id: String)
@@ -80,6 +81,16 @@ class FakeNotificationRepository : NotificationRepository {
     }
 
     override fun getNotifications(): Flow<List<NotificationItem>> = _notifications.asStateFlow()
+
+    override suspend fun addNotification(notification: NotificationItem) {
+        _notifications.update { current ->
+            if (current.none { it.id == notification.id }) {
+                listOf(notification) + current
+            } else {
+                current
+            }
+        }
+    }
 
     override suspend fun markAsRead(id: String) {
         _notifications.update { list ->

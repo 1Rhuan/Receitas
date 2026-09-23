@@ -1,6 +1,7 @@
 package cc.rhuan.receitas.data.repository
 
 import cc.rhuan.receitas.domain.model.DailyDoseItem
+import cc.rhuan.receitas.domain.model.DoseStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +33,8 @@ class FakeDailyDoseRepository : DailyDoseRepository {
                     time = "07:30",
                     isTaken = true,
                     takenAtTime = "07:30",
+                    status = DoseStatus.TAKEN,
+                    treatmentId = "t1",
                 ),
                 DailyDoseItem(
                     id = "d2",
@@ -40,6 +43,8 @@ class FakeDailyDoseRepository : DailyDoseRepository {
                     dosage = "500 mg",
                     time = "14:00",
                     isTaken = false,
+                    status = DoseStatus.PENDING,
+                    treatmentId = "t2",
                 ),
                 DailyDoseItem(
                     id = "d3",
@@ -48,6 +53,8 @@ class FakeDailyDoseRepository : DailyDoseRepository {
                     dosage = "20 mg",
                     time = "22:00",
                     isTaken = false,
+                    status = DoseStatus.PENDING,
+                    treatmentId = "t3",
                 ),
             )
         )
@@ -59,7 +66,7 @@ class FakeDailyDoseRepository : DailyDoseRepository {
         _doses.update { list ->
             list.map { dose ->
                 if (dose.id == doseId) {
-                    dose.copy(isTaken = true, takenAtTime = "Agora")
+                    dose.copy(isTaken = true, takenAtTime = "Agora", status = DoseStatus.TAKEN)
                 } else dose
             }
         }
@@ -89,7 +96,7 @@ class FakeDailyDoseRepository : DailyDoseRepository {
                     (title?.contains(dose.medicationName, ignoreCase = true) == true)
 
                 if (isMatchingDose && !dose.isTaken) {
-                    dose.copy(isTaken = true, takenAtTime = "Agora")
+                    dose.copy(isTaken = true, takenAtTime = "Agora", status = DoseStatus.TAKEN)
                 } else dose
             }
         }
@@ -110,7 +117,7 @@ class FakeDailyDoseRepository : DailyDoseRepository {
                     (title?.contains(dose.medicationName, ignoreCase = true) == true)
 
                 if (isMatchingDose && !dose.isTaken) {
-                    dose.copy(time = newTimeCalculator(dose.time))
+                    dose.copy(time = newTimeCalculator(dose.time), status = DoseStatus.SNOOZED)
                 } else dose
             }
         }

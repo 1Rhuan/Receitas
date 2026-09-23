@@ -1,0 +1,57 @@
+package cc.rhuan.receitas.di
+
+import android.content.Context
+import cc.rhuan.receitas.data.local.AppDatabase
+import cc.rhuan.receitas.data.local.dao.DoctorDao
+import cc.rhuan.receitas.data.local.dao.DoseLogDao
+import cc.rhuan.receitas.data.local.dao.DoseScheduleDao
+import cc.rhuan.receitas.data.local.dao.MedicationDao
+import cc.rhuan.receitas.data.local.dao.NotificationDao
+import cc.rhuan.receitas.data.local.dao.PrescriptionDao
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+
+    @Provides
+    @Singleton
+    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+        return AppDatabase.getDatabase(context)
+    }
+
+    @Provides
+    fun provideDoctorDao(database: AppDatabase): DoctorDao {
+        return database.doctorDao()
+    }
+
+    @Provides
+    fun provideMedicationDao(database: AppDatabase): MedicationDao {
+        return database.medicationDao()
+    }
+
+    @Provides
+    fun providePrescriptionDao(database: AppDatabase): PrescriptionDao {
+        return database.prescriptionDao()
+    }
+
+    @Provides
+    fun provideDoseScheduleDao(database: AppDatabase): DoseScheduleDao {
+        return database.doseScheduleDao()
+    }
+
+    @Provides
+    fun provideDoseLogDao(database: AppDatabase): DoseLogDao {
+        return database.doseLogDao()
+    }
+
+    @Provides
+    fun provideNotificationDao(database: AppDatabase): NotificationDao {
+        return database.notificationDao()
+    }
+}
