@@ -3,21 +3,20 @@ package cc.rhuan.receitas.ui.feature.home
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import cc.rhuan.receitas.data.repository.DailyDoseRepository
 import cc.rhuan.receitas.data.repository.MedicationRepository
 import cc.rhuan.receitas.data.repository.NotificationRepository
 import cc.rhuan.receitas.data.repository.PrescriptionRepository
-import cc.rhuan.receitas.domain.model.DailyDoseItem
 import cc.rhuan.receitas.domain.model.MedicationItem
 import cc.rhuan.receitas.domain.model.NotificationAction
 import cc.rhuan.receitas.domain.model.NotificationItem
-import cc.rhuan.receitas.domain.model.NotificationType
 import cc.rhuan.receitas.domain.model.PrescriptionItem
 import cc.rhuan.receitas.domain.usecase.GenerateNotificationsUseCase
+import cc.rhuan.receitas.ui.feature.home.components.TrackingItem
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.LocalTime
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,12 +31,9 @@ class HomeViewModel @Inject constructor(
     private val prescriptionRepository: PrescriptionRepository,
     private val medicationRepository: MedicationRepository,
     private val notificationRepository: NotificationRepository,
-    private val dailyDoseRepository: DailyDoseRepository,
 ) : AndroidViewModel(application) {
 
     private val generateNotificationsUseCase: GenerateNotificationsUseCase = GenerateNotificationsUseCase()
-
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -57,9 +53,8 @@ class HomeViewModel @Inject constructor(
                     prescriptionRepository.getPrescriptions(),
                     medicationRepository.getMedications(),
                     notificationRepository.getNotifications(),
-                    dailyDoseRepository.getDailyDoses(),
-                ) { prescriptions, medicamentos, notifications, dailyDoses ->
-                    HomeData(prescriptions, medicamentos, notifications, dailyDoses)
+                ) { prescriptions, medicamentos, notifications ->
+                    HomeData(prescriptions, medicamentos, notifications)
                 }.collect { data ->
                     generateNotificationsUseCase(
                         context = getApplication(),
@@ -74,13 +69,14 @@ class HomeViewModel @Inject constructor(
                             prescriptions = data.prescriptions,
                             medicamentos = data.medicamentos,
                             notifications = data.notifications,
-                            dailyDoses = data.dailyDoses,
                             unreadNotificationsCount = unreadCount,
                             isLoading = false,
                             isRefreshing = false,
                         )
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -97,20 +93,36 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(searchQuery = query) }
     }
 
-    fun markDoseAsTaken(doseId: String) {
-        viewModelScope.launch {
-            dailyDoseRepository.markDoseAsTaken(doseId)
-            _uiState.update { it.copy(snackbarMessage = "Dose marcada como tomada!") }
+    fun onDateSelected(date: LocalDate) {
+        _uiState.update { it.copy(selectedDate = date) }
+    }
 
-            val targetDose = _uiState.value.dailyDoses.find { it.id == doseId }
-            if (targetDose != null) {
-                val activeNotif = _uiState.value.notifications.find { notif ->
-                    !notif.isRead && (notif.type == NotificationType.MEDICATION_REMINDER) &&
-                        ((notif.targetId == targetDose.medicationId) || (notif.targetId == targetDose.id) ||
-                            notif.message.contains(targetDose.medicationName, ignoreCase = true))
+    fun onQuickAction(item: TrackingItem) {
+        viewModelScope.launch {
+            when (item) {
+                is TrackingItem.Prescription -> {
+                    prescriptionRepository.renewPrescription(item.targetId, item.title, null)
+                    _uiState.update { it.copy(snackbarMessage = "Receita marcada como renovada!") }
                 }
-                activeNotif?.let { notif ->
-                    notificationRepository.performAction(notif.id, NotificationAction.TAKE_MEDICATION)
+                is TrackingItem.Medication -> {
+                    medicationRepository.replenishStock(item.targetId, item.title, null)
+                    _uiState.update { it.copy(snackbarMessage = "Medicamento marcado como retirado!") }
+                }
+            }
+        }
+    }
+
+    fun onSecondaryActionWithDate(item: TrackingItem, customDate: LocalDate) {
+        viewModelScope.launch {
+            val dateStr = customDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            when (item) {
+                is TrackingItem.Prescription -> {
+                    prescriptionRepository.renewPrescription(item.targetId, item.title, null, customDate)
+                    _uiState.update { it.copy(snackbarMessage = "Renovação registrada em $dateStr!") }
+                }
+                is TrackingItem.Medication -> {
+                    medicationRepository.replenishStock(item.targetId, item.title, null, customDate)
+                    _uiState.update { it.copy(snackbarMessage = "Retirada registrada em $dateStr!") }
                 }
             }
         }
@@ -124,16 +136,6 @@ class HomeViewModel @Inject constructor(
             val messageText = targetNotification?.message
 
             when (action) {
-                NotificationAction.TAKE_MEDICATION -> {
-                    dailyDoseRepository.markMatchingDoseAsTaken(targetId, id, title, messageText)
-                }
-
-                NotificationAction.SNOOZE_MEDICATION -> {
-                    dailyDoseRepository.snoozeMatchingDose(targetId, id, title, messageText) { timeStr ->
-                        addMinutesToTime(timeStr)
-                    }
-                }
-
                 NotificationAction.RENEW_PRESCRIPTION -> {
                     prescriptionRepository.renewPrescription(targetId, title, messageText)
                 }
@@ -151,16 +153,6 @@ class HomeViewModel @Inject constructor(
             if (message != null) {
                 _uiState.update { it.copy(snackbarMessage = message) }
             }
-        }
-    }
-
-    private fun addMinutesToTime(timeStr: String, minutesToAdd: Long = 15L): String {
-        return try {
-            val time = LocalTime.parse(timeStr)
-            val newTime = time.plusMinutes(minutesToAdd)
-            newTime.format(timeFormatter)
-        } catch (_: Exception) {
-            "$timeStr (+${minutesToAdd}m)"
         }
     }
 
@@ -185,5 +177,4 @@ private data class HomeData(
     val prescriptions: List<PrescriptionItem>,
     val medicamentos: List<MedicationItem>,
     val notifications: List<NotificationItem>,
-    val dailyDoses: List<DailyDoseItem>,
 )
