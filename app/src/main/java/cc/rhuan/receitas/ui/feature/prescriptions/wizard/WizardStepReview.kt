@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
@@ -125,7 +124,7 @@ fun WizardStepReview(
                 } else {
                     allMedications.forEach { med ->
                         Text(
-                            text = "• ${med.title} (${med.dosage}) - ${med.doseAmount} a cada ${med.frequencyHours}h (1ª dose: ${med.firstDoseTime.format(timeFormatter)})",
+                            text = "• ${med.title} (${med.dosage}) ${if (med.prescribedPosology.isNotBlank()) "- " + med.prescribedPosology else ""}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF334155),
                             fontWeight = FontWeight.SemiBold

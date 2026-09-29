@@ -149,7 +149,10 @@ fun MainScreen() {
             }
             composable(NavRoute.Medications.route) {
                 MedicationsScreen(
-                    viewModel = hiltViewModel()
+                    viewModel = hiltViewModel(),
+                    onAddMedicationClick = {
+                        navController.navigate("prescription_wizard?entryMode=STANDALONE_MEDICATION")
+                    },
                 )
             }
             composable(NavRoute.Prescriptions.route) {
@@ -160,19 +163,25 @@ fun MainScreen() {
                     },
                     onCreatePrescriptionClick = {
                         navController.navigate(NavRoute.PrescriptionWizard.route)
-                    }
+                    },
                 )
             }
             composable(
                 route = NavRoute.PrescriptionWizard.route,
-                arguments = listOf(navArgument("prescriptionId") {
-                    type = NavType.StringType
-                    nullable = true
-                })
+                arguments = listOf(
+                    navArgument("prescriptionId") {
+                        type = NavType.StringType
+                        nullable = true
+                    },
+                    navArgument("entryMode") {
+                        type = NavType.StringType
+                        nullable = true
+                    },
+                ),
             ) {
                 PrescriptionWizardScreen(
                     viewModel = hiltViewModel(),
-                    onNavigateUp = { navController.popBackStack() }
+                    onNavigateUp = { navController.popBackStack() },
                 )
             }
             composable(
@@ -182,9 +191,9 @@ fun MainScreen() {
                 PrescriptionDetailScreen(
                     viewModel = hiltViewModel(),
                     onBackClick = { navController.popBackStack() },
-                    onEditClick = { id -> 
-                        navController.navigate("prescription_wizard?prescriptionId=$id") 
-                    }
+                    onEditClick = { id ->
+                        navController.navigate("prescription_wizard?prescriptionId=$id")
+                    },
                 )
             }
             composable(NavRoute.Menu.route) {

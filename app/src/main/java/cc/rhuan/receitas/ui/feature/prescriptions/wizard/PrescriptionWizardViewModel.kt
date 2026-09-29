@@ -13,11 +13,10 @@ import cc.rhuan.receitas.domain.model.MedicationSource
 import cc.rhuan.receitas.domain.model.PharmaceuticalForm
 import cc.rhuan.receitas.domain.model.PrescriptionItem
 import cc.rhuan.receitas.domain.model.PrescriptionType
-import cc.rhuan.receitas.notification.AlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -34,12 +33,17 @@ class PrescriptionWizardViewModel @Inject constructor(
     private val prescriptionRepository: PrescriptionRepository,
     private val medicationRepository: MedicationRepository,
     private val doctorRepository: DoctorRepository,
-    @ApplicationContext private val appContext: Context
+    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     private val prescriptionId: String? = savedStateHandle.get<String>("prescriptionId")
+    private val entryModeParam: String? = savedStateHandle.get<String>("entryMode")
 
-    private val _uiState = MutableStateFlow(PrescriptionWizardUiState())
+    private val _uiState = MutableStateFlow(
+        PrescriptionWizardUiState(
+            entryMode = if (entryModeParam == "STANDALONE_MEDICATION") WizardEntryMode.STANDALONE_MEDICATION else WizardEntryMode.FULL_PRESCRIPTION,
+        ),
+    )
     val uiState = _uiState.asStateFlow()
 
     init {
@@ -79,13 +83,15 @@ class PrescriptionWizardViewModel @Inject constructor(
                                 title = medItem.title,
                                 form = medItem.form,
                                 dosageOverride = medItem.dosage,
-                                source = MedicationSource.fromLabel(medItem.category),
+                                prescribedPosology = medItem.prescribedPosology,
+                                source = medItem.source,
+                                sourceName = medItem.sourceName ?: "",
                                 lastPickupDate = medItem.lastRefillDate,
                                 pickupIntervalDays = medItem.refillCycleDays,
                                 currentStock = medItem.stockQuantity,
                                 minStockThreshold = medItem.minStockThreshold,
-                                availabilityNote = medItem.instructions ?: ""
-                            )
+                                availabilityNote = medItem.instructions ?: "",
+                            ),
                         )
                     }
                 }
@@ -106,7 +112,7 @@ class PrescriptionWizardViewModel @Inject constructor(
                         healthFacility = doctor?.healthFacility ?: "",
                         doctorPhone = doctor?.phone ?: "",
                         medications = linkedDrafts,
-                        isLoading = false
+                        isLoading = false,
                     )
                 }
             } else {
@@ -117,7 +123,7 @@ class PrescriptionWizardViewModel @Inject constructor(
 
     // Navigation
     fun goToStep(step: Int) {
-        if (step in 1..6) {
+        if (step in 1.._uiState.value.maxSteps) {
             _uiState.update { it.copy(currentStep = step) }
         }
     }
@@ -125,8 +131,8 @@ class PrescriptionWizardViewModel @Inject constructor(
     fun nextStep() {
         val currentState = _uiState.value
 
-        // Auto-generate title if not customized when completing medication setup
-        if (!currentState.isTitleCustomized) {
+        // Auto-generate prescription title if not customized
+        if (!currentState.isTitleCustomized && currentState.entryMode == WizardEntryMode.FULL_PRESCRIPTION) {
             val firstMedName = when {
                 currentState.medications.isNotEmpty() -> currentState.medications.first().title
                 currentState.currentMedicationDraft.title.isNotBlank() -> currentState.currentMedicationDraft.title
@@ -138,7 +144,7 @@ class PrescriptionWizardViewModel @Inject constructor(
             }
         }
 
-        if (currentState.currentStep < 6) {
+        if (currentState.currentStep < currentState.maxSteps) {
             _uiState.update { it.copy(currentStep = it.currentStep + 1) }
         }
     }
@@ -150,73 +156,52 @@ class PrescriptionWizardViewModel @Inject constructor(
     }
 
     fun skipStep() {
-        val currentState = _uiState.value
-        when (currentState.currentStep) {
-            4 -> {
-                // Skip Step 4 (Prescription Type & Validity)
-                _uiState.update {
-                    it.copy(
-                        isStep4Skipped = true,
-                        type = null,
-                        validityDays = null,
-                        renewalReminderEnabled = false
-                    )
-                }
-            }
-            5 -> {
-                // Skip Step 5 (Doctor)
-                _uiState.update {
-                    it.copy(
-                        selectedDoctorId = null,
-                        doctorName = "",
-                        doctorRegistration = "",
-                        doctorSpecialty = "",
-                        healthFacility = "",
-                        doctorPhone = ""
-                    )
-                }
-            }
-        }
         nextStep()
     }
 
-    // Medication Draft Management
+    // Draft Management
     fun updateCurrentMedicationDraft(
         title: String? = null,
+        activeIngredient: String? = null,
         form: PharmaceuticalForm? = null,
         dosageValue: String? = null,
         dosageUnit: String? = null,
         dosageOverride: String? = null,
+        prescribedPosology: String? = null,
         doseAmount: String? = null,
-        frequencyHours: Int? = null,
-        durationDays: Int? = null,
-        firstDoseTime: LocalTime? = null,
+        frequencyOption: String? = null,
+        durationOption: String? = null,
         source: MedicationSource? = null,
         sourceName: String? = null,
         hasRecurringPickup: Boolean? = null,
         lastPickupDate: LocalDate? = null,
         pickupIntervalDays: Int? = null,
         currentStock: Int? = null,
-        availabilityNote: String? = null
+        stockAlertEnabled: Boolean? = null,
+        minStockThreshold: Int? = null,
+        availabilityNote: String? = null,
     ) {
         _uiState.update { state ->
             val draft = state.currentMedicationDraft.copy(
                 title = title ?: state.currentMedicationDraft.title,
+                activeIngredient = activeIngredient ?: state.currentMedicationDraft.activeIngredient,
                 form = form ?: state.currentMedicationDraft.form,
                 dosageValue = dosageValue ?: state.currentMedicationDraft.dosageValue,
                 dosageUnit = dosageUnit ?: state.currentMedicationDraft.dosageUnit,
                 dosageOverride = dosageOverride ?: state.currentMedicationDraft.dosageOverride,
+                prescribedPosology = prescribedPosology ?: state.currentMedicationDraft.prescribedPosology,
                 doseAmount = doseAmount ?: state.currentMedicationDraft.doseAmount,
-                frequencyHours = frequencyHours ?: state.currentMedicationDraft.frequencyHours,
-                durationDays = durationDays ?: state.currentMedicationDraft.durationDays,
-                firstDoseTime = firstDoseTime ?: state.currentMedicationDraft.firstDoseTime,
+                frequencyOption = frequencyOption ?: state.currentMedicationDraft.frequencyOption,
+                durationOption = durationOption ?: state.currentMedicationDraft.durationOption,
                 source = source ?: state.currentMedicationDraft.source,
                 sourceName = sourceName ?: state.currentMedicationDraft.sourceName,
                 hasRecurringPickup = hasRecurringPickup ?: state.currentMedicationDraft.hasRecurringPickup,
                 lastPickupDate = lastPickupDate ?: state.currentMedicationDraft.lastPickupDate,
                 pickupIntervalDays = pickupIntervalDays ?: state.currentMedicationDraft.pickupIntervalDays,
                 currentStock = currentStock ?: state.currentMedicationDraft.currentStock,
-                availabilityNote = availabilityNote ?: state.currentMedicationDraft.availabilityNote
+                stockAlertEnabled = stockAlertEnabled ?: state.currentMedicationDraft.stockAlertEnabled,
+                minStockThreshold = minStockThreshold ?: state.currentMedicationDraft.minStockThreshold,
+                availabilityNote = availabilityNote ?: state.currentMedicationDraft.availabilityNote,
             )
             state.copy(currentMedicationDraft = draft)
         }
@@ -227,8 +212,10 @@ class PrescriptionWizardViewModel @Inject constructor(
             val draft = state.currentMedicationDraft.copy(
                 id = medicationItem.id,
                 title = medicationItem.title,
+                activeIngredient = medicationItem.activeIngredient ?: "",
                 dosageOverride = medicationItem.dosage,
-                form = medicationItem.form
+                form = medicationItem.form,
+                prescribedPosology = medicationItem.prescribedPosology,
             )
             state.copy(currentMedicationDraft = draft)
         }
@@ -241,7 +228,7 @@ class PrescriptionWizardViewModel @Inject constructor(
                 state.copy(
                     medications = state.medications + currentDraft,
                     currentMedicationDraft = MedicationDraft(),
-                    currentStep = 1
+                    currentStep = 1,
                 )
             }
         }
@@ -257,7 +244,6 @@ class PrescriptionWizardViewModel @Inject constructor(
         }
     }
 
-    // Step 4: Prescription Identification & Type
     fun updatePrescriptionTitle(title: String) {
         _uiState.update { it.copy(prescriptionTitle = title, isTitleCustomized = true) }
     }
@@ -271,7 +257,7 @@ class PrescriptionWizardViewModel @Inject constructor(
             it.copy(
                 isStep4Skipped = false,
                 type = type,
-                validityDays = type.defaultValidityDays
+                validityDays = type.defaultValidityDays,
             )
         }
     }
@@ -288,7 +274,6 @@ class PrescriptionWizardViewModel @Inject constructor(
         _uiState.update { it.copy(renewalReminderDaysBefore = days) }
     }
 
-    // Step 5: Doctor
     fun selectDoctor(doctor: Doctor) {
         _uiState.update {
             it.copy(
@@ -297,9 +282,13 @@ class PrescriptionWizardViewModel @Inject constructor(
                 doctorRegistration = doctor.registration ?: "",
                 doctorSpecialty = doctor.specialty ?: "",
                 healthFacility = doctor.healthFacility ?: "",
-                doctorPhone = doctor.phone ?: ""
+                doctorPhone = doctor.phone ?: "",
             )
         }
+    }
+
+    fun toggleExtraDoctorFields() {
+        _uiState.update { it.copy(showExtraDoctorFields = !it.showExtraDoctorFields) }
     }
 
     fun updateDoctorName(name: String) {
@@ -322,11 +311,6 @@ class PrescriptionWizardViewModel @Inject constructor(
         _uiState.update { it.copy(doctorPhone = phone) }
     }
 
-    fun toggleExtraDoctorFields() {
-        _uiState.update { it.copy(showExtraDoctorFields = !it.showExtraDoctorFields) }
-    }
-
-    // Step 6: Notes and Photo
     fun updateNotes(notes: String) {
         _uiState.update { it.copy(notes = notes) }
     }
@@ -335,16 +319,16 @@ class PrescriptionWizardViewModel @Inject constructor(
         _uiState.update { it.copy(photoUri = uri) }
     }
 
-    // Save Prescription
+    // Save
     fun savePrescription() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val state = _uiState.value
 
-                // 1. Doctor
+                // 1. Doctor (if full prescription & doctor provided)
                 var doctorId = state.selectedDoctorId
-                if (doctorId == null && state.doctorName.isNotBlank()) {
+                if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION && doctorId == null && state.doctorName.isNotBlank()) {
                     val doctors = doctorRepository.getDoctors().first()
                     val existingDoctor = doctors.find {
                         (state.doctorRegistration.isNotBlank() && it.registration == state.doctorRegistration) ||
@@ -359,7 +343,7 @@ class PrescriptionWizardViewModel @Inject constructor(
                             registration = state.doctorRegistration.takeIf { it.isNotBlank() },
                             specialty = state.doctorSpecialty.takeIf { it.isNotBlank() },
                             healthFacility = state.healthFacility.takeIf { it.isNotBlank() },
-                            phone = state.doctorPhone.takeIf { it.isNotBlank() }
+                            phone = state.doctorPhone.takeIf { it.isNotBlank() },
                         )
                         doctorRepository.addDoctor(newDoctor)
                         doctorId = newDoctor.id
@@ -379,17 +363,20 @@ class PrescriptionWizardViewModel @Inject constructor(
                     val medItem = MedicationItem(
                         id = medId,
                         title = draft.title,
+                        activeIngredient = draft.activeIngredient.takeIf { it.isNotBlank() },
                         dosage = draft.dosage,
                         quantity = "${draft.currentStock ?: 0} un",
-                        frequency = "A cada ${draft.frequencyHours} horas",
+                        prescribedPosology = draft.prescribedPosology.ifBlank { draft.frequencyOption },
                         category = draft.source.label,
+                        source = draft.source,
+                        sourceName = draft.sourceName.takeIf { it.isNotBlank() },
                         isAvailable = true,
                         instructions = draft.availabilityNote.takeIf { it.isNotBlank() },
                         form = draft.form,
                         stockQuantity = draft.currentStock ?: 0,
                         minStockThreshold = draft.minStockThreshold,
                         lastRefillDate = draft.lastPickupDate,
-                        refillCycleDays = draft.pickupIntervalDays ?: 30
+                        refillCycleDays = draft.pickupIntervalDays ?: 30,
                     )
 
                     if (draft.id == null) {
@@ -397,47 +384,36 @@ class PrescriptionWizardViewModel @Inject constructor(
                     } else {
                         medicationRepository.updateMedication(medItem)
                     }
-
-                    // Schedule Alarm
-                    val scheduleId = "sched_$medId"
-                    var scheduledDateTime = LocalDateTime.of(LocalDate.now(), draft.firstDoseTime)
-                    if (scheduledDateTime.isBefore(LocalDateTime.now())) {
-                        scheduledDateTime = scheduledDateTime.plusDays(1)
-                    }
-                    AlarmScheduler.scheduleDoseAlarm(
-                        context = appContext,
-                        scheduleId = scheduleId,
-                        medicationId = medId,
-                        medicationTitle = draft.title,
-                        dosage = draft.dosage,
-                        scheduledDateTime = scheduledDateTime
-                    )
                 }
 
-                // 3. Prescription
-                val prescriptionItem = PrescriptionItem(
-                    id = state.editingPrescriptionId ?: UUID.randomUUID().toString(),
-                    title = state.prescriptionTitle,
-                    specialty = state.doctorSpecialty,
-                    doctorId = doctorId,
-                    doctorName = state.doctorName,
-                    doctorRegistration = state.doctorRegistration.takeIf { it.isNotBlank() },
-                    issueDate = state.issueDate,
-                    type = if (state.isStep4Skipped) null else state.type,
-                    customValidityDays = if (state.isStep4Skipped) null else state.validityDays,
-                    notes = state.notes.takeIf { it.isNotBlank() },
-                    medicationIds = savedMedicationIds
-                )
+                // 3. Prescription (only if full prescription mode)
+                if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION) {
+                    val prescriptionItem = PrescriptionItem(
+                        id = state.editingPrescriptionId ?: UUID.randomUUID().toString(),
+                        title = state.prescriptionTitle.ifBlank { "Receita Médica" },
+                        specialty = state.doctorSpecialty,
+                        doctorId = doctorId,
+                        doctorName = state.doctorName,
+                        doctorRegistration = state.doctorRegistration.takeIf { it.isNotBlank() },
+                        issueDate = state.issueDate,
+                        type = if (state.isStep4Skipped) null else state.type,
+                        customValidityDays = if (state.isStep4Skipped) null else state.validityDays,
+                        notes = state.notes.takeIf { it.isNotBlank() },
+                        medicationIds = savedMedicationIds,
+                    )
 
-                if (state.editingPrescriptionId == null) {
-                    prescriptionRepository.addPrescription(prescriptionItem)
-                } else {
-                    prescriptionRepository.updatePrescription(prescriptionItem)
+                    if (state.editingPrescriptionId == null) {
+                        prescriptionRepository.addPrescription(prescriptionItem)
+                    } else {
+                        prescriptionRepository.updatePrescription(prescriptionItem)
+                    }
                 }
 
                 _uiState.update { it.copy(isLoading = false, isSaved = true) }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage ?: "Erro ao salvar receita") }
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage ?: "Erro ao salvar") }
             }
         }
     }

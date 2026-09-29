@@ -503,8 +503,9 @@ private fun MedicationDetailCard(
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = Color(0xFF333846),
                     )
+                    val subText = if (medication.prescribedPosology.isNotBlank()) "${medication.dosage} • ${medication.prescribedPosology}" else medication.dosage
                     Text(
-                        text = "${medication.dosage} • ${medication.frequency}",
+                        text = subText,
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFF6C7280),
                     )

@@ -3,6 +3,7 @@ package cc.rhuan.receitas.ui.feature.medications
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.rhuan.receitas.data.repository.MedicationRepository
+import cc.rhuan.receitas.domain.model.MedicationItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,10 +14,10 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class MedicationsViewModel @Inject constructor(
-    private val repository: MedicationRepository,
+    private val medicationRepository: MedicationRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(MedicationsUiState(isLoading = true))
+    private val _uiState = MutableStateFlow(MedicationsUiState())
     val uiState: StateFlow<MedicationsUiState> = _uiState.asStateFlow()
 
     init {
@@ -25,21 +26,14 @@ class MedicationsViewModel @Inject constructor(
 
     fun loadMedications() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            try {
-                repository.getMedications().collect { list ->
-                    _uiState.update {
-                        it.copy(
-                            medications = list,
-                            isLoading = false,
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.message ?: "Erro ao carregar medicamentos",
+            _uiState.update { it.copy(isLoading = true) }
+            medicationRepository.getMedications().collect { meds ->
+                _uiState.update { state ->
+                    val filtered = applyFilter(meds, state.searchQuery, state.selectedSourceFilter)
+                    state.copy(
+                        medications = meds,
+                        filteredMedications = filtered,
+                        isLoading = false
                     )
                 }
             }
@@ -47,14 +41,48 @@ class MedicationsViewModel @Inject constructor(
     }
 
     fun onSearchQueryChanged(query: String) {
-        _uiState.update { it.copy(searchQuery = query) }
+        _uiState.update { state ->
+            val filtered = applyFilter(state.medications, query, state.selectedSourceFilter)
+            state.copy(searchQuery = query, filteredMedications = filtered)
+        }
     }
 
-    fun onFilterSelected(filter: MedicationFilter) {
-        _uiState.update { it.copy(selectedFilter = filter) }
+    fun onSourceFilterSelected(sourceLabel: String) {
+        _uiState.update { state ->
+            val filtered = applyFilter(state.medications, state.searchQuery, sourceLabel)
+            state.copy(selectedSourceFilter = sourceLabel, filteredMedications = filtered)
+        }
     }
 
-    fun onSortOrderSelected(sortOrder: MedicationSortOrder) {
-        _uiState.update { it.copy(selectedSortOrder = sortOrder) }
+    fun replenishStock(medicationId: String) {
+        viewModelScope.launch {
+            medicationRepository.replenishStock(id = medicationId, title = null, message = null)
+            _uiState.update { it.copy(snackbarMessage = "Estoque atualizado com sucesso!") }
+        }
+    }
+
+    fun dismissSnackbar() {
+        _uiState.update { it.copy(snackbarMessage = null) }
+    }
+
+    private fun applyFilter(
+        list: List<MedicationItem>,
+        query: String,
+        filter: String
+    ): List<MedicationItem> {
+        return list.filter { med ->
+            val matchesQuery = query.isBlank() ||
+                med.title.contains(query, ignoreCase = true) ||
+                (med.activeIngredient?.contains(query, ignoreCase = true) == true) ||
+                med.dosage.contains(query, ignoreCase = true)
+
+            val matchesSource = when (filter) {
+                "TODOS" -> true
+                "Estoque Baixo" -> med.isStockLow || med.stockQuantity == 0
+                else -> med.category.equals(filter, ignoreCase = true) || med.source.label.equals(filter, ignoreCase = true)
+            }
+
+            matchesQuery && matchesSource
+        }
     }
 }

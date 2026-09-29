@@ -6,29 +6,34 @@ import cc.rhuan.receitas.domain.model.MedicationSource
 import cc.rhuan.receitas.domain.model.PharmaceuticalForm
 import cc.rhuan.receitas.domain.model.PrescriptionType
 import java.time.LocalDate
-import java.time.LocalTime
+
+enum class WizardEntryMode {
+    STANDALONE_MEDICATION,
+    FULL_PRESCRIPTION,
+}
 
 data class MedicationDraft(
     val id: String? = null,
     val title: String = "",
+    val activeIngredient: String = "",
     val form: PharmaceuticalForm = PharmaceuticalForm.TABLET,
     val dosageValue: String = "",
     val dosageUnit: String = "mg",
     val dosageOverride: String = "",
+    val prescribedPosology: String = "",
     val doseAmount: String = "1 comprimido",
-    val frequencyHours: Int = 8,
-    val durationDays: Int = 30,
-    val firstDoseTime: LocalTime = LocalTime.of(8, 0),
+    val frequencyOption: String = "3 vezes ao dia (8 em 8 horas)",
+    val durationOption: String = "30 dias",
     val source: MedicationSource = MedicationSource.COMPRA_PROPRIA,
     val sourceName: String = "",
     val hasRecurringPickup: Boolean = false,
     val lastPickupDate: LocalDate? = null,
     val pickupIntervalDays: Int? = 30,
     val pickupReminderDaysBefore: Int = 3,
-    val currentStock: Int? = null,
+    val currentStock: Int? = 30,
     val stockAlertEnabled: Boolean = true,
-    val minStockThreshold: Int = 5,
-    val availabilityNote: String = ""
+    val minStockThreshold: Int = 10,
+    val availabilityNote: String = "",
 ) {
     val dosage: String
         get() = when {
@@ -38,26 +43,30 @@ data class MedicationDraft(
         }
 
     val isStep1Complete: Boolean
-        get() = title.isNotBlank() && dosage.isNotBlank()
+        get() = title.isNotBlank()
 
     val isStep2Complete: Boolean
-        get() = doseAmount.isNotBlank() && frequencyHours > 0
+        get() = dosage.isNotBlank() || title.isNotBlank()
+
+    val isStep3Complete: Boolean
+        get() = prescribedPosology.isNotBlank() || frequencyOption.isNotBlank()
 
     val isComplete: Boolean
         get() = isStep1Complete && isStep2Complete
 }
 
 data class PrescriptionWizardUiState(
+    val entryMode: WizardEntryMode = WizardEntryMode.FULL_PRESCRIPTION,
     val editingPrescriptionId: String? = null,
     val currentStep: Int = 1,
 
-    // Step 1 - 3: Medications
+    // Drafts and Medications
     val medications: List<MedicationDraft> = emptyList(),
     val currentMedicationDraft: MedicationDraft = MedicationDraft(),
     val availableMedications: List<MedicationItem> = emptyList(),
     val showAddAnotherDialog: Boolean = false,
 
-    // Step 4: Prescription Identification & Type
+    // Prescription Identification & Type
     val prescriptionTitle: String = "",
     val isTitleCustomized: Boolean = false,
     val issueDate: LocalDate = LocalDate.now(),
@@ -67,7 +76,7 @@ data class PrescriptionWizardUiState(
     val renewalReminderEnabled: Boolean = true,
     val renewalReminderDaysBefore: Int = 5,
 
-    // Step 5: Doctor
+    // Doctor
     val availableDoctors: List<Doctor> = emptyList(),
     val selectedDoctorId: String? = null,
     val doctorName: String = "",
@@ -77,17 +86,20 @@ data class PrescriptionWizardUiState(
     val doctorPhone: String = "",
     val showExtraDoctorFields: Boolean = false,
 
-    // Step 6: Notes, Photo and Review
+    // Notes, Photo and Review
     val notes: String = "",
     val photoUri: String? = null,
 
     // Status
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
 ) {
+    val maxSteps: Int
+        get() = if (entryMode == WizardEntryMode.STANDALONE_MEDICATION) 6 else 10
+
     val progress: Float
-        get() = currentStep / 6f
+        get() = currentStep.toFloat() / maxSteps.toFloat()
 
     val currentMedicationIndex: Int
         get() = medications.size + 1
@@ -95,22 +107,16 @@ data class PrescriptionWizardUiState(
     val hasMultipleMedications: Boolean
         get() = medications.isNotEmpty()
 
-    val canAdvanceFromStep1: Boolean
-        get() = currentMedicationDraft.isStep1Complete || medications.isNotEmpty()
-
-    val canAdvanceFromStep2: Boolean
-        get() = currentMedicationDraft.isStep2Complete || medications.isNotEmpty()
-
-    val canAdvanceFromStep3: Boolean
-        get() = true
-
-    val canAdvanceFromStep4: Boolean
-        get() = true
-
-    val canAdvanceFromStep5: Boolean
-        get() = true
+    val canAdvanceCurrentStep: Boolean
+        get() = when (currentStep) {
+            1 -> currentMedicationDraft.title.isNotBlank() || medications.isNotEmpty()
+            2 -> currentMedicationDraft.dosage.isNotBlank() || medications.isNotEmpty()
+            3 -> currentMedicationDraft.prescribedPosology.isNotBlank() || currentMedicationDraft.frequencyOption.isNotBlank() || medications.isNotEmpty()
+            4 -> true
+            5 -> true
+            else -> true
+        }
 
     val canSave: Boolean
-        get() = (medications.isNotEmpty() || currentMedicationDraft.isComplete) &&
-                prescriptionTitle.isNotBlank()
+        get() = (medications.isNotEmpty() || currentMedicationDraft.title.isNotBlank())
 }

@@ -12,16 +12,9 @@ sealed class NavRoute(
 ) {
     data object Home : NavRoute(
         route = "home",
-        title = "Hoje",
+        title = "Início",
         iconRes = R.drawable.ic_home,
         selectedIconRes = R.drawable.ic_bold_home,
-    )
-
-    data object Medications : NavRoute(
-        route = "medications",
-        title = "Medicamentos",
-        iconRes = R.drawable.ic_pills,
-        selectedIconRes = R.drawable.ic_bold_pills,
     )
 
     data object Prescriptions : NavRoute(
@@ -29,6 +22,13 @@ sealed class NavRoute(
         title = "Receitas",
         iconRes = R.drawable.ic_document_medicine,
         selectedIconRes = R.drawable.ic_bold_document_medicine,
+    )
+
+    data object Medications : NavRoute(
+        route = "medications",
+        title = "Medicamentos",
+        iconRes = R.drawable.ic_pills,
+        selectedIconRes = R.drawable.ic_bold_pills,
     )
 
     data object Menu : NavRoute(
@@ -43,11 +43,11 @@ sealed class NavRoute(
         title = "Notificações",
         iconRes = R.drawable.ic_bell_bing,
         selectedIconRes = R.drawable.ic_bold_bell_bing,
-        badgeCount = 2,
+        badgeCount = 0,
     )
 
     data object PrescriptionWizard : NavRoute(
-        route = "prescription_wizard?prescriptionId={prescriptionId}",
+        route = "prescription_wizard?prescriptionId={prescriptionId}&entryMode={entryMode}",
         title = "Nova Receita",
         iconRes = R.drawable.ic_document_medicine,
         selectedIconRes = R.drawable.ic_bold_document_medicine,
@@ -56,8 +56,8 @@ sealed class NavRoute(
     companion object {
         val bottomNavItems = listOf(
             Home,
-            Medications,
             Prescriptions,
+            Medications,
             Menu,
         )
     }
