@@ -3,6 +3,7 @@ package cc.rhuan.receitas.data.repository
 import cc.rhuan.receitas.data.local.dao.MedicationDao
 import cc.rhuan.receitas.data.local.entity.MedicationEntity
 import cc.rhuan.receitas.domain.model.MedicationItem
+import cc.rhuan.receitas.domain.model.MedicationSource
 import cc.rhuan.receitas.domain.model.PharmaceuticalForm
 import java.time.LocalDate
 import javax.inject.Inject
@@ -16,7 +17,7 @@ import kotlinx.coroutines.flow.update
 interface MedicationRepository {
     fun getMedications(): Flow<List<MedicationItem>>
     suspend fun getMedicationById(id: String): MedicationItem?
-    suspend fun replenishStock(id: String?, title: String?, message: String?)
+    suspend fun replenishStock(id: String?, title: String?, message: String?, customDate: LocalDate = LocalDate.now())
     suspend fun addMedication(medication: MedicationItem)
     suspend fun updateMedication(medication: MedicationItem)
 }
@@ -35,7 +36,7 @@ class RoomMedicationRepository @Inject constructor(
         return medicationDao.getMedicationById(id)?.toDomain()
     }
 
-    override suspend fun replenishStock(id: String?, title: String?, message: String?) {
+    override suspend fun replenishStock(id: String?, title: String?, message: String?, customDate: LocalDate) {
         val list = getMedications().firstOrNull() ?: emptyList()
         list.forEach { medication ->
             val isMatching = (id != null && medication.id == id) ||
@@ -45,7 +46,7 @@ class RoomMedicationRepository @Inject constructor(
             if (isMatching) {
                 val updated = medication.copy(
                     isAvailable = true,
-                    lastRefillDate = LocalDate.now(),
+                    lastRefillDate = customDate,
                     stockQuantity = if (medication.stockQuantity > 0) medication.stockQuantity + 30 else 30,
                     quantity = medication.quantity.ifBlank { "2 cx" }
                 )
@@ -65,19 +66,20 @@ class RoomMedicationRepository @Inject constructor(
 
     private fun MedicationEntity.toDomain(): MedicationItem {
         val calculatedAvailable = (currentStock ?: 0) > 0 || isAvailableForRefill(lastPickupDate, pickupIntervalDays ?: 30)
-        val formattedFrequency = if (frequencyHours > 0) "A cada $frequencyHours horas" else "1x ao dia"
-        val formattedQuantity = if (currentStock != null) "$currentStock un" else doseAmount.ifBlank { "0 un" }
+        val formattedQuantity = if (currentStock != null) "$currentStock un" else prescribedQuantity.ifBlank { "0 un" }
 
         return MedicationItem(
             id = id,
             title = title,
+            activeIngredient = activeIngredient,
             dosage = dosage,
             quantity = formattedQuantity,
-            frequency = formattedFrequency,
+            prescribedPosology = prescribedPosology,
             category = source.label,
+            source = source,
+            sourceName = sourceName,
             isAvailable = calculatedAvailable,
             instructions = availabilityNote,
-            activeIngredient = null,
             form = form,
             stockQuantity = currentStock ?: 0,
             minStockThreshold = minStockThreshold,
@@ -93,18 +95,16 @@ class RoomMedicationRepository @Inject constructor(
     }
 
     private fun MedicationItem.toEntity(existingEntity: MedicationEntity? = null): MedicationEntity {
-        val parsedHours = Regex("(\\d+)").find(frequency)?.value?.toIntOrNull() ?: existingEntity?.frequencyHours ?: 8
-
         return MedicationEntity(
             id = id,
             title = title,
+            activeIngredient = activeIngredient ?: existingEntity?.activeIngredient,
             form = form,
             dosage = dosage,
-            doseAmount = existingEntity?.doseAmount ?: quantity.ifBlank { "1 comprimido" },
-            frequencyHours = parsedHours,
-            durationDays = existingEntity?.durationDays ?: 30,
-            firstDoseTime = existingEntity?.firstDoseTime,
-            sourceName = existingEntity?.sourceName,
+            prescribedPosology = prescribedPosology.ifBlank { existingEntity?.prescribedPosology ?: "" },
+            prescribedQuantity = quantity.ifBlank { existingEntity?.prescribedQuantity ?: "" },
+            source = source,
+            sourceName = sourceName ?: existingEntity?.sourceName,
             hasRecurringPickup = lastRefillDate != null || existingEntity?.hasRecurringPickup == true,
             lastPickupDate = lastRefillDate ?: existingEntity?.lastPickupDate,
             pickupIntervalDays = refillCycleDays,
@@ -128,10 +128,11 @@ class FakeMedicationRepository : MedicationRepository {
                     dosage = "500 mg",
                     form = PharmaceuticalForm.CAPSULE,
                     quantity = "2 cx",
+                    prescribedPosology = "Tomar 1 cápsula de 8 em 8 horas por 7 dias",
                     stockQuantity = 24,
                     minStockThreshold = 10,
-                    frequency = "8 em 8 horas",
                     category = "Antibiótico",
+                    source = MedicationSource.COMPRA_PROPRIA,
                     isAvailable = true,
                     instructions = "Tomar após as refeições.",
                     lastRefillDate = LocalDate.now().minusDays(5),
@@ -144,10 +145,11 @@ class FakeMedicationRepository : MedicationRepository {
                     dosage = "50 mg",
                     form = PharmaceuticalForm.TABLET,
                     quantity = "0 cx",
+                    prescribedPosology = "1 comprimido ao dia pela manhã",
                     stockQuantity = 2,
                     minStockThreshold = 15,
-                    frequency = "1x ao dia",
                     category = "Uso Contínuo",
+                    source = MedicationSource.FARMACIA_POPULAR,
                     isAvailable = true,
                     lastRefillDate = LocalDate.now().minusDays(15),
                     refillCycleDays = 30,
@@ -160,10 +162,11 @@ class FakeMedicationRepository : MedicationRepository {
                     dosage = "500 mg",
                     form = PharmaceuticalForm.DROPS,
                     quantity = "0 uni",
+                    prescribedPosology = "20 gotas se houver dor ou febre de 6 em 6h",
                     stockQuantity = 0,
                     minStockThreshold = 1,
-                    frequency = "Se houver dor ou febre",
                     category = "Analgésico",
+                    source = MedicationSource.COMPRA_PROPRIA,
                     isAvailable = true,
                     lastRefillDate = LocalDate.now().minusDays(28),
                     refillCycleDays = 30,
@@ -176,10 +179,11 @@ class FakeMedicationRepository : MedicationRepository {
                     dosage = "20 mg",
                     form = PharmaceuticalForm.CAPSULE,
                     quantity = "2 cx",
+                    prescribedPosology = "1 cápsula ao dia em jejum",
                     stockQuantity = 28,
                     minStockThreshold = 7,
-                    frequency = "1x ao dia em jejum",
                     category = "Gastroprotetor",
+                    source = MedicationSource.FARMACIA_BASICA,
                     isAvailable = true,
                     lastRefillDate = LocalDate.now().minusDays(10),
                     refillCycleDays = 30,
@@ -192,10 +196,11 @@ class FakeMedicationRepository : MedicationRepository {
                     dosage = "20 mg",
                     form = PharmaceuticalForm.TABLET,
                     quantity = "1 cx",
+                    prescribedPosology = "1 comprimido à noite antes de dormir",
                     stockQuantity = 14,
                     minStockThreshold = 10,
-                    frequency = "1x à noite",
                     category = "Uso Contínuo",
+                    source = MedicationSource.FARMACIA_POPULAR,
                     isAvailable = true,
                     lastRefillDate = LocalDate.now().minusDays(20),
                     refillCycleDays = 30,
@@ -211,7 +216,7 @@ class FakeMedicationRepository : MedicationRepository {
         return _medications.value.find { it.id == id }
     }
 
-    override suspend fun replenishStock(id: String?, title: String?, message: String?) {
+    override suspend fun replenishStock(id: String?, title: String?, message: String?, customDate: LocalDate) {
         _medications.update { list ->
             list.map { medication ->
                 val isMatching = (id != null && medication.id == id) ||
@@ -221,7 +226,7 @@ class FakeMedicationRepository : MedicationRepository {
                 if (isMatching) {
                     medication.copy(
                         isAvailable = true,
-                        lastRefillDate = LocalDate.now(),
+                        lastRefillDate = customDate,
                         stockQuantity = if (medication.stockQuantity > 0) medication.stockQuantity + 30 else 30,
                         quantity = medication.quantity.ifBlank { "2 cx" },
                     )

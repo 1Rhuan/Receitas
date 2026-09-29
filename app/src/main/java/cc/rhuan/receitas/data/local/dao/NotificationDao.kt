@@ -16,7 +16,7 @@ interface NotificationDao {
     @Query("SELECT * FROM notifications WHERE id = :id")
     suspend fun getNotificationById(id: String): NotificationEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertNotification(notification: NotificationEntity)
 
     @Update

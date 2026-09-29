@@ -5,20 +5,17 @@ import androidx.room.PrimaryKey
 import cc.rhuan.receitas.domain.model.MedicationSource
 import cc.rhuan.receitas.domain.model.PharmaceuticalForm
 import java.time.LocalDate
-import java.time.LocalTime
 
 @Entity(tableName = "medications")
 data class MedicationEntity(
     @PrimaryKey
     val id: String,
     val title: String,
+    val activeIngredient: String? = null,
     val form: PharmaceuticalForm = PharmaceuticalForm.TABLET,
     val dosage: String = "",
-    // Posologia
-    val doseAmount: String = "1 comprimido",
-    val frequencyHours: Int = 8,
-    val durationDays: Int = 30,
-    val firstDoseTime: LocalTime? = null,
+    val prescribedPosology: String = "",
+    val prescribedQuantity: String = "",
     // Origem e Retirada
     val source: MedicationSource = MedicationSource.COMPRA_PROPRIA,
     val sourceName: String? = null,

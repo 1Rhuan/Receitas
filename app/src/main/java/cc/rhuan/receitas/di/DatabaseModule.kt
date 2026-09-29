@@ -3,8 +3,6 @@ package cc.rhuan.receitas.di
 import android.content.Context
 import cc.rhuan.receitas.data.local.AppDatabase
 import cc.rhuan.receitas.data.local.dao.DoctorDao
-import cc.rhuan.receitas.data.local.dao.DoseLogDao
-import cc.rhuan.receitas.data.local.dao.DoseScheduleDao
 import cc.rhuan.receitas.data.local.dao.MedicationDao
 import cc.rhuan.receitas.data.local.dao.NotificationDao
 import cc.rhuan.receitas.data.local.dao.PrescriptionDao
@@ -38,16 +36,6 @@ object DatabaseModule {
     @Provides
     fun providePrescriptionDao(database: AppDatabase): PrescriptionDao {
         return database.prescriptionDao()
-    }
-
-    @Provides
-    fun provideDoseScheduleDao(database: AppDatabase): DoseScheduleDao {
-        return database.doseScheduleDao()
-    }
-
-    @Provides
-    fun provideDoseLogDao(database: AppDatabase): DoseLogDao {
-        return database.doseLogDao()
     }
 
     @Provides

@@ -1,11 +1,9 @@
 package cc.rhuan.receitas.di
 
-import cc.rhuan.receitas.data.repository.DailyDoseRepository
 import cc.rhuan.receitas.data.repository.DoctorRepository
 import cc.rhuan.receitas.data.repository.MedicationRepository
 import cc.rhuan.receitas.data.repository.NotificationRepository
 import cc.rhuan.receitas.data.repository.PrescriptionRepository
-import cc.rhuan.receitas.data.repository.RoomDailyDoseRepository
 import cc.rhuan.receitas.data.repository.RoomDoctorRepository
 import cc.rhuan.receitas.data.repository.RoomMedicationRepository
 import cc.rhuan.receitas.data.repository.RoomNotificationRepository
@@ -35,12 +33,6 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideMedicationRepository(impl: RoomMedicationRepository): MedicationRepository {
-        return impl
-    }
-
-    @Provides
-    @Singleton
-    fun provideDailyDoseRepository(impl: RoomDailyDoseRepository): DailyDoseRepository {
         return impl
     }
 

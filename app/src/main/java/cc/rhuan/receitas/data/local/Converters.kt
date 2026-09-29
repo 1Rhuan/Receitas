@@ -1,7 +1,6 @@
 package cc.rhuan.receitas.data.local
 
 import androidx.room.TypeConverter
-import cc.rhuan.receitas.domain.model.DoseStatus
 import cc.rhuan.receitas.domain.model.MedicationSource
 import cc.rhuan.receitas.domain.model.NotificationType
 import cc.rhuan.receitas.domain.model.PharmaceuticalForm
@@ -85,16 +84,6 @@ class Converters {
     @TypeConverter
     fun toPrescriptionType(value: String?): PrescriptionType? {
         return value?.let { runCatching { PrescriptionType.valueOf(it) }.getOrNull() }
-    }
-
-    @TypeConverter
-    fun fromDoseStatus(value: DoseStatus?): String? {
-        return value?.name
-    }
-
-    @TypeConverter
-    fun toDoseStatus(value: String?): DoseStatus? {
-        return value?.let { runCatching { DoseStatus.valueOf(it) }.getOrNull() }
     }
 
     @TypeConverter

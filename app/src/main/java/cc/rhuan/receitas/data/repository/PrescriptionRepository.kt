@@ -15,11 +15,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import java.time.format.DateTimeFormatter
 
 interface PrescriptionRepository {
     fun getPrescriptions(): Flow<List<PrescriptionItem>>
     suspend fun getPrescriptionById(id: String): PrescriptionItem?
-    suspend fun renewPrescription(id: String?, title: String?, message: String?)
+    suspend fun renewPrescription(id: String?, title: String?, message: String?, customDate: LocalDate = LocalDate.now())
     suspend fun addPrescription(prescription: PrescriptionItem)
     suspend fun updatePrescription(prescription: PrescriptionItem)
     suspend fun deletePrescription(id: String)
@@ -55,7 +56,7 @@ class RoomPrescriptionRepository @Inject constructor(
         return entity.toDomain(doctor)
     }
 
-    override suspend fun renewPrescription(id: String?, title: String?, message: String?) {
+    override suspend fun renewPrescription(id: String?, title: String?, message: String?, customDate: LocalDate) {
         val prescriptions = getPrescriptions().firstOrNull() ?: emptyList()
         prescriptions.forEach { prescription ->
             val isMatching = (id != null && prescription.id == id) ||
@@ -64,8 +65,8 @@ class RoomPrescriptionRepository @Inject constructor(
 
             if (isMatching) {
                 val updated = prescription.copy(
-                    issueDate = LocalDate.now(),
-                    notes = "Receita renovada recentemente em ${LocalDate.now()}"
+                    issueDate = customDate,
+                    notes = "Receita renovada em ${customDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}"
                 )
                 updatePrescription(updated)
             }
@@ -186,7 +187,7 @@ class FakePrescriptionRepository : PrescriptionRepository {
         return _prescriptions.value.find { it.id == id }
     }
 
-    override suspend fun renewPrescription(id: String?, title: String?, message: String?) {
+    override suspend fun renewPrescription(id: String?, title: String?, message: String?, customDate: LocalDate) {
         _prescriptions.update { list ->
             list.map { prescription ->
                 val isMatching = (id != null && prescription.id == id) ||
@@ -195,8 +196,8 @@ class FakePrescriptionRepository : PrescriptionRepository {
 
                 if (isMatching) {
                     prescription.copy(
-                        issueDate = LocalDate.now(),
-                        notes = "Receita renovada recentemente em ${LocalDate.now()}",
+                        issueDate = customDate,
+                        notes = "Receita renovada em ${customDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
                     )
                 } else prescription
             }
