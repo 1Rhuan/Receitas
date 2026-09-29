@@ -2,14 +2,11 @@ package cc.rhuan.receitas.ui.feature.notifications
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cc.rhuan.receitas.data.repository.DailyDoseRepository
 import cc.rhuan.receitas.data.repository.MedicationRepository
 import cc.rhuan.receitas.data.repository.NotificationRepository
 import cc.rhuan.receitas.data.repository.PrescriptionRepository
 import cc.rhuan.receitas.domain.model.NotificationAction
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,10 +19,7 @@ class NotificationsViewModel @Inject constructor(
     private val repository: NotificationRepository,
     private val prescriptionRepository: PrescriptionRepository,
     private val medicationRepository: MedicationRepository,
-    private val dailyDoseRepository: DailyDoseRepository,
 ) : ViewModel() {
-
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     private val _uiState = MutableStateFlow(NotificationsUiState(isLoading = true))
     val uiState: StateFlow<NotificationsUiState> = _uiState.asStateFlow()
@@ -88,14 +82,6 @@ class NotificationsViewModel @Inject constructor(
             val messageText = targetNotification?.message
 
             when (action) {
-                NotificationAction.TAKE_MEDICATION -> {
-                    dailyDoseRepository.markMatchingDoseAsTaken(targetId, id, title, messageText)
-                }
-                NotificationAction.SNOOZE_MEDICATION -> {
-                    dailyDoseRepository.snoozeMatchingDose(targetId, id, title, messageText) { timeStr ->
-                        addMinutesToTime(timeStr)
-                    }
-                }
                 NotificationAction.RENEW_PRESCRIPTION -> {
                     prescriptionRepository.renewPrescription(targetId, title, messageText)
                 }
@@ -111,16 +97,6 @@ class NotificationsViewModel @Inject constructor(
             if (message != null) {
                 _uiState.update { it.copy(snackbarMessage = message) }
             }
-        }
-    }
-
-    private fun addMinutesToTime(timeStr: String, minutesToAdd: Long = 15L): String {
-        return try {
-            val time = LocalTime.parse(timeStr)
-            val newTime = time.plusMinutes(minutesToAdd)
-            newTime.format(timeFormatter)
-        } catch (_: Exception) {
-            "$timeStr (+${minutesToAdd}m)"
         }
     }
 
