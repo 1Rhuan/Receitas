@@ -10,7 +10,6 @@ import cc.rhuan.receitas.domain.model.MedicationItem
 import cc.rhuan.receitas.domain.model.NotificationAction
 import cc.rhuan.receitas.domain.model.NotificationItem
 import cc.rhuan.receitas.domain.model.PrescriptionItem
-import cc.rhuan.receitas.domain.usecase.GenerateNotificationsUseCase
 import cc.rhuan.receitas.ui.feature.home.components.TrackingItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -33,8 +32,6 @@ class HomeViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
 ) : AndroidViewModel(application) {
 
-    private val generateNotificationsUseCase: GenerateNotificationsUseCase = GenerateNotificationsUseCase()
-
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -56,12 +53,6 @@ class HomeViewModel @Inject constructor(
                 ) { prescriptions, medicamentos, notifications ->
                     HomeData(prescriptions, medicamentos, notifications)
                 }.collect { data ->
-                    generateNotificationsUseCase(
-                        context = getApplication(),
-                        medications = data.medicamentos,
-                        prescriptions = data.prescriptions,
-                        notificationRepository = notificationRepository,
-                    )
 
                     val unreadCount = data.notifications.count { !it.isRead }
                     _uiState.update { currentState ->

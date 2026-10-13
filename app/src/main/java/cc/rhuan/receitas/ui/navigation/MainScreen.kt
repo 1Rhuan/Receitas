@@ -11,6 +11,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -37,8 +38,14 @@ import cc.rhuan.receitas.ui.feature.prescriptions.PrescriptionsScreen
 import cc.rhuan.receitas.ui.feature.prescriptions.wizard.PrescriptionWizardScreen
 
 @Composable
-fun MainScreen() {
+fun MainScreen(openedNotificationId: String? = null, onNotificationOpened: () -> Unit = {}) {
     val navController = rememberNavController()
+    LaunchedEffect(openedNotificationId) {
+        if (openedNotificationId != null) {
+            navController.navigate(NavRoute.Notifications.route) { launchSingleTop = true }
+            onNotificationOpened()
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -204,14 +211,8 @@ fun MainScreen() {
             composable(NavRoute.Notifications.route) {
                 NotificationsScreen(
                     viewModel = hiltViewModel(),
-                    onNavigateToPrescription = {
-                        navController.navigate(NavRoute.Prescriptions.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                    onNavigateToPrescription = { id ->
+                        navController.navigate("prescription_detail/" + android.net.Uri.encode(id))
                     },
                 ) {
                     navController.navigate(NavRoute.Medications.route) {
