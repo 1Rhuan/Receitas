@@ -27,7 +27,7 @@ data class NotificationsUiState(
             NotificationFilter.ALL -> notifications
             NotificationFilter.UNREAD -> notifications.filter { !it.isRead }
             NotificationFilter.MEDICATIONS -> notifications.filter {
-                (it.type == NotificationType.MEDICATION_REMINDER) || (it.type == NotificationType.MEDICATION_STOCK)
+                (it.type == NotificationType.MEDICATION_PICKUP) || (it.type == NotificationType.MEDICATION_STOCK)
             }
             NotificationFilter.PRESCRIPTIONS -> notifications.filter {
                 it.type == NotificationType.PRESCRIPTION_EXPIRING

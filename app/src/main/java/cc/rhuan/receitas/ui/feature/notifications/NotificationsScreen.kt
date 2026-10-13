@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -55,6 +56,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +74,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cc.rhuan.receitas.R
 import cc.rhuan.receitas.domain.model.NotificationAction
 import cc.rhuan.receitas.domain.model.NotificationItem
+import cc.rhuan.receitas.domain.model.ReminderPhase
 import cc.rhuan.receitas.domain.model.NotificationType
 import cc.rhuan.receitas.ui.theme.ReceitasTheme
 
@@ -116,6 +120,17 @@ fun NotificationsScreenContent(
     onNavigateToMedication: (String) -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    var pendingAction by remember { mutableStateOf<Pair<String, NotificationAction>?>(null) }
+    pendingAction?.let { (id, action) ->
+        val renewal = action == NotificationAction.RENEW_PRESCRIPTION
+        AlertDialog(
+            onDismissRequest = { pendingAction = null },
+            title = { Text(if (renewal) "Registrar renovação?" else "Registrar retirada?") },
+            text = { Text(if (renewal) "Confirme que a receita já foi renovada. A data de emissão será atualizada para hoje." else "Confirme que o medicamento já foi retirado. A próxima retirada será calculada a partir de hoje.") },
+            confirmButton = { TextButton(onClick = { pendingAction = null; onPerformAction(id, action) }) { Text("Confirmar") } },
+            dismissButton = { TextButton(onClick = { pendingAction = null }) { Text("Cancelar") } },
+        )
+    }
 
     LaunchedEffect(uiState.snackbarMessage) {
         uiState.snackbarMessage?.let { message ->
@@ -239,7 +254,7 @@ fun NotificationsScreenContent(
                                 NotificationFilter.ALL -> uiState.notifications.size
                                 NotificationFilter.UNREAD -> uiState.notifications.count { !it.isRead }
                                 NotificationFilter.MEDICATIONS -> uiState.notifications.count {
-                                    (it.type == NotificationType.MEDICATION_REMINDER) || (it.type == NotificationType.MEDICATION_STOCK)
+                                    (it.type == NotificationType.MEDICATION_PICKUP) || (it.type == NotificationType.MEDICATION_STOCK)
                                 }
                                 NotificationFilter.PRESCRIPTIONS -> uiState.notifications.count {
                                     it.type == NotificationType.PRESCRIPTION_EXPIRING
@@ -328,7 +343,7 @@ fun NotificationsScreenContent(
                                                     notification.targetId?.let(onNavigateToMedication)
                                                 }
                                                 else -> {
-                                                    onPerformAction(notification.id, action)
+                                                    pendingAction = notification.id to action
                                                 }
                                             }
                                         },
@@ -365,53 +380,13 @@ private fun NotificationCard(
     onActionClick: (NotificationAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val (iconRes, iconColor, containerColor, categoryLabel) = when (item.type) {
-        NotificationType.MEDICATION_REMINDER -> Quadruple(
-            R.drawable.ic_bold_pills,
-            Color(0xFF0288D1),
-            Color(0xFFE3F2FD),
-            stringResource(R.string.category_medication_reminder),
-        )
-        NotificationType.PRESCRIPTION_EXPIRING -> {
-            if (item.title.contains("Vencida", ignoreCase = true)) {
-                Quadruple(
-                    R.drawable.ic_bold_document_medicine,
-                    Color(0xFFD32F2F),
-                    Color(0xFFFFEBEE),
-                    stringResource(R.string.category_prescription_expired),
-                )
-            } else {
-                Quadruple(
-                    R.drawable.ic_bold_document_medicine,
-                    Color(0xFFD97706),
-                    Color(0xFFFFF3E0),
-                    stringResource(R.string.category_prescription_renewal),
-                )
-            }
-        }
-        NotificationType.MEDICATION_STOCK -> {
-            if (item.title.contains("Liberada", ignoreCase = true) || item.title.contains("Retirar", ignoreCase = true)) {
-                Quadruple(
-                    R.drawable.ic_box,
-                    Color(0xFF1E8E3E),
-                    Color(0xFFE6F4EA),
-                    stringResource(R.string.category_stock_available),
-                )
-            } else {
-                Quadruple(
-                    R.drawable.ic_box,
-                    Color(0xFFE65100),
-                    Color(0xFFFFF3E0),
-                    stringResource(R.string.category_stock_low),
-                )
-            }
-        }
-        NotificationType.SYSTEM_ALERT -> Quadruple(
-            R.drawable.ic_bold_bell_bing,
-            Color(0xFF7B1FA2),
-            Color(0xFFF3E5F5),
-            stringResource(R.string.category_system_alert),
-        )
+    val (iconRes, iconColor, containerColor, categoryLabel) = when (item.phase) {
+        ReminderPhase.EXPIRED -> Quadruple(R.drawable.ic_bold_document_medicine, Color(0xFFD32F2F), Color(0xFFFFEBEE), "RECEITA VENCIDA")
+        ReminderPhase.EXPIRES_TODAY -> Quadruple(R.drawable.ic_bold_document_medicine, Color(0xFFD97706), Color(0xFFFFF3E0), "VENCE HOJE")
+        ReminderPhase.RENEWAL -> Quadruple(R.drawable.ic_bold_document_medicine, Color(0xFFD97706), Color(0xFFFFF3E0), "RENOVAÇÃO DE RECEITA")
+        ReminderPhase.PICKUP_UPCOMING -> Quadruple(R.drawable.ic_box, Color(0xFF0288D1), Color(0xFFE3F2FD), "RETIRADA PRÓXIMA")
+        ReminderPhase.PICKUP_DUE -> Quadruple(R.drawable.ic_box, Color(0xFF1E8E3E), Color(0xFFE6F4EA), "DATA DE RETIRADA")
+        null -> Quadruple(R.drawable.ic_bold_bell_bing, Color(0xFF7B1FA2), Color(0xFFF3E5F5), "AVISO")
     }
 
     Card(
@@ -548,98 +523,27 @@ private fun NotificationCard(
                 }
             }
 
-            // Contextual Action Buttons Row
             if (item.actionTaken == null) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    when (item.type) {
-                        NotificationType.MEDICATION_REMINDER -> {
-                            Button(
-                                onClick = { onActionClick(NotificationAction.TAKE_MEDICATION) },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 12.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = stringResource(R.string.action_take_medication), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                            }
-
-                            OutlinedButton(
-                                onClick = { onActionClick(NotificationAction.SNOOZE_MEDICATION) },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 12.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Schedule,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = stringResource(R.string.action_snooze_medication), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                            }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val prescription = item.id.startsWith("prescription:")
+                    if (item.targetId != null) {
+                        OutlinedButton(
+                            onClick = { onActionClick(if (prescription) NotificationAction.VIEW_PRESCRIPTION else NotificationAction.VIEW_MEDICATION) },
+                            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
+                        ) {
+                            Text(if (prescription) "Ver receita" else "Ver medicamentos")
                         }
-
-                        NotificationType.PRESCRIPTION_EXPIRING -> {
-                            Button(
-                                onClick = { onActionClick(NotificationAction.RENEW_PRESCRIPTION) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 12.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = stringResource(R.string.action_renew_prescription), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-
-                        NotificationType.MEDICATION_STOCK -> {
-                            Button(
-                                onClick = { onActionClick(NotificationAction.REPLENISH_STOCK) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 12.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = stringResource(R.string.action_replenish_stock), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-
-                        NotificationType.SYSTEM_ALERT -> {
-                            if (!item.isRead) {
-                                TextButton(
-                                    onClick = { onActionClick(NotificationAction.MARK_AS_READ) },
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.DoneAll,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(text = stringResource(R.string.action_mark_read), fontSize = 13.sp)
-                                }
-                            }
+                        Button(
+                            onClick = { onActionClick(if (prescription) NotificationAction.RENEW_PRESCRIPTION else NotificationAction.REPLENISH_STOCK) },
+                            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
+                        ) {
+                            Text(if (prescription) "Registrar renovação" else "Registrar retirada")
                         }
                     }
                 }
             }
+
         }
     }
 }
@@ -717,16 +621,16 @@ private fun NotificationsScreenPreview() {
             uiState = NotificationsUiState(
                 notifications = listOf(
                     NotificationItem(
-                        id = "1",
-                        title = "Hora do Medicamento",
-                        message = "Está na hora de tomar Amoxicilina (500mg) - Dose das 14:00.",
+                        id = "pickup:1:2026-10-16:upcoming",
+                        title = "Lembrete de retirada",
+                        message = "Losartana: retirada prevista para 16/10/2026. Confirme a disponibilidade com a farmácia.",
                         timestamp = "Há 10 min",
-                        type = NotificationType.MEDICATION_REMINDER,
+                        type = NotificationType.MEDICATION_PICKUP,
                         isRead = false,
                     ),
                     NotificationItem(
-                        id = "2",
-                        title = "Receita a Vencer",
+                        id = "prescription:2:2026-10-15:renewal",
+                        title = "Lembrete de renovação",
                         message = "Sua receita de Tratamento Dermatológico vence em 2 dias.",
                         timestamp = "Há 1 hora",
                         type = NotificationType.PRESCRIPTION_EXPIRING,
