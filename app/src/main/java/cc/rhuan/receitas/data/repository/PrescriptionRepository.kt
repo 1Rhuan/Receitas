@@ -78,7 +78,7 @@ class RoomPrescriptionRepository @Inject constructor(
     }
 
     override suspend fun updatePrescription(prescription: PrescriptionItem) {
-        prescriptionDao.updatePrescription(prescription.toEntity())
+        prescriptionDao.updatePrescription(prescription.toEntity(prescriptionDao.getPrescriptionById(prescription.id)))
     }
 
     override suspend fun deletePrescription(id: String) {
@@ -99,18 +99,18 @@ class RoomPrescriptionRepository @Inject constructor(
         medicationIds = medicationIds
     )
 
-    private fun PrescriptionItem.toEntity() = PrescriptionEntity(
+    private fun PrescriptionItem.toEntity(existing: PrescriptionEntity? = null) = PrescriptionEntity(
         id = id,
         title = title,
         type = type,
         validityDays = customValidityDays ?: type?.defaultValidityDays ?: 180,
         issueDate = issueDate,
-        renewalReminderEnabled = true,
-        renewalReminderDaysBefore = 5,
+        renewalReminderEnabled = existing?.renewalReminderEnabled ?: true,
+        renewalReminderDaysBefore = existing?.renewalReminderDaysBefore ?: 5,
         doctorId = doctorId,
         medicationIds = medicationIds,
         notes = notes,
-        photoUri = null
+        photoUri = existing?.photoUri
     )
 }
 

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 interface NotificationRepository {
+    suspend fun refresh() {}
     fun getNotifications(): Flow<List<NotificationItem>>
     suspend fun addNotification(notification: NotificationItem)
     suspend fun markAsRead(id: String)

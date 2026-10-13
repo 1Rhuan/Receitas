@@ -37,21 +37,12 @@ class RoomMedicationRepository @Inject constructor(
     }
 
     override suspend fun replenishStock(id: String?, title: String?, message: String?, customDate: LocalDate) {
-        val list = getMedications().firstOrNull() ?: emptyList()
-        list.forEach { medication ->
-            val isMatching = (id != null && medication.id == id) ||
-                (message?.contains(medication.title, ignoreCase = true) == true) ||
-                (title?.contains(medication.title, ignoreCase = true) == true)
-
-            if (isMatching) {
-                val updated = medication.copy(
-                    isAvailable = true,
-                    lastRefillDate = customDate,
-                    stockQuantity = if (medication.stockQuantity > 0) medication.stockQuantity + 30 else 30,
-                    quantity = medication.quantity.ifBlank { "2 cx" }
-                )
-                updateMedication(updated)
-            }
+        val medications = medicationDao.getAllMedications().firstOrNull() ?: emptyList()
+        medications.filter { medication ->
+            if (id != null) medication.id == id
+            else message?.contains(medication.title, ignoreCase = true) == true || title?.contains(medication.title, ignoreCase = true) == true
+        }.forEach { medication ->
+            medicationDao.updateMedication(medication.copy(lastPickupDate = customDate))
         }
     }
 

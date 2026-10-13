@@ -4,17 +4,24 @@ import cc.rhuan.receitas.data.local.dao.NotificationDao
 import cc.rhuan.receitas.data.local.entity.NotificationEntity
 import cc.rhuan.receitas.domain.model.NotificationAction
 import cc.rhuan.receitas.domain.model.NotificationItem
+import android.app.NotificationManager
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+import cc.rhuan.receitas.notifications.ReminderSynchronizer
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class RoomNotificationRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val notificationDao: NotificationDao
 ) : NotificationRepository {
 
     override fun getNotifications(): Flow<List<NotificationItem>> {
         return notificationDao.getAllNotifications().map { list ->
-            list.map { it.toDomain() }
+            list.map { it.toDomain() }.filter { it.isScheduledReminder }
         }
     }
 
@@ -23,19 +30,40 @@ class RoomNotificationRepository @Inject constructor(
     }
 
     override suspend fun markAsRead(id: String) {
-        notificationDao.markAsRead(id)
+        ReminderSynchronizer.mutex.withLock {
+            suppress(id, deleted = false)
+            notificationDao.markAsRead(id)
+        }
     }
 
     override suspend fun markAllAsRead() {
-        notificationDao.markAllAsRead()
+        ReminderSynchronizer.mutex.withLock {
+            notificationDao.getAllNotifications().first().forEach { suppress(it.id, deleted = false) }
+            notificationDao.markAllAsRead()
+        }
     }
 
     override suspend fun deleteNotification(id: String) {
-        notificationDao.deleteNotification(id)
+        ReminderSynchronizer.mutex.withLock {
+            suppress(id, deleted = true)
+            notificationDao.deleteNotification(id)
+        }
     }
 
     override suspend fun clearAll() {
-        notificationDao.deleteAllNotifications()
+        ReminderSynchronizer.mutex.withLock {
+            notificationDao.getAllNotifications().first().forEach { suppress(it.id, deleted = true) }
+            notificationDao.deleteAllNotifications()
+        }
+    }
+
+    override suspend fun refresh() { ReminderSynchronizer.sync(context) }
+
+    private fun suppress(id: String, deleted: Boolean) {
+        val editor = context.getSharedPreferences("delivered_reminders", Context.MODE_PRIVATE).edit().putBoolean(id, true)
+        if (deleted) editor.putBoolean("dismissed:" + id, true)
+        editor.commit()
+        context.getSystemService(NotificationManager::class.java).cancel("reminder:" + id, 0)
     }
 
     override suspend fun performAction(id: String, action: NotificationAction): String? {
@@ -52,12 +80,12 @@ class RoomNotificationRepository @Inject constructor(
                 entity.copy(isRead = true, actionTaken = "Adiado (+15 min)")
             }
             NotificationAction.RENEW_PRESCRIPTION -> {
-                actionMessage = "Solicitação de renovação iniciada."
-                entity.copy(isRead = true, actionTaken = "Renovação solicitada")
+                actionMessage = "Renovação registrada."
+                entity.copy(isRead = true, actionTaken = "Renovação registrada")
             }
             NotificationAction.REPLENISH_STOCK -> {
-                actionMessage = "Solicitação de reposição registrada."
-                entity.copy(isRead = true, actionTaken = "Reposição solicitada")
+                actionMessage = "Retirada registrada."
+                entity.copy(isRead = true, actionTaken = "Retirada registrada")
             }
             NotificationAction.MARK_AS_READ -> {
                 actionMessage = "Notificação marcada como lida."
@@ -67,7 +95,10 @@ class RoomNotificationRepository @Inject constructor(
                 entity.copy(isRead = true)
             }
         }
-        notificationDao.updateNotification(updatedEntity)
+        ReminderSynchronizer.mutex.withLock {
+            suppress(id, deleted = false)
+            notificationDao.updateNotification(updatedEntity)
+        }
         return actionMessage
     }
 
@@ -75,7 +106,7 @@ class RoomNotificationRepository @Inject constructor(
         id = id,
         title = title,
         message = message,
-        timestamp = timestamp,
+        timestamp = runCatching { java.time.LocalDate.parse(timestamp).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) }.getOrDefault(timestamp),
         type = type,
         isRead = isRead,
         actionTaken = actionTaken,
