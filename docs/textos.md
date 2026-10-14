@@ -12,6 +12,11 @@ A revisão uniformiza os textos em português e os alinha ao comportamento imple
 | Medicamento cadastrado ao editar | Medicamento atualizado e Salvar alterações. |
 | ID inválido / ciclo encerrado | Orientação para voltar à lista ou atualizar os dados. |
 | Menu com ações vazias | Itens indisponíveis identificados como “em breve”; versão obtida do pacote instalado. |
+| Sem vínculo no detalhe do medicamento | Receitas vinculadas conta os documentos que contêm o medicamento; Ver receitas vinculadas abre a lista filtrada. |
+| Receita para retiradas | Nome da receita explicitamente escolhida para acompanhamento, independente da participação em documentos. |
+| Nomes das receitas no resumo do medicamento | “1 receita” / “2 receitas” / “0 receitas”; nomes consultados na lista de destino. |
+
+A lista de destino identifica Filtrado por medicamento e oferece Mostrar todas as receitas. Os ícones têm descrições acessíveis; Arquivar e Excluir definitivamente usam botões com confirmação. Siga [DESIGN.md](../DESIGN.md). As contagens de testes abaixo documentam a rodada original de revisão textual, não a validação atual.
 
 Textos estáticos das telas, rótulos de acessibilidade e textos com datas ou valores foram centralizados em `app/src/main/res/values/strings.xml`. Recursos substituídos e sem referências foram removidos. As mensagens produzidas pelo domínio e pelos estados/ViewModels continuam em português em Kotlin; esta alteração não constitui uma tradução completa do aplicativo para outros idiomas.
 

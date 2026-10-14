@@ -14,6 +14,8 @@ O app organiza receitas, vencimentos e retiradas. Não controla doses, estoque, 
 
 ## Relacionamentos
 
+Participar de receitas pelos itens (`medicationIds`/`items`) e escolher uma receita para acompanhamento (`linkedPrescriptionId`) são relações distintas. Um medicamento pode constar em vários documentos, inclusive históricos, e usar outro para retiradas. A interface conta e filtra a participação; mostra a receita de acompanhamento separadamente. Consultar ou filtrar não cria vínculos nem altera regras de validade.
+
 ```mermaid
 erDiagram
     PROFISSIONAL o|--o{ RECEITA : identifica

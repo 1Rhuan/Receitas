@@ -1,5 +1,13 @@
 # Verificação de código e tratamento de falhas
 
+Este documento registra uma rodada anterior de auditoria. Decisões visuais, fluxos atuais e validações recentes estão em [DESIGN.md](../DESIGN.md); os resultados abaixo não representam uma nova auditoria após cada alteração de interface.
+
+## Limpeza após a migração visual — 14/10/2026
+
+Foram cruzadas referências Kotlin/XML, consumidores de componentes e Android Lint. Removidos 33 textos, um ícone de ordenação, sete fontes Poppins, 38 imports e o slot sem consumidores da barra de detalhes. A navegação e tipografia legadas substituídas também foram retiradas; cartões de medicamento, menus de eventos, revisão editável, prévias e entradas de Room/Hilt continuam usados e foram preservados.
+
+Build do app/testes, 45 testes unitários e lint passaram. Os 34 avisos anteriores de recursos sem uso foram eliminados; restam quatro avisos de versões de dependências. Cinco cenários instrumentados passaram após repetir isoladamente um cenário afetado por falha transitória de screenshot do diálogo. Não houve mudança de banco ou dados reais. O cache `.kotlin/` fica ignorado, e as configurações locais do Android Studio ficam fora dos commits.
+
 ## Escopo
 
 Revisão de fontes Kotlin, recursos XML, navegação, persistência Room, fluxos de cadastro/renovação/retirada, ViewModels e execução de lembretes. A verificação combinou referências entre arquivos, Android Lint, compilação, testes unitários e testes no emulador.

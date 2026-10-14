@@ -1,6 +1,8 @@
 # Pesquisa One UI aplicada ao Receitas
 
-Consulta: 14/10/2026. Este documento aprofunda `DESIGN.md`. A análise das tabelas retrata a primeira versão do piloto. A segunda versão aplica parte das propostas; seu estado atualizado está em `DESIGN.md`. A coluna de aplicação contém interpretações do projeto, não instruções literais Samsung. O piloto ainda aguarda avaliação; a pesquisa não muda regras médicas, ciclos ou dados persistidos.
+As comparações com o código e propostas abaixo retratam as primeiras versões do piloto. Listas agrupadas já foram aprovadas; a implementação e as pendências vigentes estão em [DESIGN.md](../DESIGN.md). Preservar esta pesquisa como fonte das referências consultadas, sem tratar as descrições do piloto como estado atual.
+
+Consulta: 14/10/2026. A análise das tabelas retrata a primeira versão do piloto; a segunda aplicou parte das propostas naquele momento. A coluna de aplicação contém interpretações do projeto, não instruções literais Samsung. A pesquisa não muda regras médicas, ciclos ou dados persistidos. Para o estado atual, consulte DESIGN.md.
 
 ## Componentes
 

@@ -1,6 +1,6 @@
 # Cadastro de receitas e medicamentos
 
-O cadastro de receita tem quatro etapas: receita, medicamentos, retiradas e revisão. Medicamento avulso tem três: medicamento, retirada e revisão.
+O cadastro de receita começa com dados da receita, medicamentos, frequência de retirada e revisão. Medicamento avulso começa diretamente pelo medicamento. Quando há ao menos uma retirada recorrente, uma etapa adicional de lembretes, local e vínculo de receita aparece antes da revisão: são cinco etapas para receita e quatro para medicamento avulso. Sem recorrência, essa etapa é omitida (quatro e três, respectivamente).
 
 Nome do medicamento é obrigatório. Concentração, princípio ativo, orientação escrita e quantidade prescrita são opcionais. Orientação e quantidade prescrita pertencem ao item da receita; quantidade usual de retirada é independente. O app não acompanha doses ou estoque.
 
@@ -12,6 +12,12 @@ Registrar nova receita preenche o formulário a partir da anterior, preserva o d
 
 Revisão permite retornar diretamente após corrigir um grupo. O rascunho conserva IDs antes do salvamento e usa SavedStateHandle sem objetos de sugestões. O salvamento completo usa uma transação Room.
 
-Detalhes da receita permitem arquivar, reativar e excluir separadamente. Detalhes do medicamento permitem editar o acompanhamento, registrar retirada, consultar/corrigir/excluir eventos e arquivar o acompanhamento.
+Detalhes da receita e medicamento oferecem edição/remoção por ícones junto ao nome. A lixeira permite escolher arquivar ou excluir definitivamente, com as confirmações existentes. Arquivados oferecem reativação; receitas substituídas mantêm suas restrições. Eventos são corrigidos/excluídos no histórico completo em timeline.
+
+Ver medicamentos na receita abre os itens daquele documento. Selecionar um item abre o detalhe único de Remédios. Nele, Receitas vinculadas mostra a quantidade; Ver receitas vinculadas abre a lista filtrada por participação, com acesso aos documentos e opção de mostrar todas. Isso não seleciona automaticamente a receita para retiradas.
+
+Emissão/tipo e validade ficam em grupos distintos. A ação principal na base mantém transparência externa e reserva medida na rolagem, adaptando ao teclado. O sistema de componentes e o padrão vigente estão em [DESIGN.md](../DESIGN.md).
 
 Veja [modelagem.md](modelagem.md) para as regras completas e a migração.
+
+A ação principal inclui o medicamento em edição e avança; não exige confirmar Adicionar antes. Adicionar outro medicamento confirma o item e abre o próximo. Nome personalizado e profissional ficam no grupo opcional. Validade em dias e data personalizada são alternativas de entrada. A revisão permite editar frequência e preferências de lembrete separadamente.
