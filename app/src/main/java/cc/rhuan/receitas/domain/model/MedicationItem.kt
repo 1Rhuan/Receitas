@@ -20,9 +20,11 @@ data class MedicationItem(
     val minStockThreshold: Int = 5,
     val lastRefillDate: LocalDate? = null,
     val refillCycleDays: Int = 30,
+    val hasRecurringPickup: Boolean = lastRefillDate != null,
+    val pickupReminderDaysBefore: Int = 3,
 ) {
     val nextAvailableRefillDate: LocalDate?
-        get() = lastRefillDate?.plusDays(refillCycleDays.toLong())
+        get() = if (hasRecurringPickup) lastRefillDate?.plusDays(refillCycleDays.toLong()) else null
 
     val daysUntilAvailable: Int
         get() {
@@ -41,5 +43,5 @@ data class MedicationItem(
         get() = stockQuantity in 1..minStockThreshold
 
     val needsRefill: Boolean
-        get() = stockQuantity <= minStockThreshold || daysUntilAvailable <= 3
+        get() = hasRecurringPickup && daysUntilAvailable <= pickupReminderDaysBefore
 }

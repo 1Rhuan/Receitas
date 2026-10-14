@@ -15,6 +15,8 @@ data class PrescriptionItem(
     val customValidityDays: Int? = null,
     val notes: String? = null,
     val medicationIds: List<String> = emptyList(),
+    val renewalReminderEnabled: Boolean = true,
+    val renewalReminderDaysBefore: Int = 5,
 ) {
     val validityDurationDays: Int
         get() = customValidityDays ?: type?.defaultValidityDays ?: 180

@@ -56,8 +56,8 @@ class RoomMedicationRepository @Inject constructor(
     }
 
     private fun MedicationEntity.toDomain(): MedicationItem {
-        val calculatedAvailable = (currentStock ?: 0) > 0 || isAvailableForRefill(lastPickupDate, pickupIntervalDays ?: 30)
-        val formattedQuantity = if (currentStock != null) "$currentStock un" else prescribedQuantity.ifBlank { "0 un" }
+        val calculatedAvailable = !hasRecurringPickup || isAvailableForRefill(lastPickupDate, pickupIntervalDays ?: 30)
+        val formattedQuantity = prescribedQuantity
 
         return MedicationItem(
             id = id,
@@ -75,7 +75,9 @@ class RoomMedicationRepository @Inject constructor(
             stockQuantity = currentStock ?: 0,
             minStockThreshold = minStockThreshold,
             lastRefillDate = lastPickupDate,
-            refillCycleDays = pickupIntervalDays ?: 30
+            refillCycleDays = pickupIntervalDays ?: 30,
+            hasRecurringPickup = hasRecurringPickup,
+            pickupReminderDaysBefore = pickupReminderDaysBefore
         )
     }
 
@@ -89,21 +91,21 @@ class RoomMedicationRepository @Inject constructor(
         return MedicationEntity(
             id = id,
             title = title,
-            activeIngredient = activeIngredient ?: existingEntity?.activeIngredient,
+            activeIngredient = activeIngredient,
             form = form,
             dosage = dosage,
-            prescribedPosology = prescribedPosology.ifBlank { existingEntity?.prescribedPosology ?: "" },
-            prescribedQuantity = quantity.ifBlank { existingEntity?.prescribedQuantity ?: "" },
+            prescribedPosology = prescribedPosology,
+            prescribedQuantity = quantity,
             source = source,
-            sourceName = sourceName ?: existingEntity?.sourceName,
-            hasRecurringPickup = lastRefillDate != null || existingEntity?.hasRecurringPickup == true,
-            lastPickupDate = lastRefillDate ?: existingEntity?.lastPickupDate,
+            sourceName = sourceName,
+            hasRecurringPickup = hasRecurringPickup,
+            lastPickupDate = if (hasRecurringPickup) lastRefillDate else null,
             pickupIntervalDays = refillCycleDays,
-            pickupReminderDaysBefore = existingEntity?.pickupReminderDaysBefore ?: 3,
+            pickupReminderDaysBefore = pickupReminderDaysBefore,
             currentStock = stockQuantity,
-            stockAlertEnabled = existingEntity?.stockAlertEnabled ?: true,
+            stockAlertEnabled = false,
             minStockThreshold = minStockThreshold,
-            availabilityNote = instructions ?: existingEntity?.availabilityNote
+            availabilityNote = instructions
         )
     }
 }
@@ -218,8 +220,6 @@ class FakeMedicationRepository : MedicationRepository {
                     medication.copy(
                         isAvailable = true,
                         lastRefillDate = customDate,
-                        stockQuantity = if (medication.stockQuantity > 0) medication.stockQuantity + 30 else 30,
-                        quantity = medication.quantity.ifBlank { "2 cx" },
                     )
                 } else medication
             }

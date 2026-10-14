@@ -23,7 +23,9 @@ class CheckRefillStatusUseCase @Inject constructor() {
             )
         }
 
-        val nextRefillDate = medication.nextAvailableRefillDate ?: LocalDate.now()
+        if (!medication.hasRecurringPickup) return RefillStatus.OK
+
+        val nextRefillDate = maxOf(medication.nextAvailableRefillDate ?: LocalDate.now(), LocalDate.now())
 
         if (!linkedPrescription.isValidOn(nextRefillDate)) {
             return RefillStatus.PrescriptionExpiresBeforeRefill(
@@ -34,12 +36,8 @@ class CheckRefillStatusUseCase @Inject constructor() {
             )
         }
 
-        if (medication.isAvailableForRefill && medication.stockQuantity <= medication.minStockThreshold) {
+        if (medication.isAvailableForRefill) {
             return RefillStatus.RefillAvailable(medication.nextAvailableRefillDate)
-        }
-
-        if (medication.isStockLow) {
-            return RefillStatus.LowStock(medication.stockQuantity)
         }
 
         return RefillStatus.OK

@@ -96,7 +96,9 @@ class RoomPrescriptionRepository @Inject constructor(
         type = type,
         customValidityDays = validityDays,
         notes = notes,
-        medicationIds = medicationIds
+        medicationIds = medicationIds,
+        renewalReminderEnabled = renewalReminderEnabled,
+        renewalReminderDaysBefore = renewalReminderDaysBefore
     )
 
     private fun PrescriptionItem.toEntity(existing: PrescriptionEntity? = null) = PrescriptionEntity(
@@ -105,8 +107,8 @@ class RoomPrescriptionRepository @Inject constructor(
         type = type,
         validityDays = customValidityDays ?: type?.defaultValidityDays ?: 180,
         issueDate = issueDate,
-        renewalReminderEnabled = existing?.renewalReminderEnabled ?: true,
-        renewalReminderDaysBefore = existing?.renewalReminderDaysBefore ?: 5,
+        renewalReminderEnabled = renewalReminderEnabled,
+        renewalReminderDaysBefore = renewalReminderDaysBefore,
         doctorId = doctorId,
         medicationIds = medicationIds,
         notes = notes,
