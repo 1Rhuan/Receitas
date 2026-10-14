@@ -3,9 +3,9 @@ package cc.rhuan.receitas.domain.model
 enum class PharmaceuticalForm(val label: String) {
     TABLET("Comprimido"),
     CAPSULE("Cápsula"),
-    LIQUID("Xarope / Solução"),
+    LIQUID("Xarope ou solução"),
     DROPS("Gotas"),
-    OINTMENT("Pomada / Creme"),
+    OINTMENT("Pomada ou creme"),
     INJECTION("Injetável"),
     OTHER("Outro");
 

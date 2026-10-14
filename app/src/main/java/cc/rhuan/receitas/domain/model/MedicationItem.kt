@@ -1,7 +1,6 @@
 package cc.rhuan.receitas.domain.model
 
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 
 data class MedicationItem(
     val id: String,
@@ -10,38 +9,25 @@ data class MedicationItem(
     val dosage: String = "",
     val quantity: String = "",
     val prescribedPosology: String = "",
+    val prescribedQuantity: String = "",
     val form: PharmaceuticalForm = PharmaceuticalForm.TABLET,
-    val category: String = "Uso Geral",
     val source: MedicationSource = MedicationSource.COMPRA_PROPRIA,
     val sourceName: String? = null,
-    val isAvailable: Boolean = true,
     val instructions: String? = null,
-    val stockQuantity: Int = 0,
-    val minStockThreshold: Int = 5,
     val lastRefillDate: LocalDate? = null,
     val refillCycleDays: Int = 30,
     val hasRecurringPickup: Boolean = lastRefillDate != null,
     val pickupReminderDaysBefore: Int = 3,
+    val intervalUnit: IntervalUnit = IntervalUnit.DAYS,
+    val linkedPrescriptionId: String? = null,
+    val trackingArchived: Boolean = false,
+    val pickupHistory: List<PickupEvent> = emptyList(),
+    val initialPickupDate: LocalDate? = null,
+    val trackingError: String? = null,
 ) {
     val nextAvailableRefillDate: LocalDate?
-        get() = if (hasRecurringPickup) lastRefillDate?.plusDays(refillCycleDays.toLong()) else null
-
-    val daysUntilAvailable: Int
-        get() {
-            val targetDate = nextAvailableRefillDate ?: return 0
-            val days = ChronoUnit.DAYS.between(LocalDate.now(), targetDate).toInt()
-            return if (days > 0) days else 0
-        }
-
-    val isAvailableForRefill: Boolean
-        get() {
-            val targetDate = nextAvailableRefillDate ?: return true
-            return !LocalDate.now().isBefore(targetDate)
-        }
-
-    val isStockLow: Boolean
-        get() = stockQuantity in 1..minStockThreshold
+        get() = if (hasRecurringPickup && !trackingArchived && refillCycleDays in 1..3650) lastRefillDate?.let { PickupInterval(refillCycleDays, intervalUnit).nextAfter(it) } else null
 
     val needsRefill: Boolean
-        get() = hasRecurringPickup && daysUntilAvailable <= pickupReminderDaysBefore
+        get() = nextAvailableRefillDate?.let { !LocalDate.now().isBefore(it.minusDays(pickupReminderDaysBefore.toLong())) } == true
 }

@@ -17,20 +17,27 @@ data class PrescriptionItem(
     val medicationIds: List<String> = emptyList(),
     val renewalReminderEnabled: Boolean = true,
     val renewalReminderDaysBefore: Int = 5,
+    val state: RecordState = RecordState.ACTIVE,
+    val previousPrescriptionId: String? = null,
+    val items: List<PrescriptionMedication> = emptyList(),
+    val expiresOn: LocalDate? = null,
+    val validityOrigin: String = "USER_ENTERED",
 ) {
     val validityDurationDays: Int
-        get() = customValidityDays ?: type?.defaultValidityDays ?: 180
+        get() = expiresOn?.let { ChronoUnit.DAYS.between(issueDate, it).toInt() } ?: customValidityDays ?: type?.defaultValidityDays ?: 180
 
     val expirationDate: LocalDate
-        get() = issueDate.plusDays(validityDurationDays.toLong())
+        get() = expiresOn ?: issueDate.plusDays(validityDurationDays.toLong())
 
     val daysUntilExpiration: Int
         get() = ChronoUnit.DAYS.between(LocalDate.now(), expirationDate).toInt()
+
+    val isActive: Boolean get() = state == RecordState.ACTIVE
 
     val isExpired: Boolean
         get() = LocalDate.now().isAfter(expirationDate)
 
     fun isValidOn(date: LocalDate): Boolean {
-        return !date.isAfter(expirationDate)
+        return !date.isBefore(issueDate) && !date.isAfter(expirationDate)
     }
 }

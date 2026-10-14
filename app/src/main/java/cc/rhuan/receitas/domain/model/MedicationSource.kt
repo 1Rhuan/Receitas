@@ -1,8 +1,8 @@
 package cc.rhuan.receitas.domain.model
 
 enum class MedicationSource(val label: String) {
-    COMPRA_PROPRIA("Compra Própria"),
-    CONVENIO("Convênio / Plano de Saúde"),
+    COMPRA_PROPRIA("Compra própria"),
+    CONVENIO("Convênio ou plano de saúde"),
     FARMACIA_POPULAR("Farmácia Popular"),
     FARMACIA_BASICA("Farmácia Básica (SUS)"),
     OUTRO("Outro");
