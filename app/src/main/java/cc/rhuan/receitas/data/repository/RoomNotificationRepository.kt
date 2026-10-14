@@ -2,13 +2,14 @@ package cc.rhuan.receitas.data.repository
 
 import cc.rhuan.receitas.data.local.dao.NotificationDao
 import cc.rhuan.receitas.data.local.entity.NotificationEntity
-import cc.rhuan.receitas.domain.model.NotificationAction
 import cc.rhuan.receitas.domain.model.NotificationItem
 import android.app.NotificationManager
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import cc.rhuan.receitas.notifications.ReminderSynchronizer
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
@@ -25,81 +26,45 @@ class RoomNotificationRepository @Inject constructor(
         }
     }
 
-    override suspend fun addNotification(notification: NotificationItem) {
-        notificationDao.insertNotification(notification.toEntity())
-    }
-
     override suspend fun markAsRead(id: String) {
         ReminderSynchronizer.mutex.withLock {
-            suppress(id, deleted = false)
+            suppress(listOf(id), deleted = false)
             notificationDao.markAsRead(id)
         }
     }
 
     override suspend fun markAllAsRead() {
         ReminderSynchronizer.mutex.withLock {
-            notificationDao.getAllNotifications().first().forEach { suppress(it.id, deleted = false) }
+            suppress(notificationDao.getAllNotifications().first().map { it.id }, deleted = false)
             notificationDao.markAllAsRead()
         }
     }
 
     override suspend fun deleteNotification(id: String) {
         ReminderSynchronizer.mutex.withLock {
-            suppress(id, deleted = true)
+            suppress(listOf(id), deleted = true)
             notificationDao.deleteNotification(id)
         }
     }
 
     override suspend fun clearAll() {
         ReminderSynchronizer.mutex.withLock {
-            notificationDao.getAllNotifications().first().forEach { suppress(it.id, deleted = true) }
+            suppress(notificationDao.getAllNotifications().first().map { it.id }, deleted = true)
             notificationDao.deleteAllNotifications()
         }
     }
 
     override suspend fun refresh() { ReminderSynchronizer.sync(context) }
 
-    private fun suppress(id: String, deleted: Boolean) {
-        val editor = context.getSharedPreferences("delivered_reminders", Context.MODE_PRIVATE).edit().putBoolean(id, true)
-        if (deleted) editor.putBoolean("dismissed:" + id, true)
-        editor.commit()
-        context.getSystemService(NotificationManager::class.java).cancel("reminder:" + id, 0)
-    }
-
-    override suspend fun performAction(id: String, action: NotificationAction): String? {
-        var actionMessage: String? = null
-        val entity = notificationDao.getNotificationById(id) ?: return null
-
-        val updatedEntity = when (action) {
-            NotificationAction.TAKE_MEDICATION -> {
-                actionMessage = "Dose marcada como tomada!"
-                entity.copy(isRead = true, actionTaken = "Tomado agora")
-            }
-            NotificationAction.SNOOZE_MEDICATION -> {
-                actionMessage = "Lembrete adiado por 15 minutos."
-                entity.copy(isRead = true, actionTaken = "Adiado (+15 min)")
-            }
-            NotificationAction.RENEW_PRESCRIPTION -> {
-                actionMessage = "Renovação registrada."
-                entity.copy(isRead = true, actionTaken = "Renovação registrada")
-            }
-            NotificationAction.REPLENISH_STOCK -> {
-                actionMessage = "Retirada registrada."
-                entity.copy(isRead = true, actionTaken = "Retirada registrada")
-            }
-            NotificationAction.MARK_AS_READ -> {
-                actionMessage = "Notificação marcada como lida."
-                entity.copy(isRead = true)
-            }
-            else -> {
-                entity.copy(isRead = true)
-            }
-        }
-        ReminderSynchronizer.mutex.withLock {
-            suppress(id, deleted = false)
-            notificationDao.updateNotification(updatedEntity)
-        }
-        return actionMessage
+    @android.annotation.SuppressLint("ApplySharedPref", "UseKtx")
+    private suspend fun suppress(ids: List<String>, deleted: Boolean) = withContext(Dispatchers.IO) {
+        if (ids.isEmpty()) return@withContext
+        val editor = context.getSharedPreferences("delivered_reminders", Context.MODE_PRIVATE).edit()
+        ids.forEach { id -> editor.putBoolean(id, true); if (deleted) editor.putBoolean("dismissed:" + id, true) }
+        // Durable suppression must succeed before deleting Room history; run blocking I/O off the UI thread.
+        check(editor.commit()) { "Não foi possível preservar a supressão dos alertas" }
+        val manager = context.getSystemService(NotificationManager::class.java)
+        ids.forEach { manager.cancel("reminder:" + it, 0) }
     }
 
     private fun NotificationEntity.toDomain() = NotificationItem(
@@ -110,17 +75,8 @@ class RoomNotificationRepository @Inject constructor(
         type = type,
         isRead = isRead,
         actionTaken = actionTaken,
-        targetId = targetId
+        targetId = targetId, phase = phase?.let { cc.rhuan.receitas.domain.model.ReminderPhase.entries.firstOrNull { p -> p.name == it } },
+        targetType = targetType, cycleKey = cycleKey, resolvedAt = resolvedAt, resolutionReason = resolutionReason
     )
 
-    private fun NotificationItem.toEntity() = NotificationEntity(
-        id = id,
-        title = title,
-        message = message,
-        timestamp = timestamp,
-        type = type,
-        isRead = isRead,
-        actionTaken = actionTaken,
-        targetId = targetId
-    )
 }

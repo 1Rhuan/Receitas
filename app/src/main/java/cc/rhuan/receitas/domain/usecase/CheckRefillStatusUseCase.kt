@@ -11,12 +11,14 @@ class CheckRefillStatusUseCase @Inject constructor() {
     operator fun invoke(
         medication: MedicationItem,
         prescriptions: List<PrescriptionItem>,
+        today: LocalDate = LocalDate.now(),
     ): RefillStatus {
+        if (!medication.hasRecurringPickup || medication.trackingArchived) return RefillStatus.OK
         val linkedPrescription = prescriptions.find { prescription ->
-            prescription.medicationIds.contains(medication.id)
+            prescription.id == medication.linkedPrescriptionId
         } ?: return RefillStatus.NoPrescriptionLinked
 
-        if (linkedPrescription.isExpired) {
+        if (!linkedPrescription.isActive || !linkedPrescription.isValidOn(today)) {
             return RefillStatus.PrescriptionExpired(
                 prescriptionId = linkedPrescription.id,
                 prescriptionTitle = linkedPrescription.title,
@@ -25,7 +27,7 @@ class CheckRefillStatusUseCase @Inject constructor() {
 
         if (!medication.hasRecurringPickup) return RefillStatus.OK
 
-        val nextRefillDate = maxOf(medication.nextAvailableRefillDate ?: LocalDate.now(), LocalDate.now())
+        val nextRefillDate = maxOf(medication.nextAvailableRefillDate ?: today, today)
 
         if (!linkedPrescription.isValidOn(nextRefillDate)) {
             return RefillStatus.PrescriptionExpiresBeforeRefill(
@@ -36,7 +38,7 @@ class CheckRefillStatusUseCase @Inject constructor() {
             )
         }
 
-        if (medication.isAvailableForRefill) {
+        if (medication.nextAvailableRefillDate?.let { !today.isBefore(it) } == true) {
             return RefillStatus.RefillAvailable(medication.nextAvailableRefillDate)
         }
 

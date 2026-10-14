@@ -1,9 +1,11 @@
-# Quantidade por reposição
+# Retiradas
 
-Receitas e medicamentos usam RecordCard: categoria/aviso, ícone/título e informações complementares, com os mesmos espaçamentos e cores.
+O acompanhamento usa data real da última retirada e intervalo configurado em dias, semanas, meses ou anos. Não depende de estoque.
 
-A quantidade por reposição é opcional e aceita unidade junto ao valor (2 caixas, 60 comprimidos, 1 frasco). Pode ser informada no cadastro, etapa Retiradas, e é exibida na revisão, lista, detalhes e início.
+Retiradas atrasadas ou antecipadas deslocam a próxima previsão a partir da data real mais recente. Antecipação exige confirmação adicional. Datas retroativas entram no histórico; não substituem eventos mais recentes.
 
-O valor é salvo em medications.prescribedQuantity. O saldo antigo currentStock permanece separado; não é convertido em quantidade por reposição. Registrar retirada atualiza a data e não soma, decrementa ou substitui essa quantidade. É possível apagar o valor ao editar.
+Registrar, corrigir ou excluir retiradas recalcula a previsão. Acompanhamento sem recorrência ou arquivado não gera pendências na Home. O usuário escolhe uma receita vinculada ou acompanha o medicamento avulso sem receita.
 
-Os lembretes usam apenas datas de validade, renovação e retirada; não usam limites de estoque. O filtro de estoque baixo foi removido.
+As datas são previsões. A disponibilidade deve ser confirmada com a unidade de retirada.
+
+Veja [modelagem.md](modelagem.md).
