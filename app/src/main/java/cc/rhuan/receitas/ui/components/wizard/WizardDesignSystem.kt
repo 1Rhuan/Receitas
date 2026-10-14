@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,7 +24,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
@@ -56,102 +61,58 @@ fun WizardQuestionScreen(
     onPrimaryClick: () -> Unit,
     modifier: Modifier = Modifier,
     contextLabel: String? = null,
+    stepNumber: Int? = null,
+    stepCount: Int? = null,
+    description: String? = null,
+    onClose: (() -> Unit)? = null,
+    isBusy: Boolean = false,
+    errorMessage: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = Color(0xFFE8ECEF),
+        modifier = modifier.fillMaxSize().imePadding(),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.Transparent)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = Color(0xFFD0D7DE),
-                    modifier = Modifier.size(40.dp),
-                ) {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar",
-                            tint = Color(0xFF333846),
-                        )
+            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack, enabled = !isBusy, modifier = Modifier.size(48.dp)) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                    }
+                    Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                        Text(contextLabel ?: "Cadastro de receita", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        if (stepNumber != null && stepCount != null) Text("Etapa " + stepNumber + " de " + stepCount, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    onClose?.let { close ->
+                        IconButton(onClick = close, enabled = !isBusy, modifier = Modifier.size(48.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = "Sair do cadastro")
+                        }
                     }
                 }
+                LinearProgressIndicator(progress = { progress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), color = MaterialTheme.colorScheme.primary)
             }
         },
         bottomBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.Transparent)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-            ) {
-                PrimaryButton(
-                    text = primaryButtonText,
-                    enabled = primaryButtonEnabled,
-                    onClick = onPrimaryClick,
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                LinearProgressIndicator(
-                    progress = { progress.coerceIn(0f, 1f) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(4.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = Color(0xFFCBD5E1),
-                )
+            Surface(tonalElevation = 2.dp) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
+                    PrimaryButton(primaryButtonText, primaryButtonEnabled && !isBusy, onPrimaryClick, isBusy = isBusy)
+                }
             }
         },
-    ) { innerPadding ->
+    ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Context Label
-            if (!contextLabel.isNullOrBlank()) {
-                Text(
-                    text = contextLabel,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 13.sp,
-                    ),
-                    color = Color(0xFF6C7280),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.height(4.dp))
+            Text(question, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            description?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            errorMessage?.let { message ->
+                Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    Text(message, modifier = Modifier.padding(14.dp), color = MaterialTheme.colorScheme.onErrorContainer)
+                }
             }
-
-            // Question Title (directly on background)
-            Text(
-                text = question,
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    lineHeight = 28.sp,
-                ),
-                color = Color(0xFF1E293B),
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Slot Content
             content()
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -162,6 +123,7 @@ fun PrimaryButton(
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isBusy: Boolean = false,
 ) {
     Button(
         onClick = onClick,
@@ -169,14 +131,18 @@ fun PrimaryButton(
         shape = RoundedCornerShape(50),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = Color.White,
-            disabledContainerColor = Color(0xFFCBD5E1),
-            disabledContentColor = Color(0xFF94A3B8),
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp),
+            .heightIn(min = 52.dp),
     ) {
+        if (isBusy) {
+            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            Spacer(Modifier.width(8.dp))
+        }
         Text(
             text = text,
             style = MaterialTheme.typography.titleMedium.copy(
@@ -209,7 +175,7 @@ object ValueRow {
                     fontWeight = FontWeight.Medium,
                     fontSize = 16.sp,
                 ),
-                color = Color(0xFF1E293B),
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -243,7 +209,7 @@ object ValueRow {
                 .fillMaxWidth()
                 .clickable(onClick = onClick),
             shape = RoundedCornerShape(14.dp),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.surface,
         ) {
             Row(
                 modifier = Modifier
@@ -258,7 +224,7 @@ object ValueRow {
                         fontWeight = FontWeight.Medium,
                         fontSize = 15.sp,
                     ),
-                    color = Color(0xFF475569),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Text(
@@ -267,7 +233,7 @@ object ValueRow {
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                     ),
-                    color = Color(0xFF1E293B),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -293,7 +259,7 @@ fun OptionList(
                     .fillMaxWidth()
                     .clickable { onOptionSelected(option) },
                 shape = RoundedCornerShape(14.dp),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
             ) {
                 Row(
                     modifier = Modifier
@@ -308,7 +274,7 @@ fun OptionList(
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             fontSize = 15.sp,
                         ),
-                        color = Color(0xFF1E293B),
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
 
@@ -317,7 +283,7 @@ fun OptionList(
                         onClick = { onOptionSelected(option) },
                         colors = RadioButtonDefaults.colors(
                             selectedColor = MaterialTheme.colorScheme.primary,
-                            unselectedColor = Color(0xFFCBD5E1),
+                            unselectedColor = MaterialTheme.colorScheme.outlineVariant,
                         ),
                     )
                 }
@@ -346,13 +312,13 @@ fun QuickChips(
                 selected = isSelected,
                 onClick = { onOptionSelected(option) },
                 label = { Text(text = option, fontWeight = FontWeight.Normal, fontSize = 13.sp) },
-                shape = RoundedCornerShape(20.dp),
+                shape = MaterialTheme.shapes.large,
                 border = null,
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = Color.White,
-                    containerColor = Color(0xFFDCE2E6),
-                    labelColor = Color(0xFF64748B),
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
             )
         }
@@ -369,27 +335,30 @@ fun Toggle(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
             ),
-            color = Color(0xFF1E293B),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
         )
+
+        Spacer(modifier = Modifier.width(12.dp))
 
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                 checkedTrackColor = MaterialTheme.colorScheme.primary,
-                uncheckedThumbColor = Color(0xFF94A3B8),
-                uncheckedTrackColor = Color(0xFFE2E8F0),
+                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant,
             ),
         )
     }
