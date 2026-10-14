@@ -15,4 +15,5 @@ data class PrescriptionDetailUiState(
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val actionMessage: String? = null,
+    val isDeleted: Boolean = false,
 )

@@ -6,6 +6,11 @@ import androidx.lifecycle.viewModelScope
 import cc.rhuan.receitas.data.repository.MedicationRepository
 import cc.rhuan.receitas.data.repository.PrescriptionRepository
 import cc.rhuan.receitas.domain.usecase.CheckRefillStatusUseCase
+import cc.rhuan.receitas.domain.model.*
+import java.time.LocalDate
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.catch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,16 +33,21 @@ class PrescriptionDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(PrescriptionDetailUiState(isLoading = true))
     val uiState: StateFlow<PrescriptionDetailUiState> = _uiState.asStateFlow()
 
+    private var loadJob: Job? = null
+
     init {
         if (prescriptionId.isNotBlank()) {
             loadDetail()
         } else {
-            _uiState.update { it.copy(isLoading = false, errorMessage = "ID da receita inválido") }
+            _uiState.update { it.copy(isLoading = false, errorMessage = "Receita não encontrada. Volte à lista e tente novamente.") }
         }
     }
 
-    private fun loadDetail() {
-        viewModelScope.launch {
+    fun loadDetail() {
+        if (prescriptionId.isBlank()) return
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             combine(
                 prescriptionRepository.getPrescriptions(),
                 medicationRepository.getMedications(),
@@ -48,8 +58,8 @@ class PrescriptionDetailViewModel @Inject constructor(
                         .filter { prescription.medicationIds.contains(it.id) }
                         .map { med ->
                             PrescriptionMedicationDetail(
-                                medication = med,
-                                refillStatus = checkRefillStatusUseCase(med, prescriptions),
+                                medication = med.copy(title = prescription.items.find { it.medicationId == med.id }?.title ?: med.title, dosage = prescription.items.find { it.medicationId == med.id }?.dosage ?: med.dosage, form = prescription.items.find { it.medicationId == med.id }?.form ?: med.form, prescribedPosology = prescription.items.find { it.medicationId == med.id }?.posology.orEmpty(), prescribedQuantity = prescription.items.find { it.medicationId == med.id }?.quantity.orEmpty()),
+                                refillStatus = checkRefillStatusUseCase(med, listOf(prescription)),
                             )
                         }
                     PrescriptionDetailUiState(
@@ -63,25 +73,41 @@ class PrescriptionDetailViewModel @Inject constructor(
                         errorMessage = "Receita não encontrada",
                     )
                 }
+            }.catch { error ->
+                if (error is CancellationException) throw error
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Não foi possível carregar a receita.") }
             }.collect { newState ->
-                _uiState.value = newState
+                _uiState.update { newState.copy(actionMessage = it.actionMessage, isDeleted = it.isDeleted) }
             }
         }
     }
 
-    fun renewPrescription() {
+    private fun execute(action: suspend () -> String) {
         viewModelScope.launch {
-            val prescription = _uiState.value.prescription ?: return@launch
-            prescriptionRepository.renewPrescription(prescription.id, prescription.title, null)
-            _uiState.update { it.copy(actionMessage = "Solicitação de renovação de receita enviada!") }
+            try { val message = action(); _uiState.update { it.copy(actionMessage = message) } }
+            catch (e: CancellationException) { throw e }
+            catch (_: Exception) { _uiState.update { it.copy(actionMessage = "Não foi possível concluir esta ação. Tente novamente.") } }
         }
     }
-
-    fun replenishMedication(medicationId: String) {
-        viewModelScope.launch {
-            medicationRepository.replenishStock(medicationId, null, null)
-            _uiState.update { it.copy(actionMessage = "Retirada do medicamento registrada!") }
-        }
+    fun registerPickup(id: String, date: LocalDate, early: Boolean, cycle: LocalDate?) = execute {
+        medicationRepository.registerPickup(id, date, early, cycle).message()
+    }
+    fun correctPickup(id: String, date: LocalDate) = execute {
+        val result = medicationRepository.correctPickup(id, date)
+        if (result == OperationResult.Success) "Data corrigida." else result.message()
+    }
+    fun deletePickup(id: String) = execute {
+        val result = medicationRepository.deletePickup(id)
+        if (result == OperationResult.Success) "Retirada excluída. A próxima previsão foi recalculada." else result.message()
+    }
+    fun archive(archived: Boolean) = execute {
+        prescriptionRepository.archivePrescription(prescriptionId, archived)
+        if (archived) "Receita arquivada." else "Receita reativada."
+    }
+    fun deleteRecipe() = execute {
+        prescriptionRepository.deletePrescription(prescriptionId)
+        _uiState.update { it.copy(isDeleted = true) }
+        "Receita excluída."
     }
 
     fun clearActionMessage() {
