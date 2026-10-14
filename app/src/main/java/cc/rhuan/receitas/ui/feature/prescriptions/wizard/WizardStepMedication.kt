@@ -19,7 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Medication
-import androidx.compose.material3.Card
+import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,7 +60,7 @@ fun WizardStepMedication(
         // Conversational Header Card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
         ) {
             Row(
@@ -78,7 +78,7 @@ fun WizardStepMedication(
                     Icon(
                         imageVector = Icons.Default.Medication,
                         contentDescription = null,
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -94,7 +94,7 @@ fun WizardStepMedication(
                     Text(
                         text = "Qual medicamento consta na sua receita?",
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -106,7 +106,7 @@ fun WizardStepMedication(
                 text = "MEDICAMENTOS NATA RECEITA (${uiState.medications.size})",
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF6C7280)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
 
@@ -114,7 +114,7 @@ fun WizardStepMedication(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
                 ) {
                     Row(
                         modifier = Modifier
@@ -127,16 +127,16 @@ fun WizardStepMedication(
                             Text(
                                 text = med.title,
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = Color(0xFF1E293B)
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "${med.dosage} • ${med.form.label}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF64748B)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         IconButton(onClick = { viewModel.removeMedication(index) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Remover", tint = Color(0xFFEF4444))
+                            Icon(Icons.Default.Delete, contentDescription = "Remover", tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -147,9 +147,9 @@ fun WizardStepMedication(
         // Main Form Card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -159,7 +159,7 @@ fun WizardStepMedication(
                 Text(
                     text = "Nome do Medicamento *",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF334155)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 var expandedMedSearch by remember { mutableStateOf(false) }
@@ -205,7 +205,7 @@ fun WizardStepMedication(
                 Text(
                     text = "Dosagem *",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF334155)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Row(
@@ -240,7 +240,7 @@ fun WizardStepMedication(
                                 label = { Text(unit, fontSize = 12.sp) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = Color.White
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                                 )
                             )
                         }
@@ -252,7 +252,7 @@ fun WizardStepMedication(
                     Text(
                         text = "Valores de dosagem comuns:",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF64748B)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -274,7 +274,7 @@ fun WizardStepMedication(
                 Text(
                     text = "Forma Farmacêutica",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF334155)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 FlowRow(
@@ -295,7 +295,7 @@ fun WizardStepMedication(
                             } else null,
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = Color.White
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                             )
                         )
                     }

@@ -19,7 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.LocalPharmacy
-import androidx.compose.material3.Card
+import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -55,7 +55,7 @@ fun WizardStepReplenishment(
         // Conversational Header Card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
         ) {
             Row(
@@ -73,7 +73,7 @@ fun WizardStepReplenishment(
                     Icon(
                         imageVector = Icons.Default.LocalPharmacy,
                         contentDescription = null,
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -89,7 +89,7 @@ fun WizardStepReplenishment(
                     Text(
                         text = "Como você repõe $medName?",
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -98,9 +98,9 @@ fun WizardStepReplenishment(
         // Main Card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -110,7 +110,7 @@ fun WizardStepReplenishment(
                 Text(
                     text = "Origem do Medicamento",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF334155)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 FlowRow(
@@ -129,7 +129,7 @@ fun WizardStepReplenishment(
                             } else null,
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = Color.White
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                             )
                         )
                     }
@@ -139,7 +139,7 @@ fun WizardStepReplenishment(
                 Text(
                     text = "Estoque Atual (Opcional - Ativa alerta de recarga)",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF334155)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 OutlinedTextField(
@@ -178,12 +178,12 @@ fun WizardStepReplenishment(
                         Text(
                             text = "Retirada Recorrente na Farmácia/SUS?",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = Color(0xFF1E293B)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Lembrete periódico para buscar nova caixa",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF64748B)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Switch(

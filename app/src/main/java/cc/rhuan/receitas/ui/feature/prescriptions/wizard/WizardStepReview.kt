@@ -19,7 +19,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,7 +56,7 @@ fun WizardStepReview(
         // Conversational Header Card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
         ) {
             Row(
@@ -74,7 +74,7 @@ fun WizardStepReview(
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -90,7 +90,7 @@ fun WizardStepReview(
                     Text(
                         text = "Tudo pronto! Confira antes de salvar.",
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -99,9 +99,9 @@ fun WizardStepReview(
         // Card 1: Medications Summary
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -112,7 +112,7 @@ fun WizardStepReview(
                     Text(
                         text = "Medicamentos (${allMedications.size})",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = { viewModel.goToStep(1) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Editar Medicamentos")
@@ -120,13 +120,13 @@ fun WizardStepReview(
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 if (allMedications.isEmpty()) {
-                    Text("Nenhum medicamento adicionado.", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B))
+                    Text("Nenhum medicamento adicionado.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     allMedications.forEach { med ->
                         Text(
                             text = "• ${med.title} (${med.dosage}) ${if (med.prescribedPosology.isNotBlank()) "- " + med.prescribedPosology else ""}",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF334155),
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -137,9 +137,9 @@ fun WizardStepReview(
         // Card 2: Prescription Details Summary
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -150,7 +150,7 @@ fun WizardStepReview(
                     Text(
                         text = "Receita: ${uiState.prescriptionTitle.ifBlank { "Sem título" }}",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = { viewModel.goToStep(4) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Editar Receita")
@@ -158,15 +158,15 @@ fun WizardStepReview(
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 if (uiState.isStep4Skipped || uiState.type == null) {
-                    Text("Tipo de Receita: Não especificado (Etapa pulada)", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B))
+                    Text("Tipo de Receita: Não especificado (Etapa pulada)", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
-                    Text("Tipo: ${uiState.type.label}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF334155))
-                    Text("Emissão: ${uiState.issueDate.format(dateFormatter)}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF334155))
+                    Text("Tipo: ${uiState.type.label}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Emissão: ${uiState.issueDate.format(dateFormatter)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                     uiState.validityDays?.let { days ->
                         Text(
                             text = "Validade: $days dias (Vencimento: ${uiState.issueDate.plusDays(days.toLong()).format(dateFormatter)})",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF334155)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -176,9 +176,9 @@ fun WizardStepReview(
         // Card 3: Doctor Summary
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -189,7 +189,7 @@ fun WizardStepReview(
                     Text(
                         text = "Profissional Prescritor",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = { viewModel.goToStep(5) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Editar Médico")
@@ -197,12 +197,12 @@ fun WizardStepReview(
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 if (uiState.doctorName.isNotBlank()) {
-                    Text("Médico: ${uiState.doctorName}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF334155), fontWeight = FontWeight.SemiBold)
-                    if (uiState.doctorRegistration.isNotBlank()) Text("Registro: ${uiState.doctorRegistration}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B))
-                    if (uiState.doctorSpecialty.isNotBlank()) Text("Especialidade: ${uiState.doctorSpecialty}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B))
-                    if (uiState.healthFacility.isNotBlank()) Text("Local: ${uiState.healthFacility}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B))
+                    Text("Médico: ${uiState.doctorName}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                    if (uiState.doctorRegistration.isNotBlank()) Text("Registro: ${uiState.doctorRegistration}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (uiState.doctorSpecialty.isNotBlank()) Text("Especialidade: ${uiState.doctorSpecialty}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (uiState.healthFacility.isNotBlank()) Text("Local: ${uiState.healthFacility}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
-                    Text("Nenhum médico informado.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
+                    Text("Nenhum médico informado.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -210,9 +210,9 @@ fun WizardStepReview(
         // Card 4: Photo and Notes
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -221,7 +221,7 @@ fun WizardStepReview(
                 Text(
                     text = "Observações do Médico & Anexo",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF1E293B)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 OutlinedTextField(

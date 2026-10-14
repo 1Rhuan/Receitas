@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.ui.feature.prescriptions.wizard
 
+import cc.rhuan.receitas.ui.theme.AppPalette
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.Card
+import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -55,7 +57,7 @@ fun WizardStepPrescriptionType(
         // Conversational Header Card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
         ) {
             Row(
@@ -73,7 +75,7 @@ fun WizardStepPrescriptionType(
                     Icon(
                         imageVector = Icons.Default.Description,
                         contentDescription = null,
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -89,7 +91,7 @@ fun WizardStepPrescriptionType(
                     Text(
                         text = "Qual é o tipo e validade desta receita?",
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -98,9 +100,9 @@ fun WizardStepPrescriptionType(
         // Main Card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -110,7 +112,7 @@ fun WizardStepPrescriptionType(
                 Text(
                     text = "Título da Receita",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF334155)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 OutlinedTextField(
@@ -125,7 +127,7 @@ fun WizardStepPrescriptionType(
                 Text(
                     text = "Classificação / Tipo de Receita",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF334155)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 val mainTypes = listOf(
@@ -152,7 +154,7 @@ fun WizardStepPrescriptionType(
                             } else null,
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = Color.White
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                             )
                         )
                     }
@@ -164,13 +166,13 @@ fun WizardStepPrescriptionType(
                         verticalAlignment = Alignment.Top,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFFFF3E0), RoundedCornerShape(12.dp))
+                            .background(AppPalette.warningContainer, RoundedCornerShape(12.dp))
                             .padding(12.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = Color(0xFFD97706),
+                            tint = AppPalette.warning,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
@@ -178,13 +180,13 @@ fun WizardStepPrescriptionType(
                             Text(
                                 text = "Validade Regulamentar: ${selectedType.defaultValidityDays} dias",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = Color(0xFFD97706)
+                                color = AppPalette.warning
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = selectedType.legalNote,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF92400E)
+                                color = AppPalette.warning
                             )
                         }
                     }
@@ -195,7 +197,7 @@ fun WizardStepPrescriptionType(
                     Text(
                         text = "Validade Prescrita em Dias",
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF334155)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     OutlinedTextField(
@@ -212,7 +214,7 @@ fun WizardStepPrescriptionType(
                     Text(
                         text = "Data de Vencimento: ${expirationDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = Color(0xFF475569)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -226,12 +228,12 @@ fun WizardStepPrescriptionType(
                         Text(
                             text = "Avisar antes da receita vencer?",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = Color(0xFF1E293B)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Lembrete para marcar nova consulta médica",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF64748B)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Switch(
