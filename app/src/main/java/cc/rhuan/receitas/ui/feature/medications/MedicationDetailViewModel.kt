@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.rhuan.receitas.data.repository.MedicationRepository
+import cc.rhuan.receitas.data.repository.PrescriptionRepository
 import cc.rhuan.receitas.domain.model.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -14,7 +15,8 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 @HiltViewModel
-class MedicationDetailViewModel @Inject constructor(handle: SavedStateHandle, private val repository: MedicationRepository) : ViewModel() {
+class MedicationDetailViewModel @Inject constructor(handle: SavedStateHandle, private val repository: MedicationRepository,
+    private val prescriptionRepository: PrescriptionRepository) : ViewModel() {
     private val id: String = handle["medicationId"] ?: ""
     private val _uiState = MutableStateFlow(MedicationDetailUiState())
     val uiState = _uiState.asStateFlow()
@@ -27,12 +29,17 @@ class MedicationDetailViewModel @Inject constructor(handle: SavedStateHandle, pr
         if (id.isBlank()) { _uiState.update { it.copy(isLoading = false, errorMessage = "Medicamento não encontrado.") }; return }
         loadJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            repository.getMedications().catch { error ->
+            combine(repository.getMedications(), prescriptionRepository.getPrescriptions()) { medications, prescriptions ->
+                val med = medications.find { it.id == id }
+                Triple(med, prescriptions.filter { id in it.medicationIds || it.items.any { item -> item.medicationId == id } },
+                    prescriptions.find { it.id == med?.linkedPrescriptionId })
+            }.catch { error ->
                 if (error is CancellationException) throw error
                 _uiState.update { it.copy(isLoading = false, errorMessage = "Não foi possível carregar o medicamento.") }
-            }.collect { medications ->
-                val med = medications.find { it.id == id }
-                _uiState.update { it.copy(medication = med, isLoading = false, errorMessage = if (med == null) "Medicamento não encontrado." else null) }
+            }.collect { (med, prescriptions, pickupPrescription) ->
+                _uiState.update { it.copy(medication = med, prescriptions = prescriptions,
+                    pickupPrescription = pickupPrescription, isLoading = false,
+                    errorMessage = if (med == null) "Medicamento não encontrado." else null) }
             }
         }
     }

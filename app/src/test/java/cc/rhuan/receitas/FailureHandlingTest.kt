@@ -45,25 +45,52 @@ class FailureHandlingTest {
         assertFalse(vm.uiState.value.isLoading)
     }
     @Test fun missingMedicationIdEndsLoadingWithoutCrashing() = runTest {
-        val vm = track(MedicationDetailViewModel(SavedStateHandle(), Medications())); runCurrent()
+        val vm = track(MedicationDetailViewModel(SavedStateHandle(), Medications(), Recipes())); runCurrent()
         assertFalse(vm.uiState.value.isLoading)
         assertNotNull(vm.uiState.value.errorMessage)
     }
     @Test fun missingMedicationIsNotAnInfiniteSpinner() = runTest {
-        val vm = track(MedicationDetailViewModel(SavedStateHandle(mapOf("medicationId" to "missing")), Medications())); runCurrent()
+        val vm = track(MedicationDetailViewModel(SavedStateHandle(mapOf("medicationId" to "missing")), Medications(), Recipes())); runCurrent()
         assertFalse(vm.uiState.value.isLoading)
         assertNull(vm.uiState.value.medication)
         assertNotNull(vm.uiState.value.errorMessage)
     }
     @Test fun medicationDetailFailureCanRecover() = runTest {
         val repository = Medications().apply { failure = true }
-        val vm = track(MedicationDetailViewModel(SavedStateHandle(mapOf("medicationId" to "m")), repository)); runCurrent()
+        val vm = track(MedicationDetailViewModel(SavedStateHandle(mapOf("medicationId" to "m")), repository, Recipes())); runCurrent()
         assertFalse(vm.uiState.value.isLoading)
         assertNotNull(vm.uiState.value.errorMessage)
         repository.failure = false
         vm.loadMedication(); runCurrent()
         assertEquals("m", vm.uiState.value.medication!!.id)
         assertNull(vm.uiState.value.errorMessage)
+    }
+    @Test fun medicationDetailObservesRecipeMembershipSeparatelyFromPickupRecipe() = runTest {
+        val member = PrescriptionItem("member", "Receita de origem", "", medicationIds = listOf("m"))
+        val pickup = PrescriptionItem("pickup", "Receita para retiradas", "")
+        val updates = MutableStateFlow(listOf(member, pickup))
+        val recipes = Recipes().apply { this.updates = updates }
+        val meds = Medications().apply { item = MedicationItem("m", "Medicamento", linkedPrescriptionId = "pickup") }
+        val vm = track(MedicationDetailViewModel(SavedStateHandle(mapOf("medicationId" to "m")), meds, recipes))
+        runCurrent()
+        assertEquals(listOf(member), vm.uiState.value.prescriptions)
+        assertEquals(pickup, vm.uiState.value.pickupPrescription)
+        updates.value = listOf(member.copy(title = "Receita renomeada"))
+        runCurrent()
+        assertEquals("Receita renomeada", vm.uiState.value.prescriptions.single().title)
+        assertNull(vm.uiState.value.pickupPrescription)
+        updates.value = emptyList()
+        runCurrent()
+        assertTrue(vm.uiState.value.prescriptions.isEmpty())
+    }
+    @Test fun medicationInRecipeWithoutPickupLinkStillShowsRecipe() = runTest {
+        val recipe = PrescriptionItem("member", "Receita de origem", "",
+            items = listOf(PrescriptionMedication(medicationId = "m")))
+        val recipes = Recipes().apply { updates = MutableStateFlow(listOf(recipe)) }
+        val vm = track(MedicationDetailViewModel(SavedStateHandle(mapOf("medicationId" to "m")), Medications(), recipes))
+        runCurrent()
+        assertNull(vm.uiState.value.medication!!.linkedPrescriptionId)
+        assertEquals(listOf(recipe), vm.uiState.value.prescriptions)
     }
     @Test fun prescriptionDetailFailureCanRecover() = runTest {
         val recipes = Recipes().apply { failure = true }
@@ -107,13 +134,14 @@ class FailureHandlingTest {
         assertNotNull(vm.uiState.value.snackbarMessage)
     }
     private class Medications : MedicationRepository {
+        var item = MedicationItem("m", "Medicamento")
         var failure = false
         var activeCollectors = 0
         var recordings = 0
         override fun getMedications(): Flow<List<MedicationItem>> = flow {
             if (failure) error("Simulated disk failure")
             activeCollectors++
-            try { emit(listOf(MedicationItem("m", "Medicamento"))); awaitCancellation() } finally { activeCollectors-- }
+            try { emit(listOf(item)); awaitCancellation() } finally { activeCollectors-- }
         }
         override suspend fun getMedicationById(id: String) = if (id == "m") MedicationItem("m", "Medicamento") else null
         override suspend fun registerPickup(id: String, date: LocalDate, confirmedEarly: Boolean, expectedCycle: LocalDate?): OperationResult { recordings++; return OperationResult.Success }
@@ -125,11 +153,12 @@ class FailureHandlingTest {
         override suspend fun deleteMedication(id: String) = OperationResult.NotFound
     }
     private class Recipes : PrescriptionRepository {
+        var updates: MutableStateFlow<List<PrescriptionItem>>? = null
         var failure = false
         var activeCollectors = 0
         var state = RecordState.ACTIVE
         private fun recipe() = PrescriptionItem("p", "Receita", "", state = state)
-        override fun getPrescriptions(): Flow<List<PrescriptionItem>> = flow {
+        override fun getPrescriptions(): Flow<List<PrescriptionItem>> = updates ?: flow {
             if (failure) error("Simulated disk failure")
             activeCollectors++
             try { emit(listOf(recipe())); awaitCancellation() } finally { activeCollectors-- }

@@ -5,7 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun MedicationDetailScreen(viewModel: MedicationDetailViewModel, onBack: () -> Unit, onEdit: (String) -> Unit) {
+fun MedicationDetailScreen(viewModel: MedicationDetailViewModel, onBack: () -> Unit, onEdit: (String) -> Unit,
+    onPrescriptionsClick: (String) -> Unit = {}) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     MedicationDetailContent(
@@ -14,5 +15,6 @@ fun MedicationDetailScreen(viewModel: MedicationDetailViewModel, onBack: () -> U
         onDelete = viewModel::delete, onArchive = viewModel::archive,
         onRetry = viewModel::loadMedication, onCorrectPickup = viewModel::correct,
         onDeletePickup = viewModel::deleteEvent,
+        onPrescriptionsClick = onPrescriptionsClick,
     )
 }
