@@ -25,6 +25,56 @@ class PrescriptionRegistrationFlowTest {
     private fun model(handle: SavedStateHandle = SavedStateHandle()) = PrescriptionWizardViewModel(handle, recipes, meds, Doctors(), registration).also { models.add(it) }
     private fun add(vm: PrescriptionWizardViewModel, name: String) { vm.updateForm { it.copy(currentMedicationDraft = it.currentMedicationDraft.copy(title = name)) }; assertTrue(vm.commitMedicationDraft()) }
 
+    @Test fun validityActionsKeepSuggestedAndEnteredDeadlinesDistinct() = runTest {
+        val vm = model(); runCurrent()
+        vm.updateForm { it.copy(renewalReminderDaysBefore = 90, issueDate = LocalDate.of(2026, 10, 1)) }
+        vm.selectPrescriptionType(PrescriptionType.ANTIBIOTICO)
+        assertEquals(PrescriptionType.ANTIBIOTICO.defaultValidityDays, vm.uiState.value.validityDays)
+        assertEquals("SUGGESTED", vm.uiState.value.validityOrigin)
+        assertTrue(vm.uiState.value.renewalReminderDaysBefore <= vm.uiState.value.validityDays!!)
+        vm.updateExpirationDate(LocalDate.of(2026, 10, 16))
+        assertEquals(15, vm.uiState.value.validityDays)
+        assertEquals("15", vm.uiState.value.validityDaysInput)
+        assertEquals("USER_ENTERED", vm.uiState.value.validityOrigin)
+        vm.updateValidityDays("abc")
+        assertEquals("abc", vm.uiState.value.validityDaysInput)
+        assertNull(vm.uiState.value.validityDays)
+        vm.nextStep()
+        assertEquals(1, vm.uiState.value.currentStep)
+    }
+
+    @Test fun selectingExistingMedicationPreservesTrackingAndClearsRecipePosology() = runTest {
+        val vm = model(); runCurrent()
+        val medication = MedicationItem("existing", "Losartana", dosage = "50 mg",
+            hasRecurringPickup = true, lastRefillDate = LocalDate.of(2026, 10, 1),
+            refillCycleDays = 30, pickupReminderDaysBefore = 3, prescribedPosology = "Receita anterior")
+        vm.selectExistingMedication(medication)
+        val draft = vm.uiState.value.currentMedicationDraft
+        assertEquals("existing", draft.id)
+        assertEquals("50 mg", draft.dosage)
+        assertEquals(medication.lastRefillDate, draft.lastPickupDate)
+        assertEquals(3, draft.pickupReminderDaysBefore)
+        assertEquals("", draft.prescribedPosology)
+        assertTrue(vm.commitMedicationDraft())
+        vm.updatePickupInterval(0, "")
+        assertNull(vm.uiState.value.medications.single().pickupIntervalDays)
+        vm.updatePickupInterval(0, "45")
+        assertEquals(45, vm.uiState.value.medications.single().pickupIntervalDays)
+        assertEquals("45", vm.uiState.value.medications.single().pickupIntervalInput)
+    }
+
+    @Test fun selectingDoctorCopiesOptionalFieldsWithoutNulls() = runTest {
+        val vm = model(); runCurrent()
+        vm.updateForm { it.copy(doctorRegistration = "antigo", doctorPhone = "antigo") }
+        vm.selectDoctor(Doctor("doctor", "Dra. Ana", specialty = "Clínica"))
+        assertEquals("doctor", vm.uiState.value.selectedDoctorId)
+        assertEquals("Dra. Ana", vm.uiState.value.doctorName)
+        assertEquals("Clínica", vm.uiState.value.doctorSpecialty)
+        assertEquals("", vm.uiState.value.doctorRegistration)
+        assertEquals("", vm.uiState.value.doctorPhone)
+        assertTrue(vm.uiState.value.hasUnsavedChanges)
+    }
+
     @Test fun fullFlowReachesReviewWithSeveralMedicationsAndReturnsFromEdits() = runTest {
         val vm = model(); runCurrent()
         vm.nextStep(); assertEquals(2, vm.uiState.value.currentStep)
@@ -119,6 +169,19 @@ class PrescriptionRegistrationFlowTest {
         assertTrue(vm.uiState.value.initialLoadFailed)
         vm.savePrescription(); runCurrent(); assertEquals(0, registration.attempts)
     }
+    @Test fun renewalLoadsANewIdAndLetsUserContinueTrackingExplicitly() = runTest {
+        recipes.items.value = listOf(PrescriptionItem("old", "Receita antiga", "Clínica", doctorName = "Profissional antigo", medicationIds = listOf("m"), items = listOf(PrescriptionMedication("m", "Pela manhã"))))
+        meds.items.value = listOf(MedicationItem("m", "Losartana", lastRefillDate = LocalDate.now().minusDays(30), hasRecurringPickup = true, linkedPrescriptionId = "old"))
+        val vm = model(SavedStateHandle(mapOf("renewalOf" to "old"))); runCurrent()
+        assertNull(vm.uiState.value.editingPrescriptionId)
+        assertNotEquals("old", vm.uiState.value.registrationId)
+        assertEquals("old", vm.uiState.value.previousPrescriptionId)
+        assertEquals("Profissional antigo", vm.uiState.value.doctorName)
+        vm.updateMedicationPickup(0) { it.copy(linkToCurrentRecipe = true, linkedPrescriptionId = null) }
+        vm.savePrescription(); runCurrent()
+        assertEquals("old", registration.recipe!!.previousPrescriptionId)
+        assertEquals(registration.recipe!!.id, registration.medications.single().linkedPrescriptionId)
+    }
     private class Registration : PrescriptionRegistrationRepository {
         var gate: CompletableDeferred<Unit>? = null
         var attempts = 0; var fail = false; var recipe: PrescriptionItem? = null; var medications = emptyList<MedicationItem>()
@@ -132,7 +195,11 @@ class PrescriptionRegistrationFlowTest {
         val items = MutableStateFlow<List<MedicationItem>>(emptyList())
         override fun getMedications(): Flow<List<MedicationItem>> = items
         override suspend fun getMedicationById(id: String) = items.value.find { it.id == id }
-        override suspend fun replenishStock(id: String?, title: String?, message: String?, customDate: LocalDate) {}
+        override suspend fun correctPickup(eventId: String, date: LocalDate) = OperationResult.NotFound
+        override suspend fun deletePickup(eventId: String) = OperationResult.NotFound
+        override suspend fun archiveTracking(id: String, archived: Boolean) = OperationResult.NotFound
+        override suspend fun deleteMedication(id: String) = OperationResult.NotFound
+        override suspend fun registerPickup(id: String, date: LocalDate, confirmedEarly: Boolean, expectedCycle: LocalDate?) = OperationResult.Success
         override suspend fun addMedication(medication: MedicationItem) {}
         override suspend fun updateMedication(medication: MedicationItem) {}
     }
@@ -140,10 +207,10 @@ class PrescriptionRegistrationFlowTest {
         val items = MutableStateFlow<List<PrescriptionItem>>(emptyList())
         override fun getPrescriptions(): Flow<List<PrescriptionItem>> = items
         override suspend fun getPrescriptionById(id: String) = items.value.find { it.id == id }
-        override suspend fun renewPrescription(id: String?, title: String?, message: String?, customDate: LocalDate) {}
         override suspend fun addPrescription(prescription: PrescriptionItem) {}
         override suspend fun updatePrescription(prescription: PrescriptionItem) {}
         override suspend fun deletePrescription(id: String) {}
+        override suspend fun archivePrescription(id: String, archived: Boolean) {}
     }
     private class Doctors : DoctorRepository {
         override fun getDoctors(): Flow<List<Doctor>> = flowOf(listOf(Doctor("suggestion", "Profissional sugerido")))

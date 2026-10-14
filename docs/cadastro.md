@@ -1,29 +1,17 @@
-# Cadastro de receitas
+# Cadastro de receitas e medicamentos
 
-O fluxo começa no botão Nova Receita da tela inicial ou Nova receita na lista de receitas. Ambos abrem o formulário diretamente, sem parâmetros de edição.
+O cadastro de receita tem quatro etapas: receita, medicamentos, retiradas e revisão. Medicamento avulso tem três: medicamento, retirada e revisão.
 
-## Etapas
+Nome do medicamento é obrigatório. Concentração, princípio ativo, orientação escrita e quantidade prescrita são opcionais. Orientação e quantidade prescrita pertencem ao item da receita; quantidade usual de retirada é independente. O app não acompanha doses ou estoque.
 
-1. Receita: emissão, validade, identificação opcional, lembrete de renovação e profissional opcional.
-2. Medicamentos: inclusão, edição e remoção de itens. Nome obrigatório; concentração e orientação escrita opcionais. Nenhum controle de doses ou estoque é exigido.
-3. Retiradas: acompanhamento opcional por medicamento, última retirada real, intervalo, antecedência e local. A próxima data é mostrada antes da revisão.
-4. Revisão: resumo com ações de edição. Corrigir um grupo de dados e continuar retorna diretamente à revisão. Existe apenas um botão de salvar.
+Validade pode vir de sugestão do tipo, prazo em dias ou vencimento personalizado. O profissional é opcional e seus dados são preservados em cada receita.
 
-O cadastro de medicamento avulso usa três etapas: Medicamento, Retirada e Revisão.
+Retiradas recorrentes exigem última data real, intervalo e antecedência. O intervalo aceita dias, semanas, meses e anos. A etapa permite escolher a receita que sustenta o acompanhamento, inclusive a receita sendo cadastrada, ou acompanhar sem receita.
 
-## Voltar e concluir
+Registrar nova receita preenche o formulário a partir da anterior, preserva o documento antigo e oferece continuidade dos acompanhamentos. Renovação não reinicia retiradas. O usuário pode mudar profissional e medicamentos.
 
-- A seta e o botão Voltar do Android retornam à etapa anterior. Ao editar a partir da revisão, retornam à revisão mantendo o preenchimento.
-- O botão de fechar pede confirmação antes de descartar alterações.
-- A lista distingue editar um medicamento existente de incluir outro, evitando duplicação ao voltar.
-- O cabeçalho mostra o número de etapas e o rodapé mantém a ação principal acessível com o teclado aberto.
-- O rascunho é armazenado em SavedStateHandle; sugestões de médicos e medicamentos são recarregadas separadamente.
-- Uma confirmação mostra o resumo dos lembretes após salvar. Ver receita abre os detalhes e remove o formulário da navegação.
+Revisão permite retornar diretamente após corrigir um grupo. O rascunho conserva IDs antes do salvamento e usa SavedStateHandle sem objetos de sugestões. O salvamento completo usa uma transação Room.
 
-## Persistência e testes
+Detalhes da receita permitem arquivar, reativar e excluir separadamente. Detalhes do medicamento permitem editar o acompanhamento, registrar retirada, consultar/corrigir/excluir eventos e arquivar o acompanhamento.
 
-Receita, profissional novo e medicamentos são escritos em uma única transação Room. As preferências de antecedência e ativação de alertas são preservadas nas conversões entre domínio e banco. Os IDs são mantidos antes do salvamento para permitir tentativas após falha sem duplicação.
-
-Os testes cobrem avanço e retorno à revisão, edição de itens, datas inválidas, múltiplos medicamentos, medicamento avulso, falha e nova tentativa, IDs persistidos antes do término do salvamento, recriação da tela, preferências de lembretes e rollback do cadastro completo.
-
-O teste de interface percorre o aplicativo desde a tela inicial, revisa receita e medicamento, recria a atividade, salva e abre os detalhes. Seus registros temporários são removidos ao concluir. Capturas geradas pelo teste são copiadas para a pasta receitas-cadastro-preview em Download do emulador.
+Veja [modelagem.md](modelagem.md) para as regras completas e a migração.

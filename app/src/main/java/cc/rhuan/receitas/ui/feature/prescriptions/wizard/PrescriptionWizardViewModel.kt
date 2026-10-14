@@ -7,12 +7,7 @@ import cc.rhuan.receitas.data.repository.DoctorRepository
 import cc.rhuan.receitas.data.repository.MedicationRepository
 import cc.rhuan.receitas.data.repository.PrescriptionRegistrationRepository
 import cc.rhuan.receitas.data.repository.PrescriptionRepository
-import cc.rhuan.receitas.domain.model.Doctor
-import cc.rhuan.receitas.domain.model.MedicationItem
-import cc.rhuan.receitas.domain.model.MedicationSource
-import cc.rhuan.receitas.domain.model.PharmaceuticalForm
-import cc.rhuan.receitas.domain.model.PrescriptionItem
-import cc.rhuan.receitas.domain.model.PrescriptionType
+import cc.rhuan.receitas.domain.model.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import java.time.LocalDate
@@ -36,13 +31,17 @@ class PrescriptionWizardViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val prescriptionId: String? = savedStateHandle.get<String>("prescriptionId")
+    private val renewalOf: String? = savedStateHandle.get<String>("renewalOf")
+    private val medicationId: String? = savedStateHandle.get<String>("medicationId")
     private val entryModeParam: String? = savedStateHandle.get<String>("entryMode")
 
     private val restoredState = savedStateHandle.get<PrescriptionWizardUiState>("registration_draft")
     private val _uiState = MutableStateFlow(
         restoredState?.copy(isLoading = false) ?: PrescriptionWizardUiState(
             editingPrescriptionId = prescriptionId,
-            isLoading = !prescriptionId.isNullOrBlank(),
+            isLoading = !prescriptionId.isNullOrBlank() || !renewalOf.isNullOrBlank() || !medicationId.isNullOrBlank(),
+            previousPrescriptionId = renewalOf,
+            editingMedicationId = medicationId,
             entryMode = if (entryModeParam == "STANDALONE_MEDICATION") WizardEntryMode.STANDALONE_MEDICATION else WizardEntryMode.FULL_PRESCRIPTION,
         ),
     )
@@ -58,9 +57,16 @@ class PrescriptionWizardViewModel @Inject constructor(
         if ((restoredState == null || restoredState.initialLoadFailed) && !prescriptionId.isNullOrBlank() && restoredState?.isSaved != true) {
             loadPrescriptionForEditing(prescriptionId)
         }
+        if (restoredState == null && renewalOf != null) loadPrescriptionForEditing(renewalOf)
+        if (restoredState == null && medicationId != null) loadMedicationForEditing(medicationId)
     }
 
     private fun loadInitialData() {
+        viewModelScope.launch {
+            prescriptionRepository.getPrescriptions().catch { if (it is CancellationException) throw it }.collect { recipes ->
+                _uiState.update { it.copy(availablePrescriptions = recipes.filter { p -> p.isActive }) }
+            }
+        }
         viewModelScope.launch {
             medicationRepository.getMedications().catch { error ->
                 if (error is CancellationException) throw error
@@ -85,6 +91,7 @@ class PrescriptionWizardViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, initialLoadFailed = false) }
             val prescription = prescriptionRepository.getPrescriptionById(id)
             if (prescription != null) {
+                require(prescription.state != RecordState.REPLACED) { "Receita substituída" }
                 val doctor = prescription.doctorId?.let { doctorRepository.getDoctorById(it) }
 
                 val linkedDrafts = mutableListOf<MedicationDraft>()
@@ -94,21 +101,22 @@ class PrescriptionWizardViewModel @Inject constructor(
                         linkedDrafts.add(
                             MedicationDraft(
                                 id = medItem.id,
-                                title = medItem.title,
+                                title = prescription.items.find { it.medicationId == medId }?.title?.takeIf { it.isNotBlank() } ?: medItem.title,
                                 activeIngredient = medItem.activeIngredient ?: "",
-                                form = medItem.form,
-                                dosageOverride = medItem.dosage,
-                                prescribedPosology = medItem.prescribedPosology,
+                                form = prescription.items.find { it.medicationId == medId }?.form ?: medItem.form,
+                                dosageOverride = prescription.items.find { it.medicationId == medId }?.dosage ?: medItem.dosage,
+                                prescribedPosology = prescription.items.find { it.medicationId == medId }?.posology.orEmpty(),
+                                prescribedQuantity = prescription.items.find { it.medicationId == medId }?.quantity.orEmpty(),
+                                intervalUnit = medItem.intervalUnit, linkedPrescriptionId = medItem.linkedPrescriptionId,
+                                trackingArchived = medItem.trackingArchived,
                                 source = medItem.source,
                                 sourceName = medItem.sourceName ?: "",
                                 hasRecurringPickup = medItem.hasRecurringPickup,
-                                lastPickupDate = medItem.lastRefillDate,
+                                lastPickupDate = medItem.lastRefillDate, hasPickupHistory = medItem.pickupHistory.isNotEmpty(),
                                 pickupIntervalInput = medItem.refillCycleDays.toString(),
                                 pickupReminderDaysBefore = medItem.pickupReminderDaysBefore,
                                 pickupIntervalDays = medItem.refillCycleDays,
                                 replenishmentQuantity = medItem.quantity,
-                                currentStock = medItem.stockQuantity,
-                                minStockThreshold = medItem.minStockThreshold,
                                 availabilityNote = medItem.instructions ?: "",
                             ),
                         )
@@ -117,12 +125,14 @@ class PrescriptionWizardViewModel @Inject constructor(
 
                 _uiState.update {
                     it.copy(
-                        editingPrescriptionId = prescription.id,
-                        registrationId = prescription.id,
+                        editingPrescriptionId = if (renewalOf != null) null else prescription.id,
+                        registrationId = if (renewalOf != null) it.registrationId else prescription.id,
+                        previousPrescriptionId = if (renewalOf != null) renewalOf else prescription.previousPrescriptionId,
                         showMedicationEditor = false,
                         prescriptionTitle = prescription.title,
                         isTitleCustomized = true,
-                        issueDate = prescription.issueDate,
+                        issueDate = if (renewalOf != null) LocalDate.now() else prescription.issueDate,
+                        validityOrigin = prescription.validityOrigin, recordState = if (renewalOf != null) RecordState.ACTIVE else prescription.state,
                         type = prescription.type,
                         validityDays = prescription.validityDurationDays,
                         validityDaysInput = prescription.validityDurationDays.toString(),
@@ -130,9 +140,9 @@ class PrescriptionWizardViewModel @Inject constructor(
                         renewalReminderDaysBefore = prescription.renewalReminderDaysBefore,
                         notes = prescription.notes ?: "",
                         selectedDoctorId = doctor?.id ?: prescription.doctorId,
-                        doctorName = doctor?.name ?: prescription.doctorName,
-                        doctorRegistration = doctor?.registration ?: prescription.doctorRegistration ?: "",
-                        doctorSpecialty = doctor?.specialty ?: prescription.specialty,
+                        doctorName = prescription.doctorName,
+                        doctorRegistration = prescription.doctorRegistration ?: "",
+                        doctorSpecialty = prescription.specialty,
                         healthFacility = doctor?.healthFacility ?: "",
                         doctorPhone = doctor?.phone ?: "",
                         medications = linkedDrafts,
@@ -147,11 +157,27 @@ class PrescriptionWizardViewModel @Inject constructor(
         }
     }
 
+    private suspend fun medicationDraft(m: MedicationItem) = MedicationDraft(id = m.id, title = m.title,
+        activeIngredient = m.activeIngredient.orEmpty(), form = m.form, dosageOverride = m.dosage,
+        source = m.source, sourceName = m.sourceName.orEmpty(), hasRecurringPickup = m.hasRecurringPickup,
+        lastPickupDate = m.lastRefillDate, hasPickupHistory = m.pickupHistory.isNotEmpty(), pickupIntervalDays = m.refillCycleDays, pickupIntervalInput = m.refillCycleDays.toString(),
+        intervalUnit = m.intervalUnit, pickupReminderDaysBefore = m.pickupReminderDaysBefore, replenishmentQuantity = m.quantity,
+        linkedPrescriptionId = m.linkedPrescriptionId, trackingArchived = m.trackingArchived, availabilityNote = m.instructions.orEmpty())
+    private fun loadMedicationForEditing(id: String) {
+        viewModelScope.launch {
+            try {
+                val medication = medicationRepository.getMedicationById(id) ?: error("Medicamento não encontrado")
+                val draft = medicationDraft(medication)
+                _uiState.update { it.copy(medications = listOf(draft), showMedicationEditor = false, isLoading = false) }
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) { _uiState.update { it.copy(isLoading = false, initialLoadFailed = true, errorMessage = "Não foi possível carregar o medicamento. Tente novamente.") } }
+        }
+    }
     private fun persistDraft(state: PrescriptionWizardUiState) {
-        savedStateHandle["registration_draft"] = state.copy(isLoading = false, availableDoctors = emptyList(), availableMedications = emptyList())
+        savedStateHandle["registration_draft"] = state.copy(isLoading = false, availableDoctors = emptyList(), availableMedications = emptyList(), availablePrescriptions = emptyList())
     }
 
-    fun retryInitialLoad() { prescriptionId?.let(::loadPrescriptionForEditing) }
+    fun retryInitialLoad() { (prescriptionId ?: renewalOf)?.let(::loadPrescriptionForEditing); medicationId?.let(::loadMedicationForEditing) }
 
     // Navigation keeps a review return point instead of forcing the user through every step again.
     fun goToStep(step: Int) {
@@ -173,13 +199,50 @@ class PrescriptionWizardViewModel @Inject constructor(
         if (_uiState.value.isLoading) return
         _uiState.update { it.copy(currentStep = if (it.reviewEditStep != null) it.maxSteps else (it.currentStep - 1).coerceAtLeast(1), reviewEditStep = null, errorMessage = null) }
     }
-    fun skipStep() = nextStep()
     private fun change(transform: (PrescriptionWizardUiState) -> PrescriptionWizardUiState) {
         if (_uiState.value.isLoading || _uiState.value.isSaved) return
         _uiState.update { transform(it).copy(hasUnsavedChanges = true, errorMessage = null) }
     }
+
+    fun selectPrescriptionType(type: PrescriptionType) = change {
+        it.copy(type = type, validityDays = type.defaultValidityDays,
+            validityDaysInput = type.defaultValidityDays.toString(), validityOrigin = "SUGGESTED",
+            renewalReminderDaysBefore = it.renewalReminderDaysBefore.coerceAtMost(type.defaultValidityDays))
+    }
+
+    fun updateValidityDays(value: String) = change {
+        it.copy(validityDaysInput = value, validityDays = value.toIntOrNull(), validityOrigin = "USER_ENTERED")
+    }
+
+    fun updateExpirationDate(date: LocalDate) = change {
+        val days = java.time.temporal.ChronoUnit.DAYS.between(it.issueDate, date).toInt()
+        it.copy(validityDays = days, validityDaysInput = days.toString(), validityOrigin = "USER_ENTERED")
+    }
+
+    fun selectDoctor(doctor: Doctor) = change {
+        it.copy(selectedDoctorId = doctor.id, doctorName = doctor.name,
+            doctorRegistration = doctor.registration.orEmpty(), doctorSpecialty = doctor.specialty.orEmpty(),
+            healthFacility = doctor.healthFacility.orEmpty(), doctorPhone = doctor.phone.orEmpty())
+    }
+
+    fun selectExistingMedication(medication: MedicationItem) = change {
+        it.copy(currentMedicationDraft = MedicationDraft(id = medication.id, title = medication.title,
+            activeIngredient = medication.activeIngredient.orEmpty(), dosageOverride = medication.dosage,
+            form = medication.form, prescribedPosology = "", intervalUnit = medication.intervalUnit,
+            linkedPrescriptionId = medication.linkedPrescriptionId, trackingArchived = medication.trackingArchived,
+            source = medication.source, sourceName = medication.sourceName.orEmpty(),
+            hasRecurringPickup = medication.hasRecurringPickup, lastPickupDate = medication.lastRefillDate,
+            hasPickupHistory = medication.pickupHistory.isNotEmpty(), pickupIntervalDays = medication.refillCycleDays,
+            pickupIntervalInput = medication.refillCycleDays.toString(),
+            pickupReminderDaysBefore = medication.pickupReminderDaysBefore,
+            replenishmentQuantity = medication.quantity, availabilityNote = medication.instructions.orEmpty()))
+    }
+
+    fun updatePickupInterval(index: Int, value: String) = updateMedicationPickup(index) {
+        it.copy(pickupIntervalInput = value, pickupIntervalDays = value.toIntOrNull())
+    }
+
     fun updateForm(transform: (PrescriptionWizardUiState) -> PrescriptionWizardUiState) = change(transform)
-    fun dismissError() { _uiState.update { it.copy(errorMessage = null) } }
     fun commitMedicationDraft(): Boolean {
         val state = _uiState.value
         if (!state.showMedicationEditor) return true
@@ -223,169 +286,8 @@ class PrescriptionWizardViewModel @Inject constructor(
     fun updateMedicationPickup(index: Int, transform: (MedicationDraft) -> MedicationDraft) {
         change { state -> state.copy(medications = state.medications.mapIndexed { i, draft -> if (i == index) transform(draft) else draft }) }
     }
-    fun updateValidityInput(value: String) { change { it.copy(validityDaysInput = value, validityDays = value.toIntOrNull()) } }
-
-    // Draft Management
-    fun updateCurrentMedicationDraft(
-        title: String? = null,
-        activeIngredient: String? = null,
-        form: PharmaceuticalForm? = null,
-        dosageValue: String? = null,
-        dosageUnit: String? = null,
-        dosageOverride: String? = null,
-        prescribedPosology: String? = null,
-        doseQuantity: String? = null,
-        doseUnit: String? = null,
-        doseAmount: String? = null,
-        frequencyOption: String? = null,
-        durationOption: String? = null,
-        source: MedicationSource? = null,
-        sourceName: String? = null,
-        hasRecurringPickup: Boolean? = null,
-        lastPickupDate: LocalDate? = null,
-        pickupIntervalDays: Int? = null,
-        currentStock: Int? = null,
-        stockAlertEnabled: Boolean? = null,
-        minStockThreshold: Int? = null,
-        availabilityNote: String? = null,
-    ) {
-        change { state ->
-            val newDoseQuantity = doseQuantity ?: state.currentMedicationDraft.doseQuantity
-            val newDoseUnit = doseUnit ?: state.currentMedicationDraft.doseUnit
-            val computedDoseAmount = doseAmount ?: "$newDoseQuantity $newDoseUnit".trim()
-
-            val draft = state.currentMedicationDraft.copy(
-                title = title ?: state.currentMedicationDraft.title,
-                activeIngredient = activeIngredient ?: state.currentMedicationDraft.activeIngredient,
-                form = form ?: state.currentMedicationDraft.form,
-                dosageValue = dosageValue ?: state.currentMedicationDraft.dosageValue,
-                dosageUnit = dosageUnit ?: state.currentMedicationDraft.dosageUnit,
-                dosageOverride = dosageOverride ?: state.currentMedicationDraft.dosageOverride,
-                prescribedPosology = prescribedPosology ?: state.currentMedicationDraft.prescribedPosology,
-                doseQuantity = newDoseQuantity,
-                doseUnit = newDoseUnit,
-                doseAmount = computedDoseAmount,
-                frequencyOption = frequencyOption ?: state.currentMedicationDraft.frequencyOption,
-                durationOption = durationOption ?: state.currentMedicationDraft.durationOption,
-                source = source ?: state.currentMedicationDraft.source,
-                sourceName = sourceName ?: state.currentMedicationDraft.sourceName,
-                hasRecurringPickup = hasRecurringPickup ?: state.currentMedicationDraft.hasRecurringPickup,
-                lastPickupDate = lastPickupDate ?: state.currentMedicationDraft.lastPickupDate,
-                pickupIntervalDays = pickupIntervalDays ?: state.currentMedicationDraft.pickupIntervalDays,
-                currentStock = currentStock ?: state.currentMedicationDraft.currentStock,
-                stockAlertEnabled = stockAlertEnabled ?: state.currentMedicationDraft.stockAlertEnabled,
-                minStockThreshold = minStockThreshold ?: state.currentMedicationDraft.minStockThreshold,
-                availabilityNote = availabilityNote ?: state.currentMedicationDraft.availabilityNote,
-            )
-            state.copy(currentMedicationDraft = draft)
-        }
-    }
-
-    fun selectExistingMedication(medicationItem: MedicationItem) {
-        change { state ->
-            val draft = state.currentMedicationDraft.copy(
-                id = medicationItem.id,
-                title = medicationItem.title,
-                activeIngredient = medicationItem.activeIngredient ?: "",
-                dosageOverride = medicationItem.dosage,
-                form = medicationItem.form,
-                prescribedPosology = medicationItem.prescribedPosology,
-                source = medicationItem.source,
-                sourceName = medicationItem.sourceName ?: "",
-                hasRecurringPickup = medicationItem.hasRecurringPickup,
-                lastPickupDate = medicationItem.lastRefillDate,
-                pickupIntervalDays = medicationItem.refillCycleDays,
-                pickupIntervalInput = medicationItem.refillCycleDays.toString(),
-                pickupReminderDaysBefore = medicationItem.pickupReminderDaysBefore,
-                replenishmentQuantity = medicationItem.quantity,
-                currentStock = medicationItem.stockQuantity,
-                minStockThreshold = medicationItem.minStockThreshold,
-                availabilityNote = medicationItem.instructions ?: "",
-            )
-            state.copy(currentMedicationDraft = draft)
-        }
-    }
-
-    fun addCurrentDraftAndRegisterAnother() = startNewMedication()
     fun removeMedication(index: Int) {
         change { state -> state.copy(medications = state.medications.filterIndexed { i, _ -> i != index }, currentMedicationDraft = MedicationDraft(), editingMedicationIndex = null, showMedicationEditor = state.medications.size <= 1) }
-    }
-
-    fun updatePrescriptionTitle(title: String) {
-        change { it.copy(prescriptionTitle = title, isTitleCustomized = true) }
-    }
-
-    fun updateIssueDate(date: LocalDate) {
-        change { it.copy(issueDate = date) }
-    }
-
-    fun updatePrescriptionType(type: PrescriptionType) {
-        change {
-            it.copy(
-                isStep4Skipped = false,
-                type = type,
-                validityDays = type.defaultValidityDays,
-                validityDaysInput = type.defaultValidityDays.toString(),
-                renewalReminderDaysBefore = it.renewalReminderDaysBefore.coerceAtMost(type.defaultValidityDays),
-            )
-        }
-    }
-
-    fun updateValidityDays(days: Int) {
-        change { it.copy(validityDays = days, validityDaysInput = days.toString()) }
-    }
-
-    fun updateRenewalReminderEnabled(enabled: Boolean) {
-        change { it.copy(renewalReminderEnabled = enabled) }
-    }
-
-    fun updateRenewalReminderDaysBefore(days: Int) {
-        change { it.copy(renewalReminderDaysBefore = days) }
-    }
-
-    fun selectDoctor(doctor: Doctor) {
-        change {
-            it.copy(
-                selectedDoctorId = doctor.id,
-                doctorName = doctor.name,
-                doctorRegistration = doctor.registration ?: "",
-                doctorSpecialty = doctor.specialty ?: "",
-                healthFacility = doctor.healthFacility ?: "",
-                doctorPhone = doctor.phone ?: "",
-            )
-        }
-    }
-
-    fun toggleExtraDoctorFields() {
-        change { it.copy(showExtraDoctorFields = !it.showExtraDoctorFields) }
-    }
-
-    fun updateDoctorName(name: String) {
-        change { it.copy(doctorName = name, selectedDoctorId = null) }
-    }
-
-    fun updateDoctorRegistration(reg: String) {
-        change { it.copy(doctorRegistration = reg, selectedDoctorId = null) }
-    }
-
-    fun updateDoctorSpecialty(specialty: String) {
-        change { it.copy(doctorSpecialty = specialty) }
-    }
-
-    fun updateHealthFacility(facility: String) {
-        change { it.copy(healthFacility = facility) }
-    }
-
-    fun updateDoctorPhone(phone: String) {
-        change { it.copy(doctorPhone = phone) }
-    }
-
-    fun updateNotes(notes: String) {
-        change { it.copy(notes = notes) }
-    }
-
-    fun updatePhotoUri(uri: String?) {
-        change { it.copy(photoUri = uri) }
     }
 
     fun savePrescription() {
@@ -404,7 +306,7 @@ class PrescriptionWizardViewModel @Inject constructor(
                 if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION && state.doctorName.isNotBlank()) {
                     val existing = doctorId?.let { doctorRepository.getDoctorById(it) } ?: doctorRepository.getDoctors().first().find { doctor ->
                         if (state.doctorRegistration.isNotBlank()) doctor.registration == state.doctorRegistration.trim()
-                        else doctor.name.equals(state.doctorName.trim(), ignoreCase = true)
+                        else false
                     }
                     doctorId = existing?.id ?: UUID.randomUUID().toString()
                     newDoctor = Doctor(doctorId, state.doctorName.trim(), state.doctorRegistration.takeIf { it.isNotBlank() }, state.doctorSpecialty.takeIf { it.isNotBlank() }, state.healthFacility.takeIf { it.isNotBlank() }, state.doctorPhone.takeIf { it.isNotBlank() })
@@ -412,13 +314,15 @@ class PrescriptionWizardViewModel @Inject constructor(
                 val medications = drafts.map { draft ->
                     MedicationItem(
                         id = requireNotNull(draft.id), title = draft.title.trim(), activeIngredient = draft.activeIngredient.takeIf { it.isNotBlank() },
-                        dosage = draft.dosage, form = draft.form, prescribedPosology = draft.prescribedPosology,
+                        dosage = draft.dosage, form = draft.form, prescribedPosology = draft.prescribedPosology, prescribedQuantity = draft.prescribedQuantity,
                         quantity = draft.replenishmentQuantity.trim(), source = draft.source,
-                        sourceName = draft.sourceName.takeIf { it.isNotBlank() }, stockQuantity = draft.currentStock ?: 0,
-                        minStockThreshold = draft.minStockThreshold, instructions = draft.availabilityNote.takeIf { it.isNotBlank() },
+                        sourceName = draft.sourceName.takeIf { it.isNotBlank() },
+                        instructions = draft.availabilityNote.takeIf { it.isNotBlank() },
                         lastRefillDate = if (draft.hasRecurringPickup) draft.lastPickupDate else null,
                         refillCycleDays = draft.pickupIntervalDays ?: 30, hasRecurringPickup = draft.hasRecurringPickup,
-                        pickupReminderDaysBefore = draft.pickupReminderDaysBefore,
+                        pickupReminderDaysBefore = draft.pickupReminderDaysBefore, intervalUnit = draft.intervalUnit,
+                        linkedPrescriptionId = if (draft.linkToCurrentRecipe) state.editingPrescriptionId ?: state.registrationId else draft.linkedPrescriptionId,
+                        trackingArchived = draft.trackingArchived, initialPickupDate = draft.initialPickupDate,
                     )
                 }
                 val recipe = if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION) PrescriptionItem(
@@ -429,11 +333,12 @@ class PrescriptionWizardViewModel @Inject constructor(
                     type = state.type, customValidityDays = state.validityDays, notes = state.notes.takeIf { it.isNotBlank() },
                     medicationIds = medications.map { it.id }, renewalReminderEnabled = state.renewalReminderEnabled,
                     renewalReminderDaysBefore = state.renewalReminderDaysBefore,
+                    previousPrescriptionId = state.previousPrescriptionId, validityOrigin = state.validityOrigin, state = state.recordState,
                 ) else null
                 registrationRepository.save(recipe, medications, newDoctor)
                 _uiState.update { it.copy(isLoading = false, isSaved = true, savedPrescriptionId = recipe?.id, prescriptionTitle = recipe?.title ?: it.prescriptionTitle, hasUnsavedChanges = false) }
             } catch (e: CancellationException) { throw e }
-            catch (_: Exception) { _uiState.update { it.copy(isLoading = false, errorMessage = "Não foi possível salvar. Seus dados continuam aqui; tente novamente.") } }
+            catch (e: Exception) { _uiState.update { it.copy(isLoading = false, errorMessage = if (e is BusinessRuleViolation) e.message else "Não foi possível salvar. Seus dados continuam aqui; tente novamente.") } }
         }
     }
 }
