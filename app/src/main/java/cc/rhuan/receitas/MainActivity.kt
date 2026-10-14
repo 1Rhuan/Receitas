@@ -4,6 +4,9 @@ import android.content.Intent
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import android.util.Log
+import androidx.core.content.edit
 import javax.inject.Inject
 import cc.rhuan.receitas.data.repository.NotificationRepository
 import cc.rhuan.receitas.notifications.ReminderSynchronizer
@@ -32,7 +35,11 @@ class MainActivity : ComponentActivity() {
         val id = intent?.getStringExtra(ReminderSynchronizer.EXTRA_NOTIFICATION_ID) ?: return
         openedNotification.value = id
         intent.removeExtra(ReminderSynchronizer.EXTRA_NOTIFICATION_ID)
-        lifecycleScope.launch { notificationRepository.markAsRead(id) }
+        lifecycleScope.launch {
+            try { notificationRepository.markAsRead(id) }
+            catch (e: CancellationException) { throw e }
+            catch (e: Exception) { Log.e("MainActivity", "Não foi possível marcar o alerta como lido", e) }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -56,7 +63,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
             !permissionPreferences.getBoolean("requested", false)) {
-            permissionPreferences.edit().putBoolean("requested", true).apply()
+            permissionPreferences.edit { putBoolean("requested", true) }
             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         enableEdgeToEdge()
@@ -72,6 +79,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreenPreview() {
     ReceitasTheme {
-        MainScreen()
+        cc.rhuan.receitas.ui.feature.home.HomeScreenContent(cc.rhuan.receitas.ui.feature.home.HomeUiState())
     }
 }

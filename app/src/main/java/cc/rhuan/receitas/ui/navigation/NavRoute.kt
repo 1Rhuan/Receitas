@@ -47,14 +47,14 @@ sealed class NavRoute(
     )
 
     data object PrescriptionWizard : NavRoute(
-        route = "prescription_wizard?prescriptionId={prescriptionId}&entryMode={entryMode}",
-        title = "Nova Receita",
+        route = "prescription_wizard?prescriptionId={prescriptionId}&entryMode={entryMode}&renewalOf={renewalOf}&medicationId={medicationId}",
+        title = "Nova receita",
         iconRes = R.drawable.ic_document_medicine,
         selectedIconRes = R.drawable.ic_bold_document_medicine,
     )
 
     companion object {
-        val bottomNavItems = listOf(
+        val bottomNavItems get() = listOf(
             Home,
             Prescriptions,
             Medications,

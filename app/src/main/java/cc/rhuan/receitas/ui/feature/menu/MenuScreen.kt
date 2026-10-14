@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.ui.feature.menu
 
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,9 +31,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import cc.rhuan.receitas.R
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -46,6 +49,8 @@ fun MenuScreen(
     modifier: Modifier = Modifier,
     onNavigateToNotifications: () -> Unit = {},
 ) {
+    val context = LocalContext.current
+    val version = remember(context) { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() }
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -60,7 +65,7 @@ fun MenuScreen(
                     .padding(horizontal = 16.dp, vertical = 16.dp),
             ) {
                 Text(
-                    text = "Menu",
+                    text = stringResource(R.string.ui_menu),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
@@ -69,7 +74,7 @@ fun MenuScreen(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "Opções e configurações do seu aplicativo",
+                    text = stringResource(R.string.ui_lembretes_e_informacoes_do_aplicativo),
                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -84,7 +89,7 @@ fun MenuScreen(
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Conta & Opções",
+                            text = stringResource(R.string.ui_opcoes),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
@@ -99,22 +104,22 @@ fun MenuScreen(
                             Column {
                                 MenuItemRow(
                                     icon = Icons.Default.Person,
-                                    title = "Meu Perfil",
-                                    subtitle = "Rhuan - Dados pessoais",
-                                    onClick = {},
+                                    title = stringResource(R.string.ui_meu_perfil),
+                                    subtitle = stringResource(R.string.ui_dados_pessoais_em_breve),
+                                    onClick = null,
                                 )
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                                 MenuItemRow(
                                     icon = Icons.Default.Notifications,
-                                    title = "Notificações",
-                                    subtitle = "Ver central de avisos e lembretes",
+                                    title = stringResource(R.string.notifications_title),
+                                    subtitle = stringResource(R.string.ui_ver_central_de_avisos_e_lembretes),
                                     onClick = onNavigateToNotifications,
                                 )
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                                 MenuItemRow(
                                     icon = Icons.Default.Settings,
-                                    title = "Configurações",
-                                    subtitle = "Preferências do sistema",
+                                    title = stringResource(R.string.ui_configuracoes),
+                                    subtitle = stringResource(R.string.ui_preferencias_em_breve),
                                     onClick = {},
                                 )
                             }
@@ -126,7 +131,7 @@ fun MenuScreen(
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Geral",
+                            text = stringResource(R.string.ui_geral),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
@@ -141,15 +146,15 @@ fun MenuScreen(
                             Column {
                                 MenuItemRow(
                                     icon = Icons.AutoMirrored.Filled.Help,
-                                    title = "Ajuda & Suporte",
-                                    subtitle = "Perguntas frequentes e suporte",
+                                    title = stringResource(R.string.ui_ajuda_e_suporte),
+                                    subtitle = stringResource(R.string.ui_ajuda_em_breve),
                                     onClick = {},
                                 )
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                                 MenuItemRow(
                                     icon = R.drawable.ic_info_circle,
-                                    title = "Sobre o Receitas",
-                                    subtitle = "Versão 1.0.0",
+                                    title = stringResource(R.string.ui_sobre_o_receitas),
+                                    subtitle = version?.let { stringResource(R.string.app_version, it) } ?: stringResource(R.string.ui_organize_receitas_e_acompanhe_retiradas),
                                     onClick = {},
                                 )
                             }
@@ -166,13 +171,13 @@ private fun MenuItemRow(
     icon: Any,
     title: String,
     subtitle: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -220,7 +225,7 @@ private fun MenuItemRow(
             )
         }
 
-        Icon(
+        if (onClick != null) Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
