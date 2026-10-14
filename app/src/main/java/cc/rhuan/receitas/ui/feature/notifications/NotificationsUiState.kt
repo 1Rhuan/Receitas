@@ -18,6 +18,7 @@ data class NotificationsUiState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val snackbarMessage: String? = null,
+    val errorMessage: String? = null,
 ) {
     val unreadCount: Int
         get() = notifications.count { !it.isRead }

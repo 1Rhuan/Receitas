@@ -28,13 +28,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.NotificationsOff
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import cc.rhuan.receitas.ui.components.AppCard as Card
@@ -71,8 +69,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import cc.rhuan.receitas.R
 import cc.rhuan.receitas.domain.model.NotificationAction
 import cc.rhuan.receitas.domain.model.NotificationItem
@@ -81,24 +77,43 @@ import cc.rhuan.receitas.domain.model.NotificationType
 import cc.rhuan.receitas.ui.theme.ReceitasTheme
 
 @Composable
-fun NotificationsScreen(
+fun NotificationsPresentation(
     modifier: Modifier = Modifier,
-    viewModel: NotificationsViewModel = viewModel(),
+    uiState: NotificationsUiState,
+    registerPickup: (String, java.time.LocalDate, Boolean) -> Unit,
+    onFilterSelected: (NotificationFilter) -> Unit,
+    markAsRead: (String) -> Unit,
+    markAllAsRead: () -> Unit,
+    deleteNotification: (String) -> Unit,
+    clearAll: () -> Unit,
+    openRenewal: (String, (String) -> Unit) -> Unit,
+    preparePickup: (String, (cc.rhuan.receitas.domain.model.MedicationItem) -> Unit) -> Unit,
+    dismissSnackbar: () -> Unit,
+    refresh: () -> Unit,
     onNavigateToPrescription: (String) -> Unit = {},
+    onRenewPrescription: (String) -> Unit = {},
     onNavigateToMedication: (String) -> Unit = {},
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var pickup by remember { mutableStateOf<Pair<String, cc.rhuan.receitas.domain.model.MedicationItem>?>(null) }
+    pickup?.let { (id, med) -> cc.rhuan.receitas.ui.components.PickupDialog(med, onDismiss = { pickup = null }) { date, early, _ -> registerPickup(id, date, early) } }
 
     NotificationsScreenContent(
         uiState = uiState,
-        onFilterSelected = viewModel::onFilterSelected,
-        onMarkAsRead = viewModel::markAsRead,
-        onMarkAllAsRead = viewModel::markAllAsRead,
-        onDeleteNotification = viewModel::deleteNotification,
-        onClearAll = viewModel::clearAll,
-        onPerformAction = viewModel::performAction,
-        onDismissSnackbar = viewModel::dismissSnackbar,
-        onRefresh = viewModel::refresh,
+        onFilterSelected = onFilterSelected,
+        onMarkAsRead = markAsRead,
+        onMarkAllAsRead = markAllAsRead,
+        onDeleteNotification = deleteNotification,
+        onClearAll = clearAll,
+        onPerformAction = { id, action ->
+            val notification = uiState.notifications.find { it.id == id }
+            if (notification?.resolvedAt == null) when (action) {
+                NotificationAction.RENEW_PRESCRIPTION -> openRenewal(id, onRenewPrescription)
+                NotificationAction.REGISTER_PICKUP -> preparePickup(id) { pickup = id to it }
+                else -> markAsRead(id)
+            }
+        },
+        onDismissSnackbar = dismissSnackbar,
+        onRefresh = refresh,
         onNavigateToPrescription = onNavigateToPrescription,
         onNavigateToMedication = onNavigateToMedication,
         modifier = modifier,
@@ -127,10 +142,10 @@ fun NotificationsScreenContent(
         val renewal = action == NotificationAction.RENEW_PRESCRIPTION
         AlertDialog(
             onDismissRequest = { pendingAction = null },
-            title = { Text(if (renewal) "Registrar renovação?" else "Registrar retirada?") },
-            text = { Text(if (renewal) "Confirme que a receita já foi renovada. A data de emissão será atualizada para hoje." else "Confirme que o medicamento já foi retirado. A próxima retirada será calculada a partir de hoje.") },
-            confirmButton = { TextButton(onClick = { pendingAction = null; onPerformAction(id, action) }) { Text("Confirmar") } },
-            dismissButton = { TextButton(onClick = { pendingAction = null }) { Text("Cancelar") } },
+            title = { Text(if (renewal) stringResource(R.string.ui_registrar_nova_receita) else stringResource(R.string.ui_registrar_retirada)) },
+            text = { Text(if (renewal) stringResource(R.string.ui_voce_podera_confirmar_os_dados_da_nova_receita_e_escolher_os_acompanhamento) else stringResource(R.string.ui_confirme_que_o_medicamento_ja_foi_retirado_a_proxima_retirada_sera_calculad)) },
+            confirmButton = { TextButton(onClick = { pendingAction = null; onPerformAction(id, action) }) { Text(stringResource(R.string.action_confirm)) } },
+            dismissButton = { TextButton(onClick = { pendingAction = null }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 
@@ -308,6 +323,9 @@ fun NotificationsScreenContent(
                             }
                         }
 
+                        uiState.errorMessage != null -> {
+                            cc.rhuan.receitas.ui.components.LoadErrorPanel(uiState.errorMessage, onRefresh, Modifier.fillMaxSize())
+                        }
                         uiState.filteredNotifications.isEmpty() -> {
                             EmptyNotificationsState(
                                 filter = uiState.selectedFilter,
@@ -345,7 +363,7 @@ fun NotificationsScreenContent(
                                                     notification.targetId?.let(onNavigateToMedication)
                                                 }
                                                 else -> {
-                                                    pendingAction = notification.id to action
+                                                    if (action == NotificationAction.REGISTER_PICKUP || action == NotificationAction.RENEW_PRESCRIPTION) onPerformAction(notification.id, action) else pendingAction = notification.id to action
                                                 }
                                             }
                                         },
@@ -383,11 +401,11 @@ private fun NotificationCard(
     modifier: Modifier = Modifier,
 ) {
     val (iconRes, iconColor, containerColor, categoryLabel) = when (item.phase) {
-        ReminderPhase.EXPIRED -> Quadruple(R.drawable.ic_bold_document_medicine, MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.errorContainer, "RECEITA VENCIDA")
-        ReminderPhase.EXPIRES_TODAY -> Quadruple(R.drawable.ic_bold_document_medicine, AppPalette.warning, AppPalette.warningContainer, "VENCE HOJE")
-        ReminderPhase.RENEWAL -> Quadruple(R.drawable.ic_bold_document_medicine, AppPalette.warning, AppPalette.warningContainer, "RENOVAÇÃO DE RECEITA")
-        ReminderPhase.PICKUP_UPCOMING -> Quadruple(R.drawable.ic_box, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer, "RETIRADA PRÓXIMA")
-        ReminderPhase.PICKUP_DUE -> Quadruple(R.drawable.ic_box, MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.tertiaryContainer, "DATA DE RETIRADA")
+        ReminderPhase.EXPIRED -> Quadruple(R.drawable.ic_bold_document_medicine, MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.errorContainer, stringResource(R.string.ui_receita_vencida))
+        ReminderPhase.EXPIRES_TODAY -> Quadruple(R.drawable.ic_bold_document_medicine, AppPalette.warning, AppPalette.warningContainer, stringResource(R.string.ui_vence_hoje))
+        ReminderPhase.RENEWAL -> Quadruple(R.drawable.ic_bold_document_medicine, AppPalette.warning, AppPalette.warningContainer, stringResource(R.string.ui_renovacao_de_receita))
+        ReminderPhase.PICKUP_UPCOMING -> Quadruple(R.drawable.ic_box, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer, stringResource(R.string.ui_retirada_proxima))
+        ReminderPhase.PICKUP_DUE -> Quadruple(R.drawable.ic_box, MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.tertiaryContainer, stringResource(R.string.ui_data_de_retirada))
         null -> Quadruple(R.drawable.ic_bold_bell_bing, Color(0xFF7B1FA2), Color(0xFFF3E5F5), "AVISO")
     }
 
@@ -534,13 +552,13 @@ private fun NotificationCard(
                             onClick = { onActionClick(if (prescription) NotificationAction.VIEW_PRESCRIPTION else NotificationAction.VIEW_MEDICATION) },
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
                         ) {
-                            Text(if (prescription) "Ver receita" else "Ver medicamentos")
+                            Text(if (prescription) stringResource(R.string.ui_ver_receita) else stringResource(R.string.ui_ver_medicamentos))
                         }
                         Button(
-                            onClick = { onActionClick(if (prescription) NotificationAction.RENEW_PRESCRIPTION else NotificationAction.REPLENISH_STOCK) },
+                            onClick = { onActionClick(if (prescription) NotificationAction.RENEW_PRESCRIPTION else NotificationAction.REGISTER_PICKUP) },
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
                         ) {
-                            Text(if (prescription) "Registrar renovação" else "Registrar retirada")
+                            Text(if (prescription) stringResource(R.string.action_register_new_prescription) else stringResource(R.string.action_register_pickup))
                         }
                     }
                 }
