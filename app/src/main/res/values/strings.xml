@@ -339,27 +339,4 @@
     <string name="design_pickup_options_help">Escolha a antecedência, o local de retirada e a receita vinculada.</string>
     <string name="design_configure_reminders">Configurar lembretes</string>
     <string name="design_edit_reminders">Editar lembretes e local de retirada</string>
-    <string name="ui_acompanhamento_ativo">Acompanhamento ativo</string>
-    <string name="ui_editar_acompanhamento_e_receita_vinculada">Editar acompanhamento e receita vinculada</string>
-    <string name="ui_medicamentos_na_receita">MEDICAMENTOS NA RECEITA</string>
-    <string name="ui_emissao">EMISSÃO</string>
-    <string name="ui_status">STATUS</string>
-    <string name="ui_receita_vinculada_vencida_ou_encerrada">Receita vinculada vencida ou encerrada.</string>
-    <string name="ui_a_receita_vence_antes_da_proxima_previsao_de_retirada">A receita vence antes da próxima previsão de retirada.</string>
-    <string name="ui_nenhuma_receita_vinculada_a_este_acompanhamento">Nenhuma receita vinculada a este acompanhamento.</string>
-    <string name="ui_a_data_e_uma_previsao_confirme_a_disponibilidade_com_a_farmacia">A data é uma previsão. Confirme a disponibilidade com a farmácia.</string>
-    <string name="ui_informe_o_nome_a_concentracao_e_os_outros_detalhes_sao_opcionais">Informe o nome. A concentração e os outros detalhes são opcionais.</string>
-    <string name="ui_ative_o_acompanhamento_somente_para_medicamentos_com_retirada_recorrente">Ative o acompanhamento somente para medicamentos com retirada recorrente.</string>
-    <string name="action_continue">Continuar</string>
-    <string name="ui_identificacao">Identificação</string>
-    <string name="ui_profissional_opcional">Profissional (opcional)</string>
-    <string name="ui_ocultar_dados_do_profissional">Ocultar dados do profissional</string>
-    <string name="ui_adicionar_dados_do_profissional">Adicionar dados do profissional</string>
-    <string name="ui_concluir_edicao">Concluir edição</string>
-    <string name="ui_adicionar_a_receita">Adicionar à receita</string>
-    <string name="confirmed_expiration">Validade confirmada: %1$s. Confira o prazo indicado no documento ou pela unidade.</string>
-    <string name="pickup_interval">Intervalo: %1$d %2$s</string>
-    <string name="prescribed_quantity">Quantidade prescrita: %1$s</string>
-    <string name="record_status">Situação: %1$s</string>
-    <string name="last_pickup_with_interval">Última retirada: %1$s (intervalo: %2$d %3$s)</string>
 </resources>
