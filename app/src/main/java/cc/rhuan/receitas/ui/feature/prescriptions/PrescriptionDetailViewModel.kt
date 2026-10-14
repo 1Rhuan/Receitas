@@ -59,7 +59,7 @@ class PrescriptionDetailViewModel @Inject constructor(
                         .map { med ->
                             PrescriptionMedicationDetail(
                                 medication = med.copy(title = prescription.items.find { it.medicationId == med.id }?.title ?: med.title, dosage = prescription.items.find { it.medicationId == med.id }?.dosage ?: med.dosage, form = prescription.items.find { it.medicationId == med.id }?.form ?: med.form, prescribedPosology = prescription.items.find { it.medicationId == med.id }?.posology.orEmpty(), prescribedQuantity = prescription.items.find { it.medicationId == med.id }?.quantity.orEmpty()),
-                                refillStatus = checkRefillStatusUseCase(med, listOf(prescription)),
+                                refillStatus = checkRefillStatusUseCase(med, prescriptions),
                             )
                         }
                     PrescriptionDetailUiState(

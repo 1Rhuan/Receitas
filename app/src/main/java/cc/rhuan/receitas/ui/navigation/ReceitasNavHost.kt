@@ -116,6 +116,7 @@ fun ReceitasNavHost(navController: NavHostController, modifier: Modifier = Modif
             PrescriptionDetailScreen(
                 viewModel = hiltViewModel(),
                 onBackClick = { navController.popBackStack() },
+                onMedicationClick = { id -> navController.navigate("medication_detail/" + android.net.Uri.encode(id)) },
                 onRenewClick = { id -> navController.navigate("prescription_wizard?renewalOf=" + android.net.Uri.encode(id)) },
                 onEditClick = { id ->
                     navController.navigate("prescription_wizard?prescriptionId=$id")
@@ -123,7 +124,15 @@ fun ReceitasNavHost(navController: NavHostController, modifier: Modifier = Modif
             )
         }
         composable("medication_detail/{medicationId}", arguments = listOf(navArgument("medicationId") { type = NavType.StringType })) {
-            cc.rhuan.receitas.ui.feature.medications.MedicationDetailScreen(viewModel = hiltViewModel(), onBack = { navController.popBackStack() }, onEdit = { id -> navController.navigate("prescription_wizard?entryMode=STANDALONE_MEDICATION&medicationId=" + android.net.Uri.encode(id)) })
+            cc.rhuan.receitas.ui.feature.medications.MedicationDetailScreen(viewModel = hiltViewModel(), onBack = { navController.popBackStack() }, onEdit = { id -> navController.navigate("prescription_wizard?entryMode=STANDALONE_MEDICATION&medicationId=" + android.net.Uri.encode(id)) },
+                onPrescriptionsClick = { id -> navController.navigate("prescriptions_for_medication/" + android.net.Uri.encode(id)) })
+        }
+        composable("prescriptions_for_medication/{medicationId}", arguments = listOf(navArgument("medicationId") { type = NavType.StringType })) { entry ->
+            PrescriptionsScreen(viewModel = hiltViewModel(), medicationFilterId = entry.arguments?.getString("medicationId"),
+                onBack = { navController.popBackStack() },
+                onPrescriptionClick = { navController.navigate("prescription_detail/" + android.net.Uri.encode(it.id)) },
+                onCreatePrescriptionClick = { navController.navigate("prescription_wizard") },
+                onPurchaseClick = { navController.navigate("medication_detail/" + android.net.Uri.encode(it.id)) })
         }
         composable(NavRoute.Menu.route) {
             MenuScreen {

@@ -12,6 +12,7 @@ fun PrescriptionDetailScreen(
     modifier: Modifier = Modifier,
     onEditClick: (String) -> Unit = {},
     onRenewClick: (String) -> Unit = {},
+    onMedicationClick: (String) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     PrescriptionDetailPresentation(
@@ -20,6 +21,7 @@ fun PrescriptionDetailScreen(
         modifier = modifier,
         onEditClick = onEditClick,
         onRenewClick = onRenewClick,
+        onMedicationClick = onMedicationClick,
         registerPickup = viewModel::registerPickup,
         deleteRecipe = viewModel::deleteRecipe,
         archive = viewModel::archive,

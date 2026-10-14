@@ -17,6 +17,12 @@ class ReplenishmentStatusTest {
   val med = MedicationItem("m", "Medicamento", hasRecurringPickup = true, lastRefillDate = today)
   assertEquals(RefillStatus.NoPrescriptionLinked, check(med, listOf(recipe)))
  }
+ @Test fun medicationInOneRecipeCanTrackAnotherExplicitRecipe() {
+  val med = MedicationItem("m", "Medicamento", linkedPrescriptionId = "tracking", hasRecurringPickup = true, lastRefillDate = today.minusDays(30))
+  val tracking = recipe.copy(id = "tracking")
+  assertEquals(RefillStatus.NoPrescriptionLinked, check(med, listOf(recipe)))
+  assertTrue(check(med, listOf(recipe, tracking)) is RefillStatus.RefillAvailable)
+ }
  @Test fun noRecurringPickupDoesNotCreatePendingEvent() {
   val med = MedicationItem("m", "Medicamento", hasRecurringPickup = false)
   assertEquals(RefillStatus.OK, check(med, listOf(recipe)))
