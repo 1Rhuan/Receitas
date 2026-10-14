@@ -1,5 +1,9 @@
 package cc.rhuan.receitas.ui.feature.home
 
+import cc.rhuan.receitas.ui.theme.DesignTokens as T
+import cc.rhuan.receitas.ui.components.LocalNavigationClearance
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import cc.rhuan.receitas.R
 
 import androidx.compose.ui.res.stringResource
@@ -18,19 +22,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,10 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import cc.rhuan.receitas.domain.model.MedicationItem
 import cc.rhuan.receitas.domain.model.PrescriptionItem
 import cc.rhuan.receitas.ui.feature.home.components.DateSlider
@@ -126,6 +122,7 @@ fun HomeScreenContent(
     onRefresh: () -> Unit = {},
     notificationCount: Int = uiState.unreadNotificationsCount,
 ) {
+    val navigationClearance = LocalNavigationClearance.current
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var itemForDatePicker by remember { mutableStateOf<TrackingItem?>(null) }
@@ -192,37 +189,15 @@ fun HomeScreenContent(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onCreatePrescription,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = MaterialTheme.shapes.large,
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.action_new_prescription)
-                    )
-                },
-                text = {
-                    Text(
-                        text = stringResource(R.string.action_new_prescription),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
-                    )
-                }
-            )
-        },
         snackbarHost = {
             SnackbarHost(
                 hostState = snackbarHostState,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = navigationClearance + T.padding)
             ) { snackbarData ->
                 Snackbar(
                     snackbarData = snackbarData,
-                    containerColor = MaterialTheme.colorScheme.onSurface,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = MaterialTheme.colorScheme.inverseOnSurface,
                     shape = RoundedCornerShape(12.dp)
                 )
             }
@@ -275,7 +250,7 @@ fun HomeScreenContent(
                             onNavigateToMedications = onCreateMedication,
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(16.dp)
+                                .verticalScroll(rememberScrollState()).padding(start = T.margin, end = T.margin, bottom = navigationClearance + T.section)
                         )
                     }
 
@@ -287,7 +262,7 @@ fun HomeScreenContent(
                         ) {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                                contentPadding = PaddingValues(start = T.margin, end = T.margin, top = T.tight, bottom = navigationClearance + T.section),
                                 verticalArrangement = Arrangement.spacedBy(14.dp)
                             ) {
                                 // 1. Lista de acompanhamentos da data selecionada
@@ -349,7 +324,7 @@ fun HomeScreenContent(
                                 }
 
                                 item(key = "bottom_spacer") {
-                                    Spacer(modifier = Modifier.height(80.dp))
+                                    Spacer(modifier = Modifier.height(T.small))
                                 }
                             }
                         }

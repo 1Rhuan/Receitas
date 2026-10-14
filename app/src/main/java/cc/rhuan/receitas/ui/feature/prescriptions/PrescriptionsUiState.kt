@@ -28,6 +28,7 @@ data class PrescriptionsUiState(
     val selectedSortOrder: PrescriptionSortOrder = PrescriptionSortOrder.EXPIRATION,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val medicationFilterId: String? = null,
 ) {
     val nextPurchase: cc.rhuan.receitas.domain.model.MedicationItem?
         get() = medications.filter { it.source == cc.rhuan.receitas.domain.model.MedicationSource.COMPRA_PROPRIA && it.nextAvailableRefillDate != null }
@@ -47,7 +48,9 @@ data class PrescriptionsUiState(
                     PrescriptionFilter.HISTORY -> !prescription.isActive
                 }
 
-                matchesSearch && matchesFilter
+                val matchesMedication = medicationFilterId == null || medicationFilterId in prescription.medicationIds ||
+                    prescription.items.any { it.medicationId == medicationFilterId }
+                matchesSearch && matchesFilter && matchesMedication
             }
 
             return when (selectedSortOrder) {

@@ -50,7 +50,7 @@ class ReceitasPreviewTest {
                 CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 DesignTheme {
                     Box(if (small) Modifier.requiredSize(320.dp, 640.dp) else Modifier.fillMaxSize()) {
-                        MainScreenContent("prescriptions", true, {}, onCreateRecord = onCreate) { padding ->
+                        MainScreenContent("prescriptions", true, {}) { padding ->
                             PrescriptionsScreenContent(data, {}, {}, Modifier.padding(padding), onCreatePrescriptionClick = onCreate)
                         }
                     }
@@ -94,7 +94,7 @@ class ReceitasPreviewTest {
         var purchased = ""
         var opened = ""
         compose.setContent { ReceitasTheme {
-            DesignTheme { Scaffold(bottomBar = { TextNavigationBar("prescriptions", {}, { created++ }) }) { padding ->
+            DesignTheme { Scaffold(bottomBar = { TextNavigationBar("prescriptions", {}) }) { padding ->
             PrescriptionsScreenContent(designPreviewState(), {}, {}, Modifier.padding(padding),
                 onCreatePrescriptionClick = { created++ }, onPurchaseClick = { purchased = it.id },
                 onPrescriptionClick = { opened = it.id })
@@ -116,7 +116,10 @@ class ReceitasPreviewTest {
         } }
         compose.onNodeWithTag("prescription-list").performScrollToNode(hasTestTag("record-search"))
         compose.onNodeWithTag("record-search").performTextInput("termo inexistente")
-        androidx.test.espresso.Espresso.closeSoftKeyboard()
+        compose.runOnIdle {
+            (compose.activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
+                .hideSoftInputFromWindow(compose.activity.window.decorView.windowToken, 0)
+        }
         compose.waitForIdle()
         compose.onNodeWithTag("prescription-list").performScrollToNode(hasText("Limpar busca e filtros"))
         capture("receitas-no-results")
@@ -124,7 +127,7 @@ class ReceitasPreviewTest {
         compose.onNodeWithTag("prescription-list").performScrollToNode(hasText("Tratamento de uso contínuo"))
         compose.onNodeWithText("Tratamento de uso contínuo").assertIsDisplayed()
     }
-    @Test fun emptyLibraryHasOneCreationAction() {
+    @Test fun emptyLibraryHasOnePageCreationAction() {
         var created = 0
         show(data = PrescriptionsUiState(), onCreate = { created++ })
         compose.onNodeWithText("Nenhuma receita cadastrada").assertIsDisplayed()

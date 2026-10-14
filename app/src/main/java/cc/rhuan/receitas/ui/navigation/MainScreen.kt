@@ -27,11 +27,6 @@ fun MainScreen(openedNotificationId: String? = null, onNotificationOpened: () ->
     }
     MainScreenContent(
         selectedRoute = selectedRoute,
-        onCreateRecord = when (selectedRoute) {
-            NavRoute.Prescriptions.route -> ({ navController.navigate("prescription_wizard") })
-            NavRoute.Medications.route -> ({ navController.navigate("prescription_wizard?entryMode=STANDALONE_MEDICATION") })
-            else -> null
-        },
         showBottomBar = NavRoute.bottomNavItems.any { it.route == currentDestination?.route },
         onSelectDestination = { route ->
             navController.navigate(route) {

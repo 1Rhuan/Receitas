@@ -3,7 +3,6 @@ package cc.rhuan.receitas.ui.navigation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,22 +18,18 @@ fun MainScreenContent(
     showBottomBar: Boolean,
     onSelectDestination: (String) -> Unit,
     modifier: Modifier = Modifier,
-    onCreateRecord: (() -> Unit)? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    val sharedDesign = selectedRoute == NavRoute.Prescriptions.route || selectedRoute == NavRoute.Medications.route
-    if (sharedDesign) DesignTheme {
+    DesignTheme {
         var barHeight by remember { mutableStateOf(0.dp) }
         val density = LocalDensity.current
         Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             CompositionLocalProvider(LocalNavigationClearance provides if (showBottomBar) barHeight else 0.dp) {
-                content(WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal).asPaddingValues())
+                content(WindowInsets.systemBars.only(if (showBottomBar) WindowInsetsSides.Top + WindowInsetsSides.Horizontal else WindowInsetsSides.Top + WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal).asPaddingValues())
             }
             if (showBottomBar) Box(Modifier.align(Alignment.BottomCenter).onSizeChanged {
                 barHeight = with(density) { it.height.toDp() }
-            }) { TextNavigationBar(selectedRoute, onSelectDestination, onCreateRecord) }
+            }) { TextNavigationBar(selectedRoute, onSelectDestination) }
         }
-    } else Scaffold(modifier = modifier.fillMaxSize(), bottomBar = {
-        if (showBottomBar) AppNavigationBar(selectedRoute, onSelectDestination)
-    }, content = content)
+    }
 }

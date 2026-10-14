@@ -43,7 +43,7 @@ class MedicamentosPreviewTest {
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 DesignTheme {
                     Box(if (small) Modifier.requiredSize(320.dp, 640.dp) else Modifier.fillMaxSize()) {
-                        MainScreenContent("medications", true, {}, onCreateRecord = {}) { padding ->
+                        MainScreenContent("medications", true, {}) { padding ->
                             MedicationsScreenContent(data, {}, {}, {}, {}, {}, remember { SnackbarHostState() }, Modifier.padding(padding))
                         }
                     }
@@ -77,7 +77,7 @@ class MedicamentosPreviewTest {
         show(small = true, scale = 2f)
         compose.onNodeWithContentDescription("Novo medicamento").assertIsDisplayed()
         capture("medicamentos-font-200")
-        compose.onNodeWithTag("medication-list").performScrollToIndex(4)
+        compose.onNodeWithTag("medication-list").performScrollToNode(hasText("Cloridrato de metformina de liberação prolongada"))
         compose.onNodeWithText("Cloridrato de metformina de liberação prolongada", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         capture("medicamentos-font-200-list")
         val lastAction = compose.onAllNodesWithText("Registrar retirada", useUnmergedTree = true).onLast()
@@ -95,7 +95,7 @@ class MedicamentosPreviewTest {
         var opened = ""
         var created = 0
         compose.setContent { ReceitasTheme {
-            DesignTheme { Scaffold(bottomBar = { TextNavigationBar("medications", {}, { created++ }) }) { padding ->
+            DesignTheme { Scaffold(bottomBar = { TextNavigationBar("medications", {}) }) { padding ->
             MedicationsScreenContent(medicationPreviewState().copy(searchQuery = query), { query = it }, { source = it }, {},
                 { opened = it.id }, { created++ }, remember { SnackbarHostState() }, Modifier.padding(padding))
             } }

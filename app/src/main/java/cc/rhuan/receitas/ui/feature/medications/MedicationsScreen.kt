@@ -59,6 +59,7 @@ fun MedicationsScreenContent(
         subtitle = if (emptyLibrary) "" else pluralStringResource(R.plurals.design_medication_count,
             uiState.medications.size, uiState.medications.size),
         listTag = "medication-list", modifier = modifier,
+        createLabel = stringResource(R.string.ui_novo_medicamento), onCreate = onAddMedicationClick,
         snackbarHost = { SnackbarHost(snackbarHostState) }) {
         if (!emptyLibrary) {
             item("search") {

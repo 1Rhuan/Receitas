@@ -2,6 +2,9 @@ package cc.rhuan.receitas.ui.feature.prescriptions
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -14,10 +17,14 @@ fun PrescriptionsScreen(
     onPrescriptionClick: (PrescriptionItem) -> Unit = {},
     onCreatePrescriptionClick: () -> Unit = {},
     onPurchaseClick: (cc.rhuan.receitas.domain.model.MedicationItem) -> Unit = {},
+    medicationFilterId: String? = null,
+    onBack: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var filterApplied by rememberSaveable(medicationFilterId) { mutableStateOf(true) }
     PrescriptionsPresentation(
-        uiState = uiState,
+        uiState = uiState.copy(medicationFilterId = medicationFilterId.takeIf { filterApplied }),
+        onBack = onBack, onClearMedicationFilter = { filterApplied = false },
         onPurchaseClick = onPurchaseClick,
         modifier = modifier,
         onPrescriptionClick = onPrescriptionClick,

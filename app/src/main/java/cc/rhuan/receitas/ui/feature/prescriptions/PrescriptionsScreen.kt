@@ -27,8 +27,10 @@ fun PrescriptionsPresentation(
     onSortOrderSelected: (PrescriptionSortOrder) -> Unit, loadPrescriptions: () -> Unit,
     onPrescriptionClick: (PrescriptionItem) -> Unit = {}, onCreatePrescriptionClick: () -> Unit = {},
     onPurchaseClick: (MedicationItem) -> Unit = {},
+    onBack: (() -> Unit)? = null, onClearMedicationFilter: () -> Unit = {},
 ) = PrescriptionsScreenContent(uiState, onSearchQueryChanged, onFilterSelected, modifier,
-    onSortOrderSelected, onPrescriptionClick, onCreatePrescriptionClick, loadPrescriptions, onPurchaseClick)
+    onSortOrderSelected, onPrescriptionClick, onCreatePrescriptionClick, loadPrescriptions, onPurchaseClick,
+    onBack, onClearMedicationFilter)
 
 @Composable
 fun PrescriptionsScreenContent(
@@ -37,16 +39,30 @@ fun PrescriptionsScreenContent(
     onSortOrderSelected: (PrescriptionSortOrder) -> Unit = {},
     onPrescriptionClick: (PrescriptionItem) -> Unit = {}, onCreatePrescriptionClick: () -> Unit = {},
     onRetry: () -> Unit = {}, onPurchaseClick: (MedicationItem) -> Unit = {},
+    onBack: (() -> Unit)? = null, onClearMedicationFilter: () -> Unit = {},
 ) {
     DesignTheme {
         val emptyLibrary = !uiState.isLoading && uiState.errorMessage == null && uiState.prescriptions.isEmpty() &&
-            uiState.searchQuery.isBlank() && uiState.selectedFilter == PrescriptionFilter.ALL
+            uiState.searchQuery.isBlank() && uiState.selectedFilter == PrescriptionFilter.ALL && uiState.medicationFilterId == null
+        val count = if (uiState.medicationFilterId != null) uiState.filteredPrescriptions.size else uiState.prescriptions.size
         RecordListScaffold(
             title = stringResource(R.string.label_prescription_list),
-            subtitle = if (emptyLibrary) "" else pluralStringResource(R.plurals.design_record_count, uiState.prescriptions.size, uiState.prescriptions.size),
+            subtitle = if (emptyLibrary) "" else pluralStringResource(R.plurals.design_record_count, count, count),
             listTag = "prescription-list", modifier = modifier,
+            createLabel = if (uiState.medicationFilterId == null) stringResource(R.string.action_new_prescription) else null,
+            onCreate = onCreatePrescriptionClick, onBack = onBack,
         ) {
-                if (!uiState.isLoading && uiState.errorMessage == null && (uiState.nextPurchase != null || uiState.purchaseError)) {
+                if (uiState.medicationFilterId != null) item("medication-filter") {
+                    ContentCard(Modifier.padding(horizontal = T.margin)) {
+                        Text(stringResource(R.string.design_recipes_for_medication), style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        uiState.medications.find { it.id == uiState.medicationFilterId }?.let {
+                            Text(it.title, style = MaterialTheme.typography.titleMedium)
+                        }
+                        SecondaryActionButton(stringResource(R.string.design_show_all_recipes), onClearMedicationFilter, Modifier.fillMaxWidth())
+                    }
+                }
+                if (uiState.medicationFilterId == null && !uiState.isLoading && uiState.errorMessage == null && (uiState.nextPurchase != null || uiState.purchaseError)) {
                     item("purchase") {
                         Column(Modifier.padding(horizontal = T.margin)) {
                             val purchase = uiState.nextPurchase
@@ -114,9 +130,9 @@ fun PrescriptionsScreenContent(
                     uiState.filteredPrescriptions.isEmpty() -> item {
                         Column(Modifier.padding(horizontal = T.margin)) {
                             ContentCard {
-                                Text(stringResource(if (uiState.searchQuery.isNotBlank() || uiState.selectedFilter != PrescriptionFilter.ALL)
+                                Text(stringResource(if (uiState.medicationFilterId != null || uiState.searchQuery.isNotBlank() || uiState.selectedFilter != PrescriptionFilter.ALL)
                                     R.string.no_prescription_found else R.string.no_prescription_registered), style = MaterialTheme.typography.titleMedium)
-                                Text(stringResource(if (uiState.searchQuery.isNotBlank() || uiState.selectedFilter != PrescriptionFilter.ALL) R.string.design_empty_filtered
+                                Text(stringResource(if (uiState.medicationFilterId != null || uiState.searchQuery.isNotBlank() || uiState.selectedFilter != PrescriptionFilter.ALL) R.string.design_empty_filtered
                                     else R.string.registered_prescriptions_appear_here), style = MaterialTheme.typography.bodyMedium)
                                 if (uiState.searchQuery.isNotBlank() || uiState.selectedFilter != PrescriptionFilter.ALL) {
                                     TextButton(onClick = { onSearchQueryChange(""); onFilterSelected(PrescriptionFilter.ALL) }) {

@@ -15,13 +15,15 @@ class CreationNavigationTest {
         if (Build.VERSION.SDK_INT >= 33) InstrumentationRegistry.getInstrumentation().uiAutomation
             .grantRuntimePermission("cc.rhuan.receitas", Manifest.permission.POST_NOTIFICATIONS)
     }
-    @Test fun recipePlusOpensRecipeRegistration() {
+    @Test fun prescriptionsPageOpensRecipeRegistration() {
         compose.onNodeWithContentDescription("Receitas", useUnmergedTree = true).performClick()
+        compose.onNodeWithTag("floating-navigation").assertIsDisplayed()
         compose.onNodeWithContentDescription("Nova receita").performClick()
         compose.onNodeWithText("Vamos cadastrar sua receita").assertIsDisplayed()
     }
-    @Test fun medicationPlusOpensStandaloneRegistration() {
+    @Test fun medicationsPageOpensStandaloneRegistration() {
         compose.onNodeWithContentDescription("Medicamentos", useUnmergedTree = true).performClick()
+        compose.onNodeWithTag("floating-navigation").assertIsDisplayed()
         compose.onNodeWithContentDescription("Novo medicamento").performClick()
         compose.onNodeWithText("Qual medicamento deseja acompanhar?").assertIsDisplayed()
     }
