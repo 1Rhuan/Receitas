@@ -17,7 +17,7 @@ class RegistrationCopyTest {
     @Test fun monthlyPickupReviewUsesCalendarMonthAndSingularReminder() {
         val state = PrescriptionWizardUiState(
             entryMode = WizardEntryMode.STANDALONE_MEDICATION,
-            currentStep = 3,
+            currentStep = 4,
             showMedicationEditor = false,
             medications = listOf(MedicationDraft(
                 title = "Medicamento de teste", hasRecurringPickup = true,

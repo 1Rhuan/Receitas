@@ -1,6 +1,9 @@
 package cc.rhuan.receitas.ui.components.wizard
 
 import cc.rhuan.receitas.R
+import cc.rhuan.receitas.ui.theme.DesignTokens as T
+import cc.rhuan.receitas.ui.components.PageHeader
+import androidx.compose.foundation.layout.BoxWithConstraints
 
 import androidx.compose.ui.res.stringResource
 
@@ -36,11 +39,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun WizardQuestionScreen(
@@ -58,53 +69,66 @@ fun WizardQuestionScreen(
     onClose: (() -> Unit)? = null,
     isBusy: Boolean = false,
     errorMessage: String? = null,
+    prominentHeader: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val scrollState = rememberScrollState()
+    val largeText = LocalDensity.current.fontScale >= T.compactFontScale
+    LaunchedEffect(errorMessage) {
+        if (errorMessage != null) scrollState.animateScrollTo(0)
+    }
+    BoxWithConstraints(modifier.fillMaxSize().imePadding()) {
+    val actionHeight = remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
+    val expandedHeader = prominentHeader && maxHeight >= T.compactHeight && !largeText
     Scaffold(
-        modifier = modifier.fillMaxSize().imePadding(),
+        modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = T.gap, vertical = T.small)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack, enabled = !isBusy, modifier = Modifier.size(48.dp)) {
+                    IconButton(onClick = onBack, enabled = !isBusy, modifier = Modifier.size(T.control)) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
-                    Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
-                        Text(contextLabel ?: stringResource(R.string.ui_cadastro_de_receita), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Column(Modifier.weight(1f).padding(horizontal = T.small)) {
+                        if (!largeText || stepNumber == null) Text(contextLabel ?: stringResource(R.string.ui_cadastro_de_receita), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         if (stepNumber != null && stepCount != null) Text(stringResource(R.string.wizard_step, stepNumber, stepCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     onClose?.let { close ->
-                        IconButton(onClick = close, enabled = !isBusy, modifier = Modifier.size(48.dp)) {
+                        IconButton(onClick = close, enabled = !isBusy, modifier = Modifier.size(T.control)) {
                             Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_sair_do_cadastro))
                         }
                     }
                 }
-                LinearProgressIndicator(progress = { progress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), color = MaterialTheme.colorScheme.primary)
-            }
-        },
-        bottomBar = {
-            Surface(tonalElevation = 2.dp) {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
-                    PrimaryButton(primaryButtonText, primaryButtonEnabled && !isBusy, onPrimaryClick, isBusy = isBusy)
-                }
+                LinearProgressIndicator(progress = { progress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().padding(horizontal = T.small), color = MaterialTheme.colorScheme.primary)
             }
         },
     ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            Modifier.fillMaxSize().padding(padding).verticalScroll(scrollState).testTag("wizard-content").padding(vertical = T.padding),
+            verticalArrangement = Arrangement.spacedBy(T.padding),
         ) {
-            Text(question, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            description?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            PageHeader(question, description.orEmpty(), expandedHeader)
+            Column(Modifier.fillMaxWidth().padding(horizontal = T.margin), verticalArrangement = Arrangement.spacedBy(T.padding)) {
+            if (!expandedHeader) description?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             errorMessage?.let { message ->
-                Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    Text(message, modifier = Modifier.padding(14.dp), color = MaterialTheme.colorScheme.onErrorContainer)
+                Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(T.gap), modifier = Modifier.fillMaxWidth()) {
+                    Text(message, modifier = Modifier.padding(T.padding).semantics { liveRegion = LiveRegionMode.Polite }, color = MaterialTheme.colorScheme.onErrorContainer)
                 }
             }
             content()
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(T.small))
+            Spacer(Modifier.height(actionHeight.value))
+            }
         }
+    }
+    Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+        .testTag("wizard-primary-action")
+        .onSizeChanged { actionHeight.value = with(density) { it.height.toDp() } }
+        .padding(horizontal = T.margin, vertical = T.gap)) {
+        PrimaryButton(primaryButtonText, primaryButtonEnabled && !isBusy, onPrimaryClick, isBusy = isBusy)
+    }
     }
 }
 
@@ -119,7 +143,7 @@ fun PrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = RoundedCornerShape(50),
+        shape = RoundedCornerShape(T.buttonRadius),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -128,18 +152,15 @@ fun PrimaryButton(
         ),
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 52.dp),
+            .heightIn(min = T.control),
     ) {
         if (isBusy) {
-            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-            Spacer(Modifier.width(8.dp))
+            CircularProgressIndicator(modifier = Modifier.size(T.icon), color = MaterialTheme.colorScheme.onPrimary)
+            Spacer(Modifier.width(T.small))
         }
         Text(
             text = text,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-            ),
+            style = MaterialTheme.typography.labelLarge,
         )
     }
 }

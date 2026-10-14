@@ -114,9 +114,10 @@ data class PrescriptionWizardUiState(
     val isSaved: Boolean = false,
     val errorMessage: String? = null,
 ) : Serializable {
-    val maxSteps: Int get() = if (entryMode == WizardEntryMode.STANDALONE_MEDICATION) 3 else 4
+    val pickupOptionsStep: Int? get() = if (allMedications.any { it.hasRecurringPickup }) pickupStep + 1 else null
+    val maxSteps: Int get() = (if (entryMode == WizardEntryMode.STANDALONE_MEDICATION) 3 else 4) + if (pickupOptionsStep != null) 1 else 0
     val medicationStep: Int get() = if (entryMode == WizardEntryMode.STANDALONE_MEDICATION) 1 else 2
-    val pickupStep: Int get() = maxSteps - 1
+    val pickupStep: Int get() = if (entryMode == WizardEntryMode.STANDALONE_MEDICATION) 2 else 3
     val progress: Float get() = currentStep.toFloat() / maxSteps
     val allMedications: List<MedicationDraft> get() {
         if (!showMedicationEditor || currentMedicationDraft == MedicationDraft()) return medications
@@ -141,7 +142,11 @@ data class PrescriptionWizardUiState(
     val pickupError: String? get() = allMedications.firstNotNullOfOrNull { draft -> draft.pickupError()?.let { draft.title + ": " + it } }
     val currentStepError: String? get() = when (currentStep) {
         medicationStep -> medicationError
-        pickupStep -> pickupError
+        pickupStep -> allMedications.firstNotNullOfOrNull { draft ->
+            // Reminder lead time is configured on the next screen, after the schedule.
+            draft.copy(pickupReminderDaysBefore = 0).pickupError()?.let { draft.title + ": " + it }
+        }
+        pickupOptionsStep -> pickupError
         maxSteps -> recipeError ?: medicationError ?: pickupError
         else -> recipeError
     }

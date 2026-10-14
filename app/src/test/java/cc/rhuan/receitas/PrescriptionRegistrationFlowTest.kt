@@ -141,6 +141,25 @@ class PrescriptionRegistrationFlowTest {
         assertEquals(3, vm.uiState.value.maxSteps)
         assertNull(registration.recipe); assertTrue(vm.uiState.value.isSaved)
     }
+    @Test fun recurringPickupSeparatesScheduleFromPreferencesAndCanReturnFromReview() = runTest {
+        val vm = model(SavedStateHandle(mapOf("entryMode" to "STANDALONE_MEDICATION"))); runCurrent()
+        add(vm, "Losartana"); vm.nextStep()
+        vm.updateMedicationPickup(0) { it.copy(hasRecurringPickup = true, lastPickupDate = LocalDate.now(), pickupIntervalDays = 1, pickupReminderDaysBefore = 3) }
+        assertEquals(4, vm.uiState.value.maxSteps)
+        vm.nextStep()
+        assertEquals(vm.uiState.value.pickupOptionsStep, vm.uiState.value.currentStep)
+        vm.nextStep() // Invalid lead time must be corrected on the preferences screen.
+        assertEquals(3, vm.uiState.value.currentStep)
+        vm.updateMedicationPickup(0) { it.copy(pickupReminderDaysBefore = 0) }
+        vm.nextStep()
+        assertEquals(4, vm.uiState.value.currentStep)
+        vm.goToStep(2)
+        vm.updateMedicationPickup(0) { it.copy(hasRecurringPickup = false) }
+        vm.nextStep()
+        assertEquals(3, vm.uiState.value.maxSteps)
+        assertEquals(vm.uiState.value.maxSteps, vm.uiState.value.currentStep)
+        assertEquals("Losartana", vm.uiState.value.medications.single().title)
+    }
     @Test fun editingKeepsRenewalAndPickupPreferences() = runTest {
         meds.items.value = listOf(MedicationItem("m", "Losartana", hasRecurringPickup = false, pickupReminderDaysBefore = 1))
         recipes.items.value = listOf(PrescriptionItem("p", "Receita", "", medicationIds = listOf("m"), renewalReminderEnabled = false, renewalReminderDaysBefore = 9))
