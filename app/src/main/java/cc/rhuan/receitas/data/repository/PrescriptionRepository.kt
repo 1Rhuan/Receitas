@@ -1,222 +1,69 @@
 package cc.rhuan.receitas.data.repository
 
-import cc.rhuan.receitas.data.local.dao.DoctorDao
-import cc.rhuan.receitas.data.local.dao.PrescriptionDao
-import cc.rhuan.receitas.data.local.entity.DoctorEntity
+import androidx.room.withTransaction
+import cc.rhuan.receitas.data.local.AppDatabase
 import cc.rhuan.receitas.data.local.entity.PrescriptionEntity
-import cc.rhuan.receitas.domain.model.PrescriptionItem
-import cc.rhuan.receitas.domain.model.PrescriptionType
-import java.time.LocalDate
+import cc.rhuan.receitas.domain.model.*
 import javax.inject.Inject
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
-import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.flow.*
 
 interface PrescriptionRepository {
     fun getPrescriptions(): Flow<List<PrescriptionItem>>
     suspend fun getPrescriptionById(id: String): PrescriptionItem?
-    suspend fun renewPrescription(id: String?, title: String?, message: String?, customDate: LocalDate = LocalDate.now())
     suspend fun addPrescription(prescription: PrescriptionItem)
     suspend fun updatePrescription(prescription: PrescriptionItem)
     suspend fun deletePrescription(id: String)
+    suspend fun archivePrescription(id: String, archived: Boolean)
 }
-
-class RoomPrescriptionRepository @Inject constructor(
-    private val prescriptionDao: PrescriptionDao,
-    private val doctorDao: DoctorDao
-) : PrescriptionRepository {
-
-    override fun getPrescriptions(): Flow<List<PrescriptionItem>> {
-        return combine(
-            prescriptionDao.getAllPrescriptions(),
-            doctorDao.getAllDoctors()
-        ) { prescriptions, doctors ->
-            val doctorMapById = doctors.associateBy { it.id }
-            val doctorMapByReg = doctors.filter { !it.registration.isNull_or_blank() }.associateBy { it.registration!! }
-
-            prescriptions.map { entity ->
-                val doctor = entity.doctorId?.let { idOrReg ->
-                    doctorMapById[idOrReg] ?: doctorMapByReg[idOrReg]
-                }
-                entity.toDomain(doctor)
-            }
-        }
+class RoomPrescriptionRepository @Inject constructor(private val database: AppDatabase) : PrescriptionRepository {
+    private val dao get() = database.prescriptionDao()
+    override fun getPrescriptions(): Flow<List<PrescriptionItem>> = combine(dao.getAllPrescriptions(), database.trackingDao().observeItems()) { recipes, items ->
+        recipes.map { it.toDomain(items.filter { item -> item.prescriptionId == it.id }.map { item -> PrescriptionMedication(item.medicationId, item.posology, item.quantity, item.titleSnapshot, item.dosageSnapshot, PharmaceuticalForm.valueOf(item.formSnapshot)) }) }
     }
-
-    override suspend fun getPrescriptionById(id: String): PrescriptionItem? {
-        val entity = prescriptionDao.getPrescriptionById(id) ?: return null
-        val doctor = entity.doctorId?.let { idOrReg ->
-            doctorDao.getDoctorById(idOrReg) ?: doctorDao.getAllDoctors().firstOrNull()?.find { it.registration == idOrReg }
-        }
-        return entity.toDomain(doctor)
+    override suspend fun getPrescriptionById(id: String): PrescriptionItem? = database.withTransaction {
+        dao.getPrescriptionById(id)?.toDomain(database.trackingDao().items(id).map { PrescriptionMedication(it.medicationId, it.posology, it.quantity, it.titleSnapshot, it.dosageSnapshot, PharmaceuticalForm.valueOf(it.formSnapshot)) })
     }
-
-    override suspend fun renewPrescription(id: String?, title: String?, message: String?, customDate: LocalDate) {
-        val prescriptions = getPrescriptions().firstOrNull() ?: emptyList()
-        prescriptions.forEach { prescription ->
-            val isMatching = (id != null && prescription.id == id) ||
-                (message?.contains(prescription.title, ignoreCase = true) == true) ||
-                (title?.contains(prescription.title, ignoreCase = true) == true)
-
-            if (isMatching) {
-                val updated = prescription.copy(
-                    issueDate = customDate,
-                    notes = "Receita renovada em ${customDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}"
-                )
-                updatePrescription(updated)
-            }
-        }
-    }
-
-    override suspend fun addPrescription(prescription: PrescriptionItem) {
-        prescriptionDao.insertPrescription(prescription.toEntity())
-    }
-
+    override suspend fun addPrescription(prescription: PrescriptionItem) { validate(prescription); dao.insertPrescription(prescription.toEntity()) }
     override suspend fun updatePrescription(prescription: PrescriptionItem) {
-        prescriptionDao.updatePrescription(prescription.toEntity(prescriptionDao.getPrescriptionById(prescription.id)))
+        validate(prescription)
+        val old = dao.getPrescriptionById(prescription.id) ?: throw BusinessRuleViolation("Receita não encontrada")
+        requireBusiness(old.state != "REPLACED") { "Uma receita substituída pertence ao histórico" }
+        dao.updatePrescription(prescription.toEntity(old))
     }
-
-    override suspend fun deletePrescription(id: String) {
-        prescriptionDao.deletePrescription(id)
-    }
-
-    private fun PrescriptionEntity.toDomain(doctor: DoctorEntity?) = PrescriptionItem(
-        id = id,
-        title = title,
-        specialty = doctor?.specialty ?: "",
-        doctorId = doctor?.id ?: doctorId,
-        doctorName = doctor?.name ?: "",
-        doctorRegistration = doctor?.registration,
-        issueDate = issueDate,
-        type = type,
-        customValidityDays = validityDays,
-        notes = notes,
-        medicationIds = medicationIds,
-        renewalReminderEnabled = renewalReminderEnabled,
-        renewalReminderDaysBefore = renewalReminderDaysBefore
-    )
-
-    private fun PrescriptionItem.toEntity(existing: PrescriptionEntity? = null) = PrescriptionEntity(
-        id = id,
-        title = title,
-        type = type,
-        validityDays = customValidityDays ?: type?.defaultValidityDays ?: 180,
-        issueDate = issueDate,
-        renewalReminderEnabled = renewalReminderEnabled,
-        renewalReminderDaysBefore = renewalReminderDaysBefore,
-        doctorId = doctorId,
-        medicationIds = medicationIds,
-        notes = notes,
-        photoUri = existing?.photoUri
-    )
-}
-
-private fun String?.isNull_or_blank(): Boolean {
-    return this == null || this.trim().isEmpty()
-}
-
-class FakePrescriptionRepository : PrescriptionRepository {
-    companion object {
-        private val _prescriptions = MutableStateFlow(
-            listOf(
-                PrescriptionItem(
-                    id = "1",
-                    title = "Receita Cardiologia",
-                    specialty = "Cardiologista",
-                    doctorName = "Dr. Carlos Eduardo",
-                    doctorRegistration = "CRM/SP 123456",
-                    type = PrescriptionType.PFPB,
-                    issueDate = LocalDate.now().minusDays(175),
-                    notes = "Uso contínuo de anti-hipertensivo e estatina.",
-                    medicationIds = listOf("2", "5"),
-                ),
-                PrescriptionItem(
-                    id = "2",
-                    title = "Tratamento Dermatológico",
-                    specialty = "Dermatologista",
-                    doctorName = "Dra. Ana Paula",
-                    doctorRegistration = "CRM/SP 654321",
-                    type = PrescriptionType.SPECIAL_CONTROL,
-                    issueDate = LocalDate.now().minusDays(28),
-                    notes = "Pomada dermatológica à noite.",
-                    medicationIds = listOf("3"),
-                ),
-                PrescriptionItem(
-                    id = "3",
-                    title = "Tratamento de Infecção",
-                    specialty = "Clínico Geral",
-                    doctorName = "Dr. Marcos Vinicius",
-                    doctorRegistration = "CRM/RJ 987654",
-                    type = PrescriptionType.ANTIMICROBIAL,
-                    issueDate = LocalDate.now().minusDays(2),
-                    notes = "Tratamento para gastrite e antibiótico.",
-                    medicationIds = listOf("1", "4"),
-                ),
-                PrescriptionItem(
-                    id = "4",
-                    title = "Receita Pediatria",
-                    specialty = "Pediatra",
-                    doctorName = "Dra. Camila Santos",
-                    doctorRegistration = "CRM/MG 456789",
-                    type = PrescriptionType.SUS_BASIC,
-                    issueDate = LocalDate.now().minusDays(30),
-                    notes = "Xarope para tosse.",
-                    medicationIds = emptyList(),
-                ),
-                PrescriptionItem(
-                    id = "5",
-                    title = "Avaliação Psiquiátrica",
-                    specialty = "Psiquiatra",
-                    doctorName = "Dr. Lucas Mendes",
-                    doctorRegistration = "CRM/SP 112233",
-                    type = PrescriptionType.SPECIAL_CONTROL,
-                    issueDate = LocalDate.now().minusDays(35),
-                    notes = "Controle de ansiedade.",
-                    medicationIds = emptyList(),
-                ),
-            )
-        )
-    }
-
-    override fun getPrescriptions(): Flow<List<PrescriptionItem>> = _prescriptions.asStateFlow()
-
-    override suspend fun getPrescriptionById(id: String): PrescriptionItem? {
-        return _prescriptions.value.find { it.id == id }
-    }
-
-    override suspend fun renewPrescription(id: String?, title: String?, message: String?, customDate: LocalDate) {
-        _prescriptions.update { list ->
-            list.map { prescription ->
-                val isMatching = (id != null && prescription.id == id) ||
-                    (message?.contains(prescription.title, ignoreCase = true) == true) ||
-                    (title?.contains(prescription.title, ignoreCase = true) == true)
-
-                if (isMatching) {
-                    prescription.copy(
-                        issueDate = customDate,
-                        notes = "Receita renovada em ${customDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
-                    )
-                } else prescription
-            }
+    override suspend fun archivePrescription(id: String, archived: Boolean) = database.withTransaction {
+        val p = dao.getPrescriptionById(id) ?: throw BusinessRuleViolation("Receita não encontrada")
+        requireBusiness(p.state != "REPLACED") { "Esta receita já foi substituída" }
+        dao.updatePrescription(p.copy(state = if (archived) "ARCHIVED" else "ACTIVE"))
+        database.trackingDao().archiveForPrescription(id, archived)
+        if (archived) {
+            database.resolveReminders(id, "PRESCRIPTION", "OBSOLETE", "Receita arquivada")
+            database.trackingDao().observeTracking().first().filter { it.prescriptionId == id }.forEach { database.resolveReminders(it.medicationId, "PICKUP", "OBSOLETE", "Acompanhamento arquivado") }
         }
     }
-
-    override suspend fun addPrescription(prescription: PrescriptionItem) {
-        _prescriptions.update { it + prescription }
+    override suspend fun deletePrescription(id: String) = database.withTransaction {
+        requireBusiness(dao.getPrescriptionById(id) != null) { "Receita não encontrada" }
+        database.resolveReminders(id, "PRESCRIPTION", "OBSOLETE", "Receita excluída")
+        database.trackingDao().unlink(id)
+        dao.deletePrescription(id)
     }
-
-    override suspend fun updatePrescription(prescription: PrescriptionItem) {
-        _prescriptions.update { list ->
-            list.map { if (it.id == prescription.id) prescription else it }
-        }
+    private fun validate(p: PrescriptionItem) {
+        requireBusiness(p.title.isNotBlank())
+        requireBusiness(!p.issueDate.isAfter(java.time.LocalDate.now())) { "A emissão não pode estar no futuro" }
+        requireBusiness(!p.expirationDate.isBefore(p.issueDate)) { "Vencimento anterior à emissão" }
+        requireBusiness(p.validityDurationDays in 1..3650)
+        requireBusiness(!p.renewalReminderEnabled || p.renewalReminderDaysBefore in 0..p.validityDurationDays)
     }
-
-    override suspend fun deletePrescription(id: String) {
-        _prescriptions.update { list -> list.filter { it.id != id } }
-    }
+    private fun PrescriptionItem.toEntity(old: PrescriptionEntity? = null) = PrescriptionEntity(
+        id = id, title = title, type = type, validityDays = validityDurationDays, issueDate = issueDate,
+        renewalReminderEnabled = renewalReminderEnabled, renewalReminderDaysBefore = renewalReminderDaysBefore,
+        doctorId = doctorId, medicationIds = medicationIds, notes = notes, photoUri = old?.photoUri,
+        state = state.name, previousPrescriptionId = previousPrescriptionId, doctorNameSnapshot = doctorName,
+        doctorRegistrationSnapshot = doctorRegistration, doctorSpecialtySnapshot = specialty,
+        validityOrigin = validityOrigin, expiresOn = expirationDate)
 }
+fun PrescriptionEntity.toDomain(items: List<PrescriptionMedication> = emptyList()) = PrescriptionItem(
+    id = id, title = title, specialty = doctorSpecialtySnapshot, doctorId = doctorId,
+    doctorName = doctorNameSnapshot, doctorRegistration = doctorRegistrationSnapshot, issueDate = issueDate,
+    type = type, customValidityDays = validityDays, notes = notes, medicationIds = items.map { it.medicationId },
+    items = items, renewalReminderEnabled = renewalReminderEnabled, renewalReminderDaysBefore = renewalReminderDaysBefore,
+    state = RecordState.valueOf(state), previousPrescriptionId = previousPrescriptionId, expiresOn = expiresOn, validityOrigin = validityOrigin)
