@@ -15,5 +15,10 @@ data class NotificationEntity(
     val isRead: Boolean = false,
     val actionTaken: String? = null,
     val targetId: String? = null,
-    val createdAtMillis: Long = System.currentTimeMillis()
+    val createdAtMillis: Long = System.currentTimeMillis(),
+    val phase: String? = null,
+    val targetType: String? = null,
+    val cycleKey: String? = null,
+    val resolvedAt: Long? = null,
+    val resolutionReason: String? = null
 )

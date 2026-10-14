@@ -14,6 +14,7 @@ data class MedicationEntity(
     val activeIngredient: String? = null,
     val form: PharmaceuticalForm = PharmaceuticalForm.TABLET,
     val dosage: String = "",
+    // Retired columns are preserved for migration/history only; current data uses normalized tables.
     val prescribedPosology: String = "",
     val prescribedQuantity: String = "",
     // Origem e Retirada

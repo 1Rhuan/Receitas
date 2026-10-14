@@ -16,12 +16,10 @@ interface DoctorDao {
     @Query("SELECT * FROM doctors WHERE id = :id")
     suspend fun getDoctorById(id: String): DoctorEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertDoctor(doctor: DoctorEntity)
 
     @Update
     suspend fun updateDoctor(doctor: DoctorEntity)
 
-    @Query("DELETE FROM doctors WHERE id = :id")
-    suspend fun deleteDoctor(id: String)
 }
