@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.ui.feature.home.components
 
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -64,7 +65,7 @@ fun HomeHeader(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = "Calendário",
+                        contentDescription = stringResource(R.string.ui_calendario),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
@@ -97,7 +98,7 @@ fun HomeHeader(
                 ) {
                     Icon(
                         painter = painterResource(id = if (notificationCount > 0) R.drawable.ic_bell_bing else R.drawable.ic_bell),
-                        contentDescription = "Notificações",
+                        contentDescription = stringResource(R.string.notifications_title),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )

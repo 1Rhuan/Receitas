@@ -6,14 +6,12 @@ import androidx.lifecycle.viewModelScope
 import cc.rhuan.receitas.data.repository.MedicationRepository
 import cc.rhuan.receitas.data.repository.NotificationRepository
 import cc.rhuan.receitas.data.repository.PrescriptionRepository
+import cc.rhuan.receitas.domain.model.message
 import cc.rhuan.receitas.domain.model.MedicationItem
-import cc.rhuan.receitas.domain.model.NotificationAction
 import cc.rhuan.receitas.domain.model.NotificationItem
 import cc.rhuan.receitas.domain.model.PrescriptionItem
-import cc.rhuan.receitas.ui.feature.home.components.TrackingItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -73,7 +71,7 @@ class HomeViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        errorMessage = e.message ?: "Erro ao carregar dados do início",
+                        errorMessage = "Não foi possível carregar os acompanhamentos.",
                     )
                 }
             }
@@ -88,69 +86,12 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(selectedDate = date) }
     }
 
-    fun onQuickAction(item: TrackingItem) {
+    fun registerPickup(id: String, date: LocalDate, confirmedEarly: Boolean, expectedCycle: LocalDate?) {
         viewModelScope.launch {
-            when (item) {
-                is TrackingItem.Prescription -> {
-                    prescriptionRepository.renewPrescription(item.targetId, item.title, null)
-                    _uiState.update { it.copy(snackbarMessage = "Receita marcada como renovada!") }
-                }
-                is TrackingItem.Medication -> {
-                    medicationRepository.replenishStock(item.targetId, item.title, null)
-                    _uiState.update { it.copy(snackbarMessage = "Medicamento marcado como retirado!") }
-                }
-            }
-        }
-    }
-
-    fun onSecondaryActionWithDate(item: TrackingItem, customDate: LocalDate) {
-        viewModelScope.launch {
-            val dateStr = customDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-            when (item) {
-                is TrackingItem.Prescription -> {
-                    prescriptionRepository.renewPrescription(item.targetId, item.title, null, customDate)
-                    _uiState.update { it.copy(snackbarMessage = "Renovação registrada em $dateStr!") }
-                }
-                is TrackingItem.Medication -> {
-                    medicationRepository.replenishStock(item.targetId, item.title, null, customDate)
-                    _uiState.update { it.copy(snackbarMessage = "Retirada registrada em $dateStr!") }
-                }
-            }
-        }
-    }
-
-    fun performNotificationAction(id: String, action: NotificationAction) {
-        viewModelScope.launch {
-            val targetNotification = _uiState.value.notifications.find { it.id == id }
-            val targetId = targetNotification?.targetId
-            val title = targetNotification?.title
-            val messageText = targetNotification?.message
-
-            when (action) {
-                NotificationAction.RENEW_PRESCRIPTION -> {
-                    prescriptionRepository.renewPrescription(targetId, title, messageText)
-                }
-
-                NotificationAction.REPLENISH_STOCK -> {
-                    medicationRepository.replenishStock(targetId, title, messageText)
-                }
-
-                else -> {
-                    // MARK_AS_READ, etc.
-                }
-            }
-
-            val message = notificationRepository.performAction(id, action)
-            if (message != null) {
-                _uiState.update { it.copy(snackbarMessage = message) }
-            }
-        }
-    }
-
-    fun dismissNotification(id: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(dismissedAlerts = it.dismissedAlerts + id) }
-            notificationRepository.markAsRead(id)
+            try { val result = medicationRepository.registerPickup(id, date, confirmedEarly, expectedCycle)
+                _uiState.update { it.copy(snackbarMessage = result.message()) }
+            } catch (e: CancellationException) { throw e }
+            catch (_: Exception) { _uiState.update { it.copy(snackbarMessage = "Não foi possível registrar a retirada.") } }
         }
     }
 

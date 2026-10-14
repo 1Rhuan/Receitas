@@ -12,11 +12,6 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlin.math.abs
 
-enum class HomeItemType {
-    PRESCRIPTION,
-    MEDICATION
-}
-
 enum class DayEventPriority(val color: Color) {
     RED(Color(0xFFB83249)),
     ORANGE(Color(0xFFF97316)),
@@ -25,22 +20,19 @@ enum class DayEventPriority(val color: Color) {
 
 data class HomeStatusLabels(
     val medicationRefillToday: String = "Retirada hoje",
-    val medicationRefillUpcoming: String = "Retirada em %d dias",
-    val medicationRefillPending: String = "Retirada pendente",
+    val medicationRefillDelayedDay: String = "Retirada pendente há %d dia",
     val medicationRefillDelayedDays: String = "Retirada pendente há %d dias",
     val prescriptionExpiringToday: String = "Vence hoje",
-    val prescriptionExpiringDays: String = "Vence em %d dias",
     val prescriptionExpired: String = "Vencida",
+    val prescriptionExpiredDay: String = "Venceu há %d dia",
     val prescriptionExpiredDays: String = "Venceu há %d dias",
-    val prescriptionValid: String = "Válida",
-    val actionRenewPrescription: String = "Marcar como renovada",
-    val actionRegisterRenewal: String = "Registrar renovação",
-    val actionPickUpMedication: String = "Marcar como retirado",
+    val actionRenewPrescription: String = "Registrar nova receita",
+    val actionRegisterRenewal: String = "Registrar nova receita",
+    val actionPickUpMedication: String = "Registrar retirada",
     val actionRegisterPickup: String = "Registrar retirada",
 )
 
 data class HomeUiState(
-    val userName: String = "Rhuan",
     val searchQuery: String = "",
     val selectedDate: LocalDate = LocalDate.now(),
     val prescriptions: List<PrescriptionItem> = emptyList(),
@@ -50,12 +42,9 @@ data class HomeUiState(
     val unreadNotificationsCount: Int = 0,
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
-    val dismissedAlerts: Set<String> = emptySet(),
     val errorMessage: String? = null,
     val snackbarMessage: String? = null,
 ) {
-    val activeNotifications: List<NotificationItem>
-        get() = notifications.filter { !it.isRead && (it.id !in dismissedAlerts) }
 
     val isAppEmpty: Boolean
         get() = prescriptions.isEmpty() && medicamentos.isEmpty()
@@ -72,7 +61,7 @@ data class HomeUiState(
 
             if (isTodaySelected) {
                 // 1. QUANDO HOJE ESTIVER SELECIONADO:
-                for (prescription in prescriptions) {
+                for (prescription in prescriptions.filter { it.isActive }) {
                     val expirationDate = prescription.expirationDate
                     val daysUntilExpiration = ChronoUnit.DAYS.between(today, expirationDate).toInt()
 
@@ -85,7 +74,7 @@ data class HomeUiState(
 
                         val (status, statusText, priority) = if (daysUntilExpiration < 0) {
                             val absDays = abs(daysUntilExpiration)
-                            val statusStr = if (absDays > 0) String.format(statusLabels.prescriptionExpiredDays, absDays) else statusLabels.prescriptionExpired
+                            val statusStr = if (absDays > 0) String.format(if (absDays == 1) statusLabels.prescriptionExpiredDay else statusLabels.prescriptionExpiredDays, absDays) else statusLabels.prescriptionExpired
                             Triple(TrackingStatus.EXPIRED, statusStr, 1)
                         } else {
                             Triple(TrackingStatus.EXPIRES_TODAY, statusLabels.prescriptionExpiringToday, 3)
@@ -105,7 +94,7 @@ data class HomeUiState(
                                 status = status,
                                 statusLabel = statusText,
                                 formattedDateText = dateFormattedText,
-                                prescriberName = if (prescription.doctorName.isNotBlank()) "Dr(a). ${prescription.doctorName}" else null,
+                                prescriberName = if (prescription.doctorName.isNotBlank()) prescription.doctorName else null,
                                 userNote = prescription.notes?.takeIf { it.isNotBlank() },
                                 primaryActionText = statusLabels.actionRenewPrescription,
                                 secondaryActionText = statusLabels.actionRegisterRenewal,
@@ -116,8 +105,8 @@ data class HomeUiState(
                     }
                 }
 
-                for (med in medicamentos) {
-                    val nextRefill = med.nextAvailableRefillDate ?: today
+                for (med in medicamentos.filter { it.hasRecurringPickup && !it.trackingArchived }) {
+                    val nextRefill = med.nextAvailableRefillDate ?: continue
                     val daysUntilRefill = ChronoUnit.DAYS.between(today, nextRefill).toInt()
 
                     if (daysUntilRefill <= 0) {
@@ -125,7 +114,7 @@ data class HomeUiState(
 
                         val (status, statusText, priority) = if (daysUntilRefill < 0) {
                             val absDays = abs(daysUntilRefill)
-                            val statusStr = String.format(statusLabels.medicationRefillDelayedDays, absDays)
+                            val statusStr = String.format(if (absDays == 1) statusLabels.medicationRefillDelayedDay else statusLabels.medicationRefillDelayedDays, absDays)
                             Triple(TrackingStatus.PICKUP_OVERDUE, statusStr, 2)
                         } else {
                             Triple(TrackingStatus.PICKUP_TODAY, statusLabels.medicationRefillToday, 4)
@@ -134,10 +123,10 @@ data class HomeUiState(
                         val lastRefillText = if (med.lastRefillDate != null) {
                             "Última retirada: ${med.lastRefillDate.format(shortDateFormatter)}"
                         } else {
-                            "Última retirada: Não registrada"
+                            "Última retirada: não registrada"
                         }
 
-                        val stockVal = med.quantity.takeIf { it.isNotBlank() }?.let { "Reposição: $it" }
+                        val stockVal = med.quantity.takeIf { it.isNotBlank() }?.let { "Quantidade por retirada: $it" }
 
                         val dateFormattedText = if (daysUntilRefill == 0) {
                             "Retirada prevista para hoje"
@@ -189,7 +178,7 @@ data class HomeUiState(
                                 status = status,
                                 statusLabel = statusText,
                                 formattedDateText = "Vencimento: ${selectedDate.format(fullDateFormatter)}",
-                                prescriberName = if (prescription.doctorName.isNotBlank()) "Dr(a). ${prescription.doctorName}" else null,
+                                prescriberName = if (prescription.doctorName.isNotBlank()) prescription.doctorName else null,
                                 userNote = prescription.notes?.takeIf { it.isNotBlank() },
                                 primaryActionText = statusLabels.actionRenewPrescription,
                                 secondaryActionText = statusLabels.actionRegisterRenewal,
@@ -207,9 +196,9 @@ data class HomeUiState(
                         val lastRefillText = if (med.lastRefillDate != null) {
                             "Última retirada: ${med.lastRefillDate.format(shortDateFormatter)}"
                         } else {
-                            "Última retirada: Não registrada"
+                            "Última retirada: não registrada"
                         }
-                        val stockVal = med.quantity.takeIf { it.isNotBlank() }?.let { "Reposição: $it" }
+                        val stockVal = med.quantity.takeIf { it.isNotBlank() }?.let { "Quantidade por retirada: $it" }
 
                         val isDelayedInPast = selectedDate.isBefore(today)
                         val (status, statusText) = when {
@@ -270,7 +259,7 @@ data class HomeUiState(
                             status = TrackingStatus.EXPIRES_SOON,
                             statusLabel = "Em breve",
                             formattedDateText = "${expirationDate.format(shortDateFormatter)} · Vencimento da receita",
-                            prescriberName = if (prescription.doctorName.isNotBlank()) "Dr(a). ${prescription.doctorName}" else null,
+                            prescriberName = if (prescription.doctorName.isNotBlank()) prescription.doctorName else null,
                             userNote = prescription.notes?.takeIf { it.isNotBlank() },
                             primaryActionText = statusLabels.actionRenewPrescription,
                             secondaryActionText = statusLabels.actionRegisterRenewal,
@@ -289,7 +278,7 @@ data class HomeUiState(
                     val titleText = if (med.dosage.isNotBlank()) "${med.title} ${med.dosage}" else med.title
 
                     val contextTag = if (daysAway == 1) "Retirada em 1 dia" else "Retirada em $daysAway dias"
-                    val stockVal = med.quantity.takeIf { it.isNotBlank() }?.let { "Reposição: $it" }
+                    val stockVal = med.quantity.takeIf { it.isNotBlank() }?.let { "Quantidade por retirada: $it" }
 
                     items.add(
                         nextRefill to TrackingItem.Medication(
@@ -314,8 +303,6 @@ data class HomeUiState(
             return items.sortedBy { it.first }.take(3).map { it.second }
         }
 
-    val unifiedTrackingItems: List<TrackingItem>
-        get() = mainTrackingItems + futureTrackingItems
 
     fun getEventIndicatorForDate(date: LocalDate, today: LocalDate = LocalDate.now()): DayEventPriority? {
         var hasRed = false

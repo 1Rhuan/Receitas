@@ -1,5 +1,9 @@
 package cc.rhuan.receitas.ui.feature.home
 
+import cc.rhuan.receitas.R
+
+import androidx.compose.ui.res.stringResource
+
 import android.app.DatePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,14 +40,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import cc.rhuan.receitas.domain.model.MedicationItem
 import cc.rhuan.receitas.domain.model.PrescriptionItem
 import cc.rhuan.receitas.ui.feature.home.components.DateSlider
@@ -60,9 +61,13 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun HomeScreen(
+fun HomePresentation(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = viewModel(),
+    uiState: HomeUiState,
+    onDateSelected: (LocalDate) -> Unit,
+    registerPickup: (String, LocalDate, Boolean, LocalDate?) -> Unit,
+    dismissSnackbar: () -> Unit,
+    refreshData: () -> Unit,
     onPrescriptionClick: (PrescriptionItem) -> Unit = {},
     onMedicationClick: (MedicationItem) -> Unit = {},
     onNotificationClick: () -> Unit = {},
@@ -70,8 +75,12 @@ fun HomeScreen(
     onNavigateToMedications: () -> Unit = {},
     onCreatePrescription: () -> Unit = {},
     onCreateMedication: () -> Unit = {},
+    onRenewPrescription: (String) -> Unit = {},
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var pendingPickup by remember { mutableStateOf<Pair<MedicationItem, LocalDate>?>(null) }
+    pendingPickup?.let { (med, date) ->
+        cc.rhuan.receitas.ui.components.PickupDialog(med, date, onDismiss = { pendingPickup = null }) { chosen, early, cycle -> registerPickup(med.id, chosen, early, cycle) }
+    }
 
     HomeScreenContent(
         uiState = uiState,
@@ -82,11 +91,17 @@ fun HomeScreen(
         onNavigateToMedications = onNavigateToMedications,
         onCreatePrescription = onCreatePrescription,
         onCreateMedication = onCreateMedication,
-        onDateSelected = viewModel::onDateSelected,
-        onQuickAction = viewModel::onQuickAction,
-        onSecondaryActionWithDate = viewModel::onSecondaryActionWithDate,
-        onDismissSnackbar = viewModel::dismissSnackbar,
-        onRefresh = viewModel::refreshData,
+        onDateSelected = onDateSelected,
+        onQuickAction = { item -> when (item) {
+            is TrackingItem.Prescription -> onRenewPrescription(item.targetId)
+            is TrackingItem.Medication -> uiState.medicamentos.find { it.id == item.targetId }?.let { pendingPickup = it to LocalDate.now() }
+        } },
+        onSecondaryActionWithDate = { item, date -> when (item) {
+            is TrackingItem.Prescription -> onRenewPrescription(item.targetId)
+            is TrackingItem.Medication -> uiState.medicamentos.find { it.id == item.targetId }?.let { pendingPickup = it to date }
+        } },
+        onDismissSnackbar = dismissSnackbar,
+        onRefresh = refreshData,
         notificationCount = uiState.unreadNotificationsCount,
         modifier = modifier,
     )
@@ -117,10 +132,11 @@ fun HomeScreenContent(
     var showHeaderDatePicker by remember { mutableStateOf(false) }
 
     val portugueseLocale = remember { Locale.forLanguageTag("pt-BR") }
-    val headerTitle = remember(uiState.selectedDate) {
+    val todayLabel = stringResource(R.string.today)
+    val headerTitle = remember(uiState.selectedDate, todayLabel) {
         val today = LocalDate.now()
         if (uiState.selectedDate == today) {
-            "Hoje"
+            todayLabel
         } else if (uiState.selectedDate.year == today.year) {
             uiState.selectedDate.format(DateTimeFormatter.ofPattern("d 'de' MMMM", portugueseLocale))
         } else {
@@ -166,6 +182,7 @@ fun HomeScreenContent(
             now.monthValue - 1,
             now.dayOfMonth
         ).apply {
+            datePicker.maxDate = System.currentTimeMillis()
             setOnCancelListener { itemForDatePicker = null }
             setOnDismissListener { itemForDatePicker = null }
         }.show()
@@ -185,12 +202,12 @@ fun HomeScreenContent(
                 icon = {
                     Icon(
                         imageVector = Icons.Default.Add,
-                        contentDescription = "Nova Receita"
+                        contentDescription = stringResource(R.string.action_new_prescription)
                     )
                 },
                 text = {
                     Text(
-                        text = "Nova Receita",
+                        text = stringResource(R.string.action_new_prescription),
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp
                     )
@@ -248,11 +265,7 @@ fun HomeScreenContent(
                     }
 
                     uiState.errorMessage != null -> {
-                        Text(
-                            text = uiState.errorMessage,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
+                        cc.rhuan.receitas.ui.components.LoadErrorPanel(uiState.errorMessage, onRefresh, Modifier.align(Alignment.Center))
                     }
 
                     uiState.isAppEmpty -> {
@@ -299,7 +312,7 @@ fun HomeScreenContent(
                                                 }
                                             },
                                             onPrimaryAction = { item -> onQuickAction(item) },
-                                            onSecondaryAction = { item -> itemForDatePicker = item }
+                                            onSecondaryAction = { item -> if (item is TrackingItem.Prescription) onQuickAction(item) else itemForDatePicker = item }
                                         )
                                     }
                                 }
@@ -369,10 +382,6 @@ private fun HomeScreenPreview() {
                         dosage = "850 mg",
                         quantity = "2 cx",
                         prescribedPosology = "1 comprimido ao dia",
-                        category = "Uso Contínuo",
-                        isAvailable = true,
-                        stockQuantity = 60,
-                        minStockThreshold = 5,
                         lastRefillDate = LocalDate.now().minusDays(30),
                         instructions = "Tomar após o almoço."
                     ),

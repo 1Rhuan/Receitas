@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.ui.feature.home.components
 
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -183,7 +184,7 @@ fun MedicationTrackingCard(
     modifier: Modifier = Modifier
 ) {
     TrackingCard(
-        type = "Medicamento",
+        type = stringResource(R.string.label_medication),
         status = item.status,
         statusLabel = item.statusLabel,
         title = item.title,
@@ -225,7 +226,7 @@ fun MedicationTrackingCard(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_box),
-                        contentDescription = "Quantidade por reposição",
+                        contentDescription = stringResource(R.string.ui_quantidade_por_retirada),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
@@ -309,7 +310,7 @@ fun PrescriptionTrackingCard(
     modifier: Modifier = Modifier
 ) {
     TrackingCard(
-        type = "Receita",
+        type = stringResource(R.string.label_prescription),
         status = item.status,
         statusLabel = item.statusLabel,
         title = item.title,
@@ -339,7 +340,7 @@ fun PrescriptionTrackingCard(
                     verticalArrangement = Arrangement.spacedBy(1.dp)
                 ) {
                     Text(
-                        text = "Prescritor",
+                        text = stringResource(R.string.ui_prescritor),
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,

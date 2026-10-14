@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.ui.feature.home.components
 
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +25,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -86,7 +87,7 @@ fun NextEventHeader(
             modifier = Modifier.size(18.dp)
         )
         Text(
-            text = "Próximos eventos",
+            text = stringResource(R.string.ui_proximos_eventos),
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
@@ -98,7 +99,7 @@ fun NextEventHeader(
             color = MaterialTheme.colorScheme.outlineVariant
         ) {
             Text(
-                text = "Em breve",
+                text = stringResource(R.string.coming_soon),
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 10.sp,
@@ -118,9 +119,9 @@ fun NextEventCard(
     modifier: Modifier = Modifier
 ) {
     val iconRes = if (item is TrackingItem.Prescription) R.drawable.ic_bold_document_medicine else R.drawable.ic_bold_pills
-    val typeLabel = if (item is TrackingItem.Prescription) "Receita" else "Medicamento"
+    val typeLabel = if (item is TrackingItem.Prescription) stringResource(R.string.label_prescription) else stringResource(R.string.label_medication)
     val dateStr = item.rawDate?.format(DateTimeFormatter.ofPattern("dd/MM")) ?: ""
-    val eventLabel = if (item is TrackingItem.Prescription) "Vencimento da receita" else "Retirada de medicamento"
+    val eventLabel = if (item is TrackingItem.Prescription) stringResource(R.string.ui_vencimento_da_receita) else stringResource(R.string.ui_retirada_de_medicamento)
 
     Card(
         modifier = modifier
@@ -229,7 +230,7 @@ fun NextEventCard(
                         )
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Ir para a data",
+                            contentDescription = stringResource(R.string.ui_ir_para_a_data),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(12.dp)
                         )

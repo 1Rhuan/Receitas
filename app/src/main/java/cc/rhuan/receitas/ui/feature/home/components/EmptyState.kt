@@ -1,5 +1,9 @@
 package cc.rhuan.receitas.ui.feature.home.components
 
+import cc.rhuan.receitas.R
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -128,7 +131,7 @@ fun EmptyDayState(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "Nada programado para este dia",
+                    text = stringResource(R.string.ui_nada_programado_para_este_dia),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
@@ -136,7 +139,7 @@ fun EmptyDayState(
                     )
                 )
                 Text(
-                    text = "Não há retiradas ou vencimentos para a data selecionada.",
+                    text = stringResource(R.string.ui_nao_ha_retiradas_ou_vencimentos_para_a_data_selecionada),
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -158,8 +161,8 @@ fun EmptyHomeState(
         contentAlignment = Alignment.Center
     ) {
         EmptyState(
-            title = "Nenhum acompanhamento cadastrado",
-            description = "Adicione um medicamento ou uma receita para começar a gerenciar seus lembretes e retiradas.",
+            title = stringResource(R.string.ui_nenhum_acompanhamento_cadastrado),
+            description = stringResource(R.string.ui_adicione_um_medicamento_ou_uma_receita_para_comecar_a_gerenciar_seus_lembre),
             icon = {
                 Box(
                     modifier = Modifier
@@ -195,7 +198,7 @@ fun EmptyHomeState(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Adicionar receita",
+                        text = stringResource(R.string.ui_adicionar_receita),
                         style = MaterialTheme.typography.labelLarge.copy(
                             fontWeight = FontWeight.Bold
                         )
@@ -217,7 +220,7 @@ fun EmptyHomeState(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Adicionar medicamento",
+                        text = stringResource(R.string.ui_adicionar_medicamento),
                         style = MaterialTheme.typography.labelLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
