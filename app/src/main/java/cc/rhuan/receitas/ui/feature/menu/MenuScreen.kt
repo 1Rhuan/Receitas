@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Card
+import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -48,7 +48,7 @@ fun MenuScreen(
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = Color(0xFFE8ECEF),
+        color = MaterialTheme.colorScheme.background,
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -65,13 +65,13 @@ fun MenuScreen(
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
                     ),
-                    color = Color(0xFF333846),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "Opções e configurações do seu aplicativo",
                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                    color = Color(0xFF6C7280),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -89,12 +89,12 @@ fun MenuScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                             ),
-                            color = Color(0xFF535A6B),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                            shape = MaterialTheme.shapes.large,
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         ) {
                             Column {
                                 MenuItemRow(
@@ -103,14 +103,14 @@ fun MenuScreen(
                                     subtitle = "Rhuan - Dados pessoais",
                                     onClick = {},
                                 )
-                                HorizontalDivider(color = Color(0xFFE0E4EA), thickness = 1.dp)
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                                 MenuItemRow(
                                     icon = Icons.Default.Notifications,
                                     title = "Notificações",
                                     subtitle = "Ver central de avisos e lembretes",
                                     onClick = onNavigateToNotifications,
                                 )
-                                HorizontalDivider(color = Color(0xFFE0E4EA), thickness = 1.dp)
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                                 MenuItemRow(
                                     icon = Icons.Default.Settings,
                                     title = "Configurações",
@@ -131,12 +131,12 @@ fun MenuScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                             ),
-                            color = Color(0xFF535A6B),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                            shape = MaterialTheme.shapes.large,
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         ) {
                             Column {
                                 MenuItemRow(
@@ -145,7 +145,7 @@ fun MenuScreen(
                                     subtitle = "Perguntas frequentes e suporte",
                                     onClick = {},
                                 )
-                                HorizontalDivider(color = Color(0xFFE0E4EA), thickness = 1.dp)
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                                 MenuItemRow(
                                     icon = R.drawable.ic_info_circle,
                                     title = "Sobre o Receitas",
@@ -178,7 +178,7 @@ private fun MenuItemRow(
     ) {
         Surface(
             shape = RoundedCornerShape(10.dp),
-            color = Color(0xFFF1F3F7),
+            color = MaterialTheme.colorScheme.surfaceContainer,
             modifier = Modifier.size(40.dp),
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -210,20 +210,20 @@ private fun MenuItemRow(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,
                 ),
-                color = Color(0xFF333846),
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF6C7280),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = Color(0xFF8B93A7),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

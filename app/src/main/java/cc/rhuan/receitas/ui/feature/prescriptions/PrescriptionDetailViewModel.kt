@@ -80,7 +80,7 @@ class PrescriptionDetailViewModel @Inject constructor(
     fun replenishMedication(medicationId: String) {
         viewModelScope.launch {
             medicationRepository.replenishStock(medicationId, null, null)
-            _uiState.update { it.copy(actionMessage = "Estoque do medicamento atualizado!") }
+            _uiState.update { it.copy(actionMessage = "Retirada do medicamento registrada!") }
         }
     }
 

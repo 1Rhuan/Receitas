@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.ui.feature.notifications
 
+import cc.rhuan.receitas.ui.theme.AppPalette
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -35,7 +37,7 @@ import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -148,7 +150,7 @@ fun NotificationsScreenContent(
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = Color(0xFFE8ECEF),
+        color = MaterialTheme.colorScheme.background,
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -177,7 +179,7 @@ fun NotificationsScreenContent(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 24.sp,
                                 ),
-                                color = Color(0xFF333846),
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
 
                             if (uiState.unreadCount > 0) {
@@ -222,7 +224,7 @@ fun NotificationsScreenContent(
                                     Icon(
                                         imageVector = Icons.Default.ClearAll,
                                         contentDescription = stringResource(R.string.clear_all_notifications),
-                                        tint = Color(0xFF6C7280),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             }
@@ -237,7 +239,7 @@ fun NotificationsScreenContent(
                         Text(
                             text = stringResource(R.string.notifications_subtitle),
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                            color = Color(0xFF6C7280),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 2.dp),
                         )
                     }
@@ -274,17 +276,17 @@ fun NotificationsScreenContent(
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                                     selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                    containerColor = Color.White,
-                                    labelColor = Color(0xFF535A6B),
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 ),
                                 border = FilterChipDefaults.filterChipBorder(
                                     enabled = true,
                                     selected = isSelected,
-                                    borderColor = Color(0xFFD0D5DD),
+                                    borderColor = MaterialTheme.colorScheme.outlineVariant,
                                     selectedBorderColor = Color.Transparent,
                                     borderWidth = 1.dp,
                                 ),
-                                shape = RoundedCornerShape(20.dp),
+                                shape = MaterialTheme.shapes.large,
                             )
                         }
                     }
@@ -363,8 +365,8 @@ fun NotificationsScreenContent(
             ) { snackbarData ->
                 Snackbar(
                     snackbarData = snackbarData,
-                    containerColor = Color(0xFF333846),
-                    contentColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.onSurface,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                     shape = RoundedCornerShape(12.dp),
                 )
             }
@@ -381,11 +383,11 @@ private fun NotificationCard(
     modifier: Modifier = Modifier,
 ) {
     val (iconRes, iconColor, containerColor, categoryLabel) = when (item.phase) {
-        ReminderPhase.EXPIRED -> Quadruple(R.drawable.ic_bold_document_medicine, Color(0xFFD32F2F), Color(0xFFFFEBEE), "RECEITA VENCIDA")
-        ReminderPhase.EXPIRES_TODAY -> Quadruple(R.drawable.ic_bold_document_medicine, Color(0xFFD97706), Color(0xFFFFF3E0), "VENCE HOJE")
-        ReminderPhase.RENEWAL -> Quadruple(R.drawable.ic_bold_document_medicine, Color(0xFFD97706), Color(0xFFFFF3E0), "RENOVAÇÃO DE RECEITA")
-        ReminderPhase.PICKUP_UPCOMING -> Quadruple(R.drawable.ic_box, Color(0xFF0288D1), Color(0xFFE3F2FD), "RETIRADA PRÓXIMA")
-        ReminderPhase.PICKUP_DUE -> Quadruple(R.drawable.ic_box, Color(0xFF1E8E3E), Color(0xFFE6F4EA), "DATA DE RETIRADA")
+        ReminderPhase.EXPIRED -> Quadruple(R.drawable.ic_bold_document_medicine, MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.errorContainer, "RECEITA VENCIDA")
+        ReminderPhase.EXPIRES_TODAY -> Quadruple(R.drawable.ic_bold_document_medicine, AppPalette.warning, AppPalette.warningContainer, "VENCE HOJE")
+        ReminderPhase.RENEWAL -> Quadruple(R.drawable.ic_bold_document_medicine, AppPalette.warning, AppPalette.warningContainer, "RENOVAÇÃO DE RECEITA")
+        ReminderPhase.PICKUP_UPCOMING -> Quadruple(R.drawable.ic_box, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer, "RETIRADA PRÓXIMA")
+        ReminderPhase.PICKUP_DUE -> Quadruple(R.drawable.ic_box, MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.tertiaryContainer, "DATA DE RETIRADA")
         null -> Quadruple(R.drawable.ic_bold_bell_bing, Color(0xFF7B1FA2), Color(0xFFF3E5F5), "AVISO")
     }
 
@@ -393,9 +395,9 @@ private fun NotificationCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onCardClick),
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = if (!item.isRead) Color(0xFFF8FAFC) else Color.White,
+            containerColor = if (!item.isRead) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surface,
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (!item.isRead) 2.dp else 1.dp,
@@ -453,7 +455,7 @@ private fun NotificationCard(
                     Text(
                         text = item.timestamp,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = Color(0xFF94A3B8),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -464,7 +466,7 @@ private fun NotificationCard(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = stringResource(R.string.delete_notification),
-                        tint = Color(0xFF94A3B8),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp),
                     )
                 }
@@ -479,7 +481,7 @@ private fun NotificationCard(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                 ),
-                color = Color(0xFF333846),
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -490,7 +492,7 @@ private fun NotificationCard(
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                 ),
-                color = Color(0xFF64748B),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             // Status Banner if action taken
@@ -498,7 +500,7 @@ private fun NotificationCard(
                 Spacer(modifier = Modifier.height(10.dp))
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFE8F5E9),
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
@@ -508,7 +510,7 @@ private fun NotificationCard(
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = Color(0xFF2E7D32),
+                            tint = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.size(16.dp),
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -516,7 +518,7 @@ private fun NotificationCard(
                             text = item.actionTaken,
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF2E7D32),
+                                color = MaterialTheme.colorScheme.tertiary,
                             ),
                         )
                     }
@@ -563,14 +565,14 @@ private fun EmptyNotificationsState(
         ) {
             Surface(
                 shape = CircleShape,
-                color = Color(0xFFE2E8F0),
+                color = MaterialTheme.colorScheme.outlineVariant,
                 modifier = Modifier.size(80.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.NotificationsOff,
                         contentDescription = null,
-                        tint = Color(0xFF64748B),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(40.dp),
                     )
                 }
@@ -589,7 +591,7 @@ private fun EmptyNotificationsState(
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                 ),
-                color = Color(0xFF333846),
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -600,7 +602,7 @@ private fun EmptyNotificationsState(
                     else -> stringResource(R.string.empty_notifications_desc)
                 },
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                color = Color(0xFF64748B),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

@@ -29,7 +29,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Card
+import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +49,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -105,23 +106,21 @@ fun MedicationsScreenContent(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
 ) {
-    val filterOptions = listOf("TODOS", "Estoque Baixo", "Compra Própria", "Farmácia Popular", "Farmácia Básica (SUS)")
+    val filterOptions = listOf("TODOS", "Compra Própria", "Farmácia Popular", "Farmácia Básica (SUS)")
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(
+            androidx.compose.material3.ExtendedFloatingActionButton(
                 onClick = onAddMedicationClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Adicionar Medicamento",
-                )
-            }
+                shape = MaterialTheme.shapes.large,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Novo medicamento") },
+            )
         }
     ) { innerPadding ->
         Column(
@@ -134,12 +133,12 @@ fun MedicationsScreenContent(
 
             Text(
                 text = "Meus Medicamentos",
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 24.sp),
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = "Gerencie seus medicamentos cadastrados, dosagens e estoque",
+                text = "Consulte seus medicamentos, reposições e datas de retirada",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -151,7 +150,7 @@ fun MedicationsScreenContent(
                 value = uiState.searchQuery,
                 onValueChange = onSearchQueryChange,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Buscar medicamento ou dosagem...") },
+                placeholder = { Text("Buscar medicamento ou concentração...", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -182,7 +181,7 @@ fun MedicationsScreenContent(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Filtros de Origem / Estoque
+            // Filtros de origem
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(bottom = 8.dp)
@@ -200,15 +199,16 @@ fun MedicationsScreenContent(
                             )
                         },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            labelColor = MaterialTheme.colorScheme.onSurface
                         ),
+                        shape = MaterialTheme.shapes.large,
                         border = FilterChipDefaults.filterChipBorder(
                             enabled = true,
                             selected = isSelected,
-                            borderColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+                            borderColor = MaterialTheme.colorScheme.outlineVariant
                         )
                     )
                 }
@@ -282,161 +282,33 @@ fun MedicationsScreenContent(
 
 @Composable
 fun MedicationCardItem(
-    medication: MedicationItem,
-    onClick: () -> Unit,
-    onReplenishStock: () -> Unit,
-    modifier: Modifier = Modifier,
+ medication: MedicationItem, onClick: () -> Unit, onReplenishStock: () -> Unit,
+ modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_pills),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = medication.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (!medication.activeIngredient.isNullOrBlank()) {
-                            Text(
-                                text = medication.activeIngredient,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                ) {
-                    Text(
-                        text = medication.dosage.ifBlank { medication.form.label },
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-
-            if (medication.prescribedPosology.isNotBlank()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = medication.prescribedPosology,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Origem e Estoque
-                Column {
-                    Text(
-                        text = "Origem: ${medication.category}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Estoque: ${medication.stockQuantity} un",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = if (medication.isStockLow) FontWeight.Bold else FontWeight.Normal,
-                            color = if (medication.isStockLow) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        if (medication.isStockLow) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = "Estoque Baixo",
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-                    }
-                }
-
-                OutlinedButton(
-                    onClick = onReplenishStock,
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Repor Estoque",
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Repor",
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
-        }
-    }
+ var confirmPickup by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+ if (confirmPickup) androidx.compose.material3.AlertDialog(
+  onDismissRequest = { confirmPickup = false }, title = { Text("Registrar retirada?") },
+  text = { Text("Confirme que você retirou o medicamento. A data da última retirada será atualizada para hoje.") },
+  confirmButton = { androidx.compose.material3.TextButton(onClick = { confirmPickup = false; onReplenishStock() }) { Text("Confirmar") } },
+  dismissButton = { androidx.compose.material3.TextButton(onClick = { confirmPickup = false }) { Text("Cancelar") } },
+ )
+ cc.rhuan.receitas.ui.components.RecordCard(
+  title = medication.title, category = "Medicamento", iconRes = R.drawable.ic_bold_pills,
+  onClick = onClick, modifier = modifier,
+  badge = {
+   Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.secondaryContainer) {
+    Text(medication.dosage.ifBlank { medication.form.label }, Modifier.padding(horizontal = 10.dp, vertical = 5.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+   }
+  },
+ ) {
+  if (!medication.activeIngredient.isNullOrBlank()) Text(medication.activeIngredient, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+  Text("Origem: " + medication.source.label + (medication.sourceName?.takeIf { it.isNotBlank() && !it.equals(medication.source.label, ignoreCase = true) }?.let { " · " + it } ?: ""), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+  if (medication.quantity.isNotBlank()) Text("Quantidade por reposição: " + medication.quantity, style = MaterialTheme.typography.bodyMedium)
+  if (medication.hasRecurringPickup) {
+   medication.lastRefillDate?.let { Text("Última retirada: " + it.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")), style = MaterialTheme.typography.bodySmall) }
+   medication.nextAvailableRefillDate?.let { Text("Próxima retirada prevista: " + it.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")), style = MaterialTheme.typography.bodySmall) }
+   OutlinedButton(onClick = { confirmPickup = true }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.small) { Text("Registrar retirada") }
+  }
+  if (medication.prescribedPosology.isNotBlank()) Text(medication.prescribedPosology, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+ }
 }
-
-

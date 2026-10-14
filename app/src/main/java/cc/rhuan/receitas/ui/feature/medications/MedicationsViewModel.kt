@@ -57,7 +57,7 @@ class MedicationsViewModel @Inject constructor(
     fun replenishStock(medicationId: String) {
         viewModelScope.launch {
             medicationRepository.replenishStock(id = medicationId, title = null, message = null)
-            _uiState.update { it.copy(snackbarMessage = "Estoque atualizado com sucesso!") }
+            _uiState.update { it.copy(snackbarMessage = "Retirada registrada com sucesso!") }
         }
     }
 
@@ -78,7 +78,6 @@ class MedicationsViewModel @Inject constructor(
 
             val matchesSource = when (filter) {
                 "TODOS" -> true
-                "Estoque Baixo" -> med.isStockLow || med.stockQuantity == 0
                 else -> med.category.equals(filter, ignoreCase = true) || med.source.label.equals(filter, ignoreCase = true)
             }
 

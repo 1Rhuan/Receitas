@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.ui.feature.prescriptions
 
+import cc.rhuan.receitas.ui.theme.AppPalette
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,7 +25,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
+import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -99,7 +101,7 @@ fun PrescriptionDetailContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = Color(0xFFE8ECEF),
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -107,7 +109,7 @@ fun PrescriptionDetailContent(
                     Text(
                         text = "Detalhes da Receita",
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF333846),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 },
                 navigationIcon = {
@@ -115,12 +117,12 @@ fun PrescriptionDetailContent(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar",
-                            tint = Color(0xFF333846),
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFE8ECEF),
+                    containerColor = MaterialTheme.colorScheme.background,
                 ),
             )
         },
@@ -169,7 +171,7 @@ fun PrescriptionDetailContent(
                                 style = MaterialTheme.typography.labelLarge.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp,
-                                    color = Color(0xFF6C7280),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 ),
                                 modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
                             )
@@ -180,12 +182,12 @@ fun PrescriptionDetailContent(
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                                 ) {
                                     Text(
                                         text = "Nenhum medicamento vinculado a esta receita.",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFF6C7280),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(16.dp),
                                     )
                                 }
@@ -218,12 +220,12 @@ fun PrescriptionDetailContent(
 private fun DetailExpirationBadge(daysUntilExpiration: Int) {
     val isExpired = daysUntilExpiration <= 0
     val (bgColor, textColor, labelText) = when {
-        isExpired -> Triple(Color(0xFFFFDADE), Color(0xFFC01535), "Vencida")
+        isExpired -> Triple(MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.error, "Vencida")
         daysUntilExpiration <= 30 -> {
             val daysText = if (daysUntilExpiration == 1) "dia" else "dias"
-            Triple(Color(0xFFFFF3E0), Color(0xFFD97706), "Venc. $daysUntilExpiration $daysText")
+            Triple(AppPalette.warningContainer, AppPalette.warning, "Venc. $daysUntilExpiration $daysText")
         }
-        else -> Triple(Color(0xFFE6F4EA), Color(0xFF1E8E3E), "Válida")
+        else -> Triple(MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.tertiary, "Válida")
     }
 
     Surface(
@@ -254,16 +256,16 @@ private fun PrescriptionHeaderCard(
     val isExpiringSoon = prescription.daysUntilExpiration in 1..30
     
     val (containerBg, iconBg, iconColor) = when {
-        isExpired -> Triple(Color(0xFFFFF8F8), Color(0xFFFFEBEE), Color(0xFFD32F2F))
-        isExpiringSoon -> Triple(Color(0xFFFFFAF0), Color(0xFFFFF3E0), Color(0xFFD97706))
-        else -> Triple(Color.White, Color(0xFFE6F4EA), Color(0xFF1E8E3E))
+        isExpired -> Triple(MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.error)
+        isExpiringSoon -> Triple(AppPalette.warningContainer, AppPalette.warningContainer, AppPalette.warning)
+        else -> Triple(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.tertiary)
     }
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = containerBg),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
@@ -305,7 +307,7 @@ private fun PrescriptionHeaderCard(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp,
                             ),
-                            color = Color(0xFF1E293B),
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -314,7 +316,7 @@ private fun PrescriptionHeaderCard(
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Editar Receita",
-                        tint = Color(0xFF6C7280)
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -322,8 +324,8 @@ private fun PrescriptionHeaderCard(
             Spacer(modifier = Modifier.height(20.dp))
 
             Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = if (isExpired || isExpiringSoon) Color.White else Color(0xFFF8FAFC),
+                shape = MaterialTheme.shapes.large,
+                color = if (isExpired || isExpiringSoon) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainerLow,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(
@@ -335,7 +337,7 @@ private fun PrescriptionHeaderCard(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_info_circle),
                                 contentDescription = null,
-                                tint = Color(0xFF94A3B8),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp),
                             )
                             Spacer(modifier = Modifier.width(12.dp))
@@ -343,12 +345,12 @@ private fun PrescriptionHeaderCard(
                                 Text(
                                     text = "MÉDICO PRESCRITOR",
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = Color(0xFF94A3B8),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                                 Text(
                                     text = prescription.doctorName,
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = Color(0xFF334155),
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
@@ -363,7 +365,7 @@ private fun PrescriptionHeaderCard(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_info_circle),
                                 contentDescription = null,
-                                tint = Color(0xFF94A3B8),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp),
                             )
                             Spacer(modifier = Modifier.width(12.dp))
@@ -371,12 +373,12 @@ private fun PrescriptionHeaderCard(
                                 Text(
                                     text = "EMISSÃO",
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = Color(0xFF94A3B8),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                                 Text(
                                     text = prescription.issueDate.format(dateFormatter),
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = Color(0xFF334155),
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
@@ -385,7 +387,7 @@ private fun PrescriptionHeaderCard(
                             Text(
                                 text = "STATUS",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = Color(0xFF94A3B8),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             DetailExpirationBadge(daysUntilExpiration = prescription.daysUntilExpiration)
@@ -400,20 +402,20 @@ private fun PrescriptionHeaderCard(
                     verticalAlignment = Alignment.Top,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(12.dp))
                         .padding(12.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_info_circle),
                         contentDescription = null,
-                        tint = Color(0xFF64748B),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp).padding(top = 2.dp),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = prescription.notes,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF475569),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -424,13 +426,13 @@ private fun PrescriptionHeaderCard(
                 verticalAlignment = Alignment.Top,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFFFFF3E0), RoundedCornerShape(12.dp))
+                    .background(AppPalette.warningContainer, RoundedCornerShape(12.dp))
                     .padding(12.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Warning,
                     contentDescription = null,
-                    tint = Color(0xFFD97706),
+                    tint = AppPalette.warning,
                     modifier = Modifier.size(18.dp).padding(top = 2.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -438,13 +440,13 @@ private fun PrescriptionHeaderCard(
                     Text(
                         text = prescription.type?.label ?: "Sem Tipo Especificado",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFFD97706),
+                        color = AppPalette.warning,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = prescription.type?.legalNote ?: "Receita sem classificação regulatória especificada.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF92400E),
+                        color = AppPalette.warning,
                     )
                 }
             }
@@ -458,7 +460,7 @@ private fun PrescriptionHeaderCard(
                     .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isExpired) Color(0xFFDC2626) else MaterialTheme.colorScheme.primary,
+                    containerColor = if (isExpired) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 ),
             ) {
                 Icon(
@@ -488,9 +490,9 @@ private fun MedicationDetailCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -501,28 +503,23 @@ private fun MedicationDetailCard(
                     Text(
                         text = medication.title,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF333846),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     val subText = if (medication.prescribedPosology.isNotBlank()) "${medication.dosage} • ${medication.prescribedPosology}" else medication.dosage
                     Text(
                         text = subText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF6C7280),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFF1F5F9),
-                ) {
-                    Text(
-                        text = "Estoque: ${medication.stockQuantity}",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = if (medication.isStockLow) Color(0xFFD97706) else Color(0xFF333846),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    )
-                }
             }
+
+            if (medication.quantity.isNotBlank()) Text(
+                text = "Quantidade por reposição: " + medication.quantity,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -530,15 +527,15 @@ private fun MedicationDetailCard(
                 Text(
                     text = "Última retirada: ${lastDate.format(dateFormatter)} (Ciclo: ${medication.refillCycleDays} dias)",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF6C7280),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             medication.nextAvailableRefillDate?.let { nextDate ->
                 Text(
-                    text = "Próxima reposição permitida: ${nextDate.format(dateFormatter)}",
+                    text = "Próxima retirada prevista: ${nextDate.format(dateFormatter)}",
                     style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                    color = Color(0xFF333846),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
@@ -549,9 +546,9 @@ private fun MedicationDetailCard(
                 is RefillStatus.PrescriptionExpiresBeforeRefill -> {
                     RefillWarningBanner(
                         title = "Atenção: Receita Vencerá Antes da Reposição",
-                        message = "A receita expira em ${refillStatus.expirationDate.format(dateFormatter)}, mas a próxima retirada só é liberada em ${refillStatus.nextRefillDate.format(dateFormatter)}. Solicite nova receita a tempo.",
-                        bgColor = Color(0xFFFFF3E0),
-                        iconColor = Color(0xFFD97706),
+                        message = "A receita expira em ${refillStatus.expirationDate.format(dateFormatter)}, mas a próxima retirada está prevista para ${refillStatus.nextRefillDate.format(dateFormatter)}. Solicite nova receita a tempo.",
+                        bgColor = AppPalette.warningContainer,
+                        iconColor = AppPalette.warning,
                     )
                 }
 
@@ -559,32 +556,23 @@ private fun MedicationDetailCard(
                     RefillWarningBanner(
                         title = "Receita Vencida",
                         message = "A receita vinculada já expirou. Você precisará de uma nova consulta.",
-                        bgColor = Color(0xFFFFEBEE),
-                        iconColor = Color(0xFFD32F2F),
+                        bgColor = MaterialTheme.colorScheme.errorContainer,
+                        iconColor = MaterialTheme.colorScheme.error,
                     )
                 }
 
                 is RefillStatus.RefillAvailable -> {
                     RefillSuccessBanner(
-                        title = "Reposição Liberada na Farmácia",
-                        message = "Você já pode retirar uma nova caixa na farmácia.",
+                        title = "Data de retirada alcançada",
+                        message = "Confira a disponibilidade com a farmácia antes de retirar.",
                         onReplenishClick = onReplenishClick,
-                    )
-                }
-
-                is RefillStatus.LowStock -> {
-                    RefillWarningBanner(
-                        title = "Estoque Baixo",
-                        message = "Restam apenas ${refillStatus.remainingStock} unidades.",
-                        bgColor = Color(0xFFFFFBEB),
-                        iconColor = Color(0xFFD97706),
                     )
                 }
 
                 else -> {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFFE6F4EA),
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Row(
@@ -594,7 +582,7 @@ private fun MedicationDetailCard(
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = Color(0xFF1E8E3E),
+                                tint = MaterialTheme.colorScheme.tertiary,
                                 modifier = Modifier.size(18.dp),
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -602,7 +590,7 @@ private fun MedicationDetailCard(
                                 text = "Receita válida e dentro do prazo de reposição.",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF1E8E3E),
+                                    color = MaterialTheme.colorScheme.tertiary,
                                 ),
                             )
                         }
@@ -646,7 +634,7 @@ private fun RefillWarningBanner(
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF333846),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -661,7 +649,7 @@ private fun RefillSuccessBanner(
 ) {
     Surface(
         shape = RoundedCornerShape(10.dp),
-        color = Color(0xFFE6F4EA),
+        color = MaterialTheme.colorScheme.tertiaryContainer,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -669,7 +657,7 @@ private fun RefillSuccessBanner(
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = Color(0xFF1E8E3E),
+                    tint = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -677,12 +665,12 @@ private fun RefillSuccessBanner(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E8E3E),
+                        color = MaterialTheme.colorScheme.tertiary,
                     )
                     Text(
                         text = message,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF333846),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }

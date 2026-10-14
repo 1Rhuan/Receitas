@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.ui.feature.prescriptions
 
+import cc.rhuan.receitas.ui.theme.AppPalette
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -32,13 +34,14 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Card
+import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -112,21 +115,18 @@ fun PrescriptionsScreenContent(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         floatingActionButton = {
-            FloatingActionButton(
+            ExtendedFloatingActionButton(
                 onClick = onCreatePrescriptionClick,
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.add_prescription),
-                    tint = Color.White
-                )
-            }
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Nova receita") },
+            )
         }
     ) { paddingValues ->
         Surface(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
-            color = Color(0xFFE8ECEF),
+            color = MaterialTheme.colorScheme.background,
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -143,7 +143,7 @@ fun PrescriptionsScreenContent(
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
                     ),
-                    color = Color(0xFF333846),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 AnimatedVisibility(
@@ -156,7 +156,7 @@ fun PrescriptionsScreenContent(
                         Text(
                             text = stringResource(R.string.track_and_consult_prescriptions),
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                            color = Color(0xFF6C7280),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -177,7 +177,7 @@ fun PrescriptionsScreenContent(
                                 Icon(
                                     imageVector = Icons.Default.Search,
                                     contentDescription = stringResource(R.string.search),
-                                    tint = Color(0xFF6C7280),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             },
                             trailingIcon = {
@@ -186,17 +186,17 @@ fun PrescriptionsScreenContent(
                                         Icon(
                                             imageVector = Icons.Default.Clear,
                                             contentDescription = stringResource(R.string.clear_search),
-                                            tint = Color(0xFF6C7280),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
                                 }
                             },
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = Color(0xFFD0D5DD),
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                             ),
                             singleLine = true,
                             maxLines = 1,
@@ -234,25 +234,25 @@ fun PrescriptionsScreenContent(
                                 },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = Color.White,
-                                    selectedLeadingIconColor = Color.White,
-                                    containerColor = Color.White,
-                                    labelColor = Color(0xFF4A4E5A),
-                                    iconColor = Color(0xFF4A4E5A),
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    labelColor = MaterialTheme.colorScheme.onSurface,
+                                    iconColor = MaterialTheme.colorScheme.onSurface,
                                 ),
-                                shape = RoundedCornerShape(20.dp),
+                                shape = MaterialTheme.shapes.large,
                             )
 
                             DropdownMenu(
                                 expanded = sortMenuExpanded,
                                 onDismissRequest = { sortMenuExpanded = false },
-                                modifier = Modifier.background(Color.White),
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface),
                             ) {
                                 Text(
                                     text = stringResource(R.string.sort_by),
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF6C7280),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     ),
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 )
@@ -262,7 +262,7 @@ fun PrescriptionsScreenContent(
                                             Text(
                                                 text = stringResource(sortOption.labelRes),
                                                 fontWeight = if (uiState.selectedSortOrder == sortOption) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (uiState.selectedSortOrder == sortOption) MaterialTheme.colorScheme.primary else Color(0xFF333846),
+                                                color = if (uiState.selectedSortOrder == sortOption) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                             )
                                         },
                                         trailingIcon = if (uiState.selectedSortOrder == sortOption) {
@@ -292,11 +292,11 @@ fun PrescriptionsScreenContent(
                             label = { Text(stringResource(filter.labelRes)) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = Color.White,
-                                containerColor = Color.White,
-                                labelColor = Color(0xFF4A4E5A),
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface,
                             ),
-                            shape = RoundedCornerShape(20.dp),
+                            shape = MaterialTheme.shapes.large,
                         )
                     }
                 }
@@ -356,161 +356,34 @@ fun PrescriptionsScreenContent(
 }
 
 @Composable
-private fun PrescriptionCard(
-    prescription: PrescriptionItem,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val isExpired = prescription.isExpired
-    val containerBg = if (isExpired) Color(0xFFFFF8F8) else Color.White
-    val iconBg = if (isExpired) Color(0xFFFFEBEE) else Color(0xFFFFF3E0)
-    val iconColor = if (isExpired) Color(0xFFD32F2F) else Color(0xFFF57C00)
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = containerBg),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = iconBg,
-                    modifier = Modifier.size(38.dp),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_bold_document_medicine),
-                            contentDescription = null,
-                            tint = iconColor,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(
-                        text = prescription.specialty.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp,
-                            color = iconColor,
-                        ),
-                    )
-                    Text(
-                        text = prescription.title,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                        ),
-                        color = Color(0xFF333846),
-                    )
-                }
-
-                ExpirationBadge(daysUntilExpiration = prescription.daysUntilExpiration)
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                if (prescription.doctorName.isNotEmpty()) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = Color(0xFF6C7280),
-                            modifier = Modifier.size(14.dp),
-                        )
-                        Text(
-                            text = prescription.doctorName,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = Color(0xFF6C7280),
-                        )
-                    }
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = null,
-                        tint = Color(0xFF6C7280),
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.issued_on, prescription.issueDate.format(dateFormatter)),
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = Color(0xFF6C7280),
-                    )
-                }
-            }
-
-            prescription.notes?.let { note ->
-                Spacer(modifier = Modifier.height(10.dp))
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFF1F5F9),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_info_circle),
-                            contentDescription = null,
-                            tint = Color(0xFF475569),
-                            modifier = Modifier.size(14.dp),
-                        )
-                        Text(
-                            text = note,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF333846),
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-            }
-        }
-    }
+private fun PrescriptionCard(prescription: PrescriptionItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
+ val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
+ cc.rhuan.receitas.ui.components.RecordCard(
+  title = prescription.title, category = prescription.specialty.takeIf { it.isNotBlank() } ?: "Receita",
+  iconRes = R.drawable.ic_bold_document_medicine, onClick = onClick, modifier = modifier,
+  badge = { ExpirationBadge(prescription.daysUntilExpiration) },
+ ) {
+  if (prescription.doctorName.isNotBlank()) Text("Profissional: " + prescription.doctorName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+  Text(stringResource(R.string.issued_on, prescription.issueDate.format(dateFormatter)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+  prescription.notes?.takeIf { it.isNotBlank() }?.let { note ->
+   Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
+    Text(note, Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall)
+   }
+  }
+ }
 }
 
 @Composable
 private fun ExpirationBadge(daysUntilExpiration: Int) {
-    val isExpired = daysUntilExpiration <= 0
+    val isExpired = daysUntilExpiration < 0
     val (bgColor, textColor, labelText) = when {
-        isExpired -> Triple(Color(0xFFFFDADE), Color(0xFFC01535), stringResource(R.string.expired))
+        isExpired -> Triple(MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.error, stringResource(R.string.expired))
+        daysUntilExpiration == 0 -> Triple(AppPalette.warningContainer, AppPalette.warning, "Vence hoje")
         daysUntilExpiration <= 30 -> {
             val daysText = if (daysUntilExpiration == 1) stringResource(R.string.day) else stringResource(R.string.days)
-            Triple(Color(0xFFFFF3E0), Color(0xFFD97706), stringResource(R.string.expires_in, daysUntilExpiration, daysText))
+            Triple(AppPalette.warningContainer, AppPalette.warning, stringResource(R.string.expires_in, daysUntilExpiration, daysText))
         }
-        else -> Triple(Color(0xFFE6F4EA), Color(0xFF1E8E3E), stringResource(R.string.valid))
+        else -> Triple(MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.tertiary, stringResource(R.string.valid))
     }
 
     Surface(
@@ -548,13 +421,13 @@ private fun EmptyPrescriptionsState(
         Text(
             text = if (hasSearchQuery) stringResource(R.string.no_prescription_found) else stringResource(R.string.no_prescription_registered),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = Color(0xFF333846),
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = if (hasSearchQuery) stringResource(R.string.try_searching_different_term) else stringResource(R.string.registered_prescriptions_appear_here),
             style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF6C7280),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
