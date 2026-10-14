@@ -34,15 +34,15 @@ fun SearchField(value: String, onValueChange: (String) -> Unit, label: String, s
 }
 
 @Composable
-fun ActionButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Button(onClick, modifier.heightIn(min = T.control), shape = RoundedCornerShape(T.buttonRadius)) {
+fun ActionButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    Button(onClick, modifier.heightIn(min = T.control), enabled = enabled, shape = RoundedCornerShape(T.buttonRadius)) {
         Text(label, style = MaterialTheme.typography.labelLarge)
     }
 }
 
 @Composable
-fun SecondaryActionButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    OutlinedButton(onClick, modifier.heightIn(min = T.control), shape = RoundedCornerShape(T.buttonRadius)) {
+fun SecondaryActionButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    OutlinedButton(onClick, modifier.heightIn(min = T.control), enabled = enabled, shape = RoundedCornerShape(T.buttonRadius)) {
         Text(label, style = MaterialTheme.typography.labelLarge)
     }
 }
@@ -63,7 +63,8 @@ fun PageHeader(title: String, subtitle: String, expanded: Boolean) {
     Column(Modifier.fillMaxWidth().testTag(if (expanded) "page-header" else "page-app-bar").padding(horizontal = T.margin)
         .padding(vertical = if (expanded) T.viewingPadding else T.padding),
         horizontalAlignment = if (expanded) Alignment.CenterHorizontally else Alignment.Start) {
-        Text(title, Modifier.semantics { heading() }, style = if (expanded) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.titleLarge)
+        Text(title, Modifier.semantics { heading() }, style = if (expanded) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.titleLarge,
+            textAlign = if (expanded) TextAlign.Center else TextAlign.Start)
         if (expanded && subtitle.isNotBlank()) Text(subtitle, Modifier.padding(top = T.small),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center)

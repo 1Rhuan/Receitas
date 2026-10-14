@@ -5,22 +5,25 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import cc.rhuan.receitas.ui.theme.DesignTheme
 import cc.rhuan.receitas.ui.theme.DesignTokens as T
 
 val LocalNavigationClearance = compositionLocalOf { 0.dp }
 
-/** Shared header, list and insets; creation belongs to the contextual navigation bar. */
+/** Shared header, page creation action, list and insets. */
 @Composable
 fun RecordListScaffold(title: String, subtitle: String,
     listTag: String, modifier: Modifier = Modifier,
+    createLabel: String? = null, onCreate: () -> Unit = {},
+    onBack: (() -> Unit)? = null,
     snackbarHost: @Composable () -> Unit = {}, content: LazyListScope.() -> Unit) {
     DesignTheme {
         val navigationClearance = LocalNavigationClearance.current
@@ -51,11 +54,22 @@ fun RecordListScaffold(title: String, subtitle: String,
                     Box(Modifier.padding(bottom = navigationClearance)) { snackbarHost() }
                 },
                 topBar = {
-                    PageHeader(title, if (expanded) subtitle else "", expanded)
+                    if (onBack != null) DetailHeader(title, onBack)
+                    else PageHeader(title, if (expanded) subtitle else "", expanded)
                 }) { padding ->
                 LazyColumn(state = state, modifier = Modifier.fillMaxSize().padding(padding).nestedScroll(scroll).testTag(listTag),
                     contentPadding = PaddingValues(bottom = T.section + navigationClearance),
-                    verticalArrangement = Arrangement.spacedBy(T.gap), content = content)
+                    verticalArrangement = Arrangement.spacedBy(T.gap)) {
+                    createLabel?.let { label ->
+                        item("create-record") {
+                            ActionButton(label, onCreate, Modifier.fillMaxWidth()
+                                .padding(horizontal = T.margin)
+                                .testTag("create-record")
+                                .semantics { contentDescription = label })
+                        }
+                    }
+                    content()
+                }
             }
         }
     }
