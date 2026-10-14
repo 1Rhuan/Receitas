@@ -68,6 +68,8 @@ fun HomeScreen(
     onNotificationClick: () -> Unit = {},
     onNavigateToPrescriptions: () -> Unit = {},
     onNavigateToMedications: () -> Unit = {},
+    onCreatePrescription: () -> Unit = {},
+    onCreateMedication: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -78,6 +80,8 @@ fun HomeScreen(
         onNotificationClick = onNotificationClick,
         onNavigateToPrescriptions = onNavigateToPrescriptions,
         onNavigateToMedications = onNavigateToMedications,
+        onCreatePrescription = onCreatePrescription,
+        onCreateMedication = onCreateMedication,
         onDateSelected = viewModel::onDateSelected,
         onQuickAction = viewModel::onQuickAction,
         onSecondaryActionWithDate = viewModel::onSecondaryActionWithDate,
@@ -98,6 +102,8 @@ fun HomeScreenContent(
     onNotificationClick: () -> Unit = {},
     onNavigateToPrescriptions: () -> Unit = {},
     onNavigateToMedications: () -> Unit = {},
+    onCreatePrescription: () -> Unit = {},
+    onCreateMedication: () -> Unit = {},
     onDateSelected: (LocalDate) -> Unit = {},
     onQuickAction: (TrackingItem) -> Unit = {},
     onSecondaryActionWithDate: (TrackingItem, LocalDate) -> Unit = { _, _ -> },
@@ -167,14 +173,14 @@ fun HomeScreenContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = Color(0xFFF6F7F9),
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = onNavigateToPrescriptions,
-                containerColor = Color(0xFF3B82F6),
-                contentColor = Color.White,
-                shape = RoundedCornerShape(20.dp),
+                onClick = onCreatePrescription,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = MaterialTheme.shapes.large,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
                 icon = {
                     Icon(
@@ -198,8 +204,8 @@ fun HomeScreenContent(
             ) { snackbarData ->
                 Snackbar(
                     snackbarData = snackbarData,
-                    containerColor = Color(0xFF1E293B),
-                    contentColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.onSurface,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                     shape = RoundedCornerShape(12.dp)
                 )
             }
@@ -237,7 +243,7 @@ fun HomeScreenContent(
                     uiState.isLoading -> {
                         CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center),
-                            color = Color(0xFF3B82F6)
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
 
@@ -252,8 +258,8 @@ fun HomeScreenContent(
                     uiState.isAppEmpty -> {
                         // Estado totalmente vazio do aplicativo
                         EmptyHomeState(
-                            onNavigateToPrescriptions = onNavigateToPrescriptions,
-                            onNavigateToMedications = onNavigateToMedications,
+                            onNavigateToPrescriptions = onCreatePrescription,
+                            onNavigateToMedications = onCreateMedication,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(16.dp)

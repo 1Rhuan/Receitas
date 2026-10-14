@@ -1,5 +1,6 @@
 package cc.rhuan.receitas.ui.navigation
 
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
@@ -52,67 +53,70 @@ fun MainScreen(openedNotificationId: String? = null, onNotificationOpened: () ->
         bottomBar = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
+            val showBottomBar = NavRoute.bottomNavItems.any { it.route == currentDestination?.route }
 
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.background,
-                contentColor = MaterialTheme.colorScheme.onBackground,
-                tonalElevation = 0.dp,
-            ) {
-                NavRoute.bottomNavItems.forEach { navRoute ->
-                    val isSelected = currentDestination?.hierarchy?.any { it.route == navRoute.route } == true
+            if (showBottomBar) {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onBackground,
+                    tonalElevation = 0.dp,
+                ) {
+                    NavRoute.bottomNavItems.forEach { navRoute ->
+                        val isSelected = currentDestination?.hierarchy?.any { it.route == navRoute.route } == true
 
-                    NavigationBarItem(
-                        selected = isSelected,
-                        onClick = {
-                            if (!isSelected) {
-                                navController.navigate(navRoute.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                        NavigationBarItem(
+                            selected = isSelected,
+                            onClick = {
+                                if (!isSelected) {
+                                    navController.navigate(navRoute.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
                                 }
-                            }
-                        },
-                        icon = {
-                            BadgedBox(
-                                badge = {
-                                    navRoute.badgeCount?.let { count ->
-                                        if (count > 0) {
-                                            Badge(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                            ) {
-                                                val displayCount = if (count > 99) "99+" else count.toString()
-                                                Text(text = displayCount)
+                            },
+                            icon = {
+                                BadgedBox(
+                                    badge = {
+                                        navRoute.badgeCount?.let { count ->
+                                            if (count > 0) {
+                                                Badge(
+                                                    containerColor = MaterialTheme.colorScheme.primary,
+                                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                                ) {
+                                                    val displayCount = if (count > 99) "99+" else count.toString()
+                                                    Text(text = displayCount)
+                                                }
                                             }
                                         }
-                                    }
-                                },
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = if (isSelected) navRoute.selectedIconRes else navRoute.iconRes),
-                                    contentDescription = navRoute.title,
+                                    },
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = if (isSelected) navRoute.selectedIconRes else navRoute.iconRes),
+                                        contentDescription = navRoute.title,
+                                    )
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = navRoute.title,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
-                            }
-                        },
-                        label = {
-                            Text(
-                                text = navRoute.title,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = Color.Transparent,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
-                    )
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                        )
+                    }
                 }
             }
         },
@@ -120,11 +124,14 @@ fun MainScreen(openedNotificationId: String? = null, onNotificationOpened: () ->
         NavHost(
             navController = navController,
             startDestination = NavRoute.Home.route,
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
         ) {
             composable(NavRoute.Home.route) {
                 HomeScreen(
                     viewModel = hiltViewModel(),
+                    onCreatePrescription = { navController.navigate("prescription_wizard") { launchSingleTop = true } },
+                    onCreateMedication = { navController.navigate("prescription_wizard?entryMode=STANDALONE_MEDICATION") { launchSingleTop = true } },
+                    onPrescriptionClick = { navController.navigate("prescription_detail/" + android.net.Uri.encode(it.id)) },
                     onNotificationClick = {
                         navController.navigate(NavRoute.Notifications.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
@@ -169,7 +176,7 @@ fun MainScreen(openedNotificationId: String? = null, onNotificationOpened: () ->
                         navController.navigate("prescription_detail/${prescription.id}")
                     },
                     onCreatePrescriptionClick = {
-                        navController.navigate(NavRoute.PrescriptionWizard.route)
+                        navController.navigate("prescription_wizard")
                     },
                 )
             }
@@ -189,6 +196,12 @@ fun MainScreen(openedNotificationId: String? = null, onNotificationOpened: () ->
                 PrescriptionWizardScreen(
                     viewModel = hiltViewModel(),
                     onNavigateUp = { navController.popBackStack() },
+                    onViewSaved = { id ->
+                        if (id != null) navController.navigate("prescription_detail/" + android.net.Uri.encode(id)) {
+                            popUpTo(NavRoute.PrescriptionWizard.route) { inclusive = true }
+                            launchSingleTop = true
+                        } else navController.popBackStack()
+                    },
                 )
             }
             composable(

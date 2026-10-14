@@ -51,21 +51,21 @@ fun HomeHeader(
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 28.sp,
-                    color = Color(0xFF0F172A)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             )
 
             Surface(
                 onClick = onCalendarClick,
                 shape = RoundedCornerShape(10.dp),
-                color = Color(0xFFF1F5F9),
+                color = MaterialTheme.colorScheme.surfaceContainer,
                 modifier = Modifier.size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.CalendarMonth,
                         contentDescription = "Calendário",
-                        tint = Color(0xFF475569),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -75,7 +75,7 @@ fun HomeHeader(
         Surface(
             onClick = onNotificationClick,
             shape = RoundedCornerShape(12.dp),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.surface,
             shadowElevation = 1.dp,
             modifier = Modifier.size(40.dp)
         ) {
@@ -84,8 +84,8 @@ fun HomeHeader(
                     badge = {
                         if (notificationCount > 0) {
                             Badge(
-                                containerColor = Color(0xFFEF4444),
-                                contentColor = Color.White
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
                             ) {
                                 Text(
                                     text = notificationCount.toString(),
@@ -98,7 +98,7 @@ fun HomeHeader(
                     Icon(
                         painter = painterResource(id = if (notificationCount > 0) R.drawable.ic_bell_bing else R.drawable.ic_bell),
                         contentDescription = "Notificações",
-                        tint = Color(0xFF334155),
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
                 }

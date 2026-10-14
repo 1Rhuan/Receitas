@@ -22,7 +22,7 @@ import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
+import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,9 +58,9 @@ fun TrackingCard(
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -76,7 +76,7 @@ fun TrackingCard(
                     text = type,
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF64748B),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
                 )
@@ -92,7 +92,7 @@ fun TrackingCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color(0xFFF1F5F9))
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
             )
 
             // 2. Conteúdo: Área do Ícone + Título e Conteúdo Variável (Slot)
@@ -113,7 +113,7 @@ fun TrackingCard(
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp,
-                            color = Color(0xFF0F172A)
+                            color = MaterialTheme.colorScheme.onSurface
                         ),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -127,7 +127,7 @@ fun TrackingCard(
             if (!userNote.isNullOrBlank()) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFF8FAFC),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -138,14 +138,14 @@ fun TrackingCard(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = Color(0xFF64748B),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
                             text = userNote,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontSize = 12.sp,
-                                color = Color(0xFF475569)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             ),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
@@ -159,7 +159,7 @@ fun TrackingCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color(0xFFF1F5F9))
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
             )
 
             // 4. Ações
@@ -195,35 +195,25 @@ fun MedicationTrackingCard(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF1F5F9)),
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_bold_pills),
                     contentDescription = null,
-                    tint = Color(0xFF0F172A),
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(20.dp)
                 )
             }
         },
         content = {
-            if (item.formattedDateText.isNotBlank()) {
-                Text(
-                    text = item.formattedDateText,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
-                        color = Color(0xFF334155)
-                    )
-                )
-            }
             if (!item.lastPickupDateText.isNullOrBlank()) {
                 Text(
                     text = item.lastPickupDateText,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp,
-                        color = Color(0xFF334155)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 )
             }
@@ -235,8 +225,8 @@ fun MedicationTrackingCard(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_box),
-                        contentDescription = "Estoque",
-                        tint = Color(0xFF64748B),
+                        contentDescription = "Quantidade por reposição",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
@@ -244,7 +234,7 @@ fun MedicationTrackingCard(
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF475569)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                 }
@@ -255,8 +245,8 @@ fun MedicationTrackingCard(
                 onClick = onPrimaryAction,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF3B82F6),
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                 modifier = Modifier
@@ -291,7 +281,7 @@ fun MedicationTrackingCard(
                 Icon(
                     imageVector = Icons.Default.Event,
                     contentDescription = null,
-                    tint = Color(0xFF334155),
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(14.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
@@ -300,7 +290,7 @@ fun MedicationTrackingCard(
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 11.sp,
-                        color = Color(0xFF334155)
+                        color = MaterialTheme.colorScheme.onSurface
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -331,27 +321,18 @@ fun PrescriptionTrackingCard(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFEFF6FF)),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_bold_document_medicine),
                     contentDescription = null,
-                    tint = Color(0xFF2563EB),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
         },
         content = {
-            Text(
-                text = item.formattedDateText,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
-                    color = Color(0xFF334155)
-                )
-            )
-
             if (!item.prescriberName.isNullOrBlank()) {
                 Column(
                     modifier = Modifier.padding(top = 2.dp),
@@ -362,7 +343,7 @@ fun PrescriptionTrackingCard(
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF94A3B8)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                     Text(
@@ -370,7 +351,7 @@ fun PrescriptionTrackingCard(
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF1E293B)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     )
                 }
@@ -381,8 +362,8 @@ fun PrescriptionTrackingCard(
                 onClick = onPrimaryAction,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF3B82F6),
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                 modifier = Modifier
@@ -417,7 +398,7 @@ fun PrescriptionTrackingCard(
                 Icon(
                     imageVector = Icons.Default.Event,
                     contentDescription = null,
-                    tint = Color(0xFF334155),
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(14.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
@@ -426,7 +407,7 @@ fun PrescriptionTrackingCard(
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 11.sp,
-                        color = Color(0xFF334155)
+                        color = MaterialTheme.colorScheme.onSurface
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis

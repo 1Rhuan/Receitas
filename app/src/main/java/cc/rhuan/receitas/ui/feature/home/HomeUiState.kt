@@ -18,7 +18,7 @@ enum class HomeItemType {
 }
 
 enum class DayEventPriority(val color: Color) {
-    RED(Color(0xFFEF4444)),
+    RED(Color(0xFFB83249)),
     ORANGE(Color(0xFFF97316)),
     GREEN(Color(0xFF10B981))
 }
@@ -137,7 +137,7 @@ data class HomeUiState(
                             "Última retirada: Não registrada"
                         }
 
-                        val stockVal = if (med.stockQuantity > 0) "${med.stockQuantity} unidades" else "Sem estoque"
+                        val stockVal = med.quantity.takeIf { it.isNotBlank() }?.let { "Reposição: $it" }
 
                         val dateFormattedText = if (daysUntilRefill == 0) {
                             "Retirada prevista para hoje"
@@ -209,7 +209,7 @@ data class HomeUiState(
                         } else {
                             "Última retirada: Não registrada"
                         }
-                        val stockVal = if (med.stockQuantity > 0) "${med.stockQuantity} unidades" else "Sem estoque"
+                        val stockVal = med.quantity.takeIf { it.isNotBlank() }?.let { "Reposição: $it" }
 
                         val isDelayedInPast = selectedDate.isBefore(today)
                         val (status, statusText) = when {
@@ -289,7 +289,7 @@ data class HomeUiState(
                     val titleText = if (med.dosage.isNotBlank()) "${med.title} ${med.dosage}" else med.title
 
                     val contextTag = if (daysAway == 1) "Retirada em 1 dia" else "Retirada em $daysAway dias"
-                    val stockVal = if (med.stockQuantity > 0) "${med.stockQuantity} unidades" else "Sem estoque"
+                    val stockVal = med.quantity.takeIf { it.isNotBlank() }?.let { "Reposição: $it" }
 
                     items.add(
                         nextRefill to TrackingItem.Medication(

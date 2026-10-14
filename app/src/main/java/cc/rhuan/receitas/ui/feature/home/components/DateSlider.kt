@@ -68,10 +68,10 @@ fun DateItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(MaterialTheme.shapes.large)
             .clickable { onDateSelected(date) }
             .background(
-                if (isSelected) Color(0xFFE2E8F0) else Color.Transparent
+                if (isSelected) MaterialTheme.colorScheme.outlineVariant else Color.Transparent
             )
             .padding(horizontal = 8.dp, vertical = 6.dp)
     ) {
@@ -79,7 +79,7 @@ fun DateItem(
             text = dayInitial,
             style = MaterialTheme.typography.labelMedium.copy(
                 fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.SemiBold,
-                color = if (isSelected) Color(0xFF0F172A) else Color(0xFF64748B),
+                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp
             )
         )
@@ -89,14 +89,14 @@ fun DateItem(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF0F172A)),
+                    .background(MaterialTheme.colorScheme.onSurface),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = date.dayOfMonth.toString(),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 14.sp
                     )
                 )
@@ -110,7 +110,7 @@ fun DateItem(
                     text = date.dayOfMonth.toString(),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isToday) Color(0xFF2563EB) else Color(0xFF1E293B),
+                        color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         fontSize = 14.sp
                     )
                 )

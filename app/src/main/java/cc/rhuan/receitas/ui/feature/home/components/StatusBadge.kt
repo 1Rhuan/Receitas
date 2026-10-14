@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.ui.feature.home.components
 
+import cc.rhuan.receitas.ui.theme.AppPalette
+
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -19,10 +21,10 @@ fun StatusBadge(
     modifier: Modifier = Modifier
 ) {
     val (backgroundColor, textColor) = when (status) {
-        TrackingStatus.EXPIRED, TrackingStatus.PICKUP_OVERDUE -> Color(0xFFFEE2E2) to Color(0xFFEF4444)
-        TrackingStatus.EXPIRES_TODAY -> Color(0xFFFFEDD5) to Color(0xFFEA580C)
-        TrackingStatus.PICKUP_TODAY -> Color(0xFFDCFCE7) to Color(0xFF16A34A)
-        TrackingStatus.EXPIRES_SOON, TrackingStatus.PICKUP_SOON -> Color(0xFFEFF6FF) to Color(0xFF2563EB)
+        TrackingStatus.EXPIRED, TrackingStatus.PICKUP_OVERDUE -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
+        TrackingStatus.EXPIRES_TODAY -> AppPalette.warningContainer to AppPalette.warning
+        TrackingStatus.PICKUP_TODAY -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.tertiary
+        TrackingStatus.EXPIRES_SOON, TrackingStatus.PICKUP_SOON -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary
     }
 
     Surface(

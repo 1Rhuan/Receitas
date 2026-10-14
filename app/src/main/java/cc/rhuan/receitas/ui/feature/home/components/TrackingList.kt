@@ -13,7 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.Card
+import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -82,7 +82,7 @@ fun NextEventHeader(
         Icon(
             imageVector = Icons.Default.Schedule,
             contentDescription = null,
-            tint = Color(0xFF64748B),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp)
         )
         Text(
@@ -90,19 +90,19 @@ fun NextEventHeader(
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
-                color = Color(0xFF334155)
+                color = MaterialTheme.colorScheme.onSurface
             )
         )
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = Color(0xFFE2E8F0)
+            color = MaterialTheme.colorScheme.outlineVariant
         ) {
             Text(
                 text = "Em breve",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 10.sp,
-                    color = Color(0xFF475569)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
             )
@@ -120,18 +120,15 @@ fun NextEventCard(
     val iconRes = if (item is TrackingItem.Prescription) R.drawable.ic_bold_document_medicine else R.drawable.ic_bold_pills
     val typeLabel = if (item is TrackingItem.Prescription) "Receita" else "Medicamento"
     val dateStr = item.rawDate?.format(DateTimeFormatter.ofPattern("dd/MM")) ?: ""
-    val formattedDateText = when (item) {
-        is TrackingItem.Medication -> item.formattedDateText
-        is TrackingItem.Prescription -> item.formattedDateText
-    }
+    val eventLabel = if (item is TrackingItem.Prescription) "Vencimento da receita" else "Retirada de medicamento"
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -144,13 +141,13 @@ fun NextEventCard(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF1F5F9)),
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
-                    tint = Color(0xFF475569),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -167,7 +164,7 @@ fun NextEventCard(
                         text = typeLabel,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF64748B),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp
                         )
                     )
@@ -175,13 +172,13 @@ fun NextEventCard(
                     if (!item.contextTag.isNullOrBlank()) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = Color(0xFFEFF6FF)
+                            color = MaterialTheme.colorScheme.primaryContainer
                         ) {
                             Text(
                                 text = item.contextTag!!,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2563EB),
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontSize = 11.sp
                                 ),
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -195,17 +192,17 @@ fun NextEventCard(
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = Color(0xFF0F172A)
+                        color = MaterialTheme.colorScheme.onSurface
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
                 Text(
-                    text = formattedDateText,
+                    text = eventLabel,
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 12.sp,
-                        color = Color(0xFF64748B)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 )
             }
@@ -214,7 +211,7 @@ fun NextEventCard(
                 Surface(
                     onClick = { onNavigateToDate(item.rawDate!!) },
                     shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFFF8FAFC),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                     shadowElevation = 0.dp
                 ) {
                     Row(
@@ -227,13 +224,13 @@ fun NextEventCard(
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
-                                color = Color(0xFF2563EB)
+                                color = MaterialTheme.colorScheme.primary
                             )
                         )
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = "Ir para a data",
-                            tint = Color(0xFF2563EB),
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(12.dp)
                         )
                     }
