@@ -8,6 +8,7 @@ enum class PrescriptionFilter(@StringRes val labelRes: Int) {
     ALL(R.string.filter_all),
     VALID(R.string.filter_valid),
     EXPIRED(R.string.filter_expired),
+    HISTORY(R.string.filter_history),
 }
 
 enum class PrescriptionSortOrder(@StringRes val labelRes: Int) {
@@ -19,6 +20,8 @@ enum class PrescriptionSortOrder(@StringRes val labelRes: Int) {
 }
 
 data class PrescriptionsUiState(
+    val medications: List<cc.rhuan.receitas.domain.model.MedicationItem> = emptyList(),
+    val purchaseError: Boolean = false,
     val prescriptions: List<PrescriptionItem> = emptyList(),
     val searchQuery: String = "",
     val selectedFilter: PrescriptionFilter = PrescriptionFilter.ALL,
@@ -26,6 +29,9 @@ data class PrescriptionsUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 ) {
+    val nextPurchase: cc.rhuan.receitas.domain.model.MedicationItem?
+        get() = medications.filter { it.source == cc.rhuan.receitas.domain.model.MedicationSource.COMPRA_PROPRIA && it.nextAvailableRefillDate != null }
+            .minByOrNull { it.nextAvailableRefillDate!! }
     val filteredPrescriptions: List<PrescriptionItem>
         get() {
             val filtered = prescriptions.filter { prescription ->
@@ -36,8 +42,9 @@ data class PrescriptionsUiState(
 
                 val matchesFilter = when (selectedFilter) {
                     PrescriptionFilter.ALL -> true
-                    PrescriptionFilter.VALID -> !prescription.isExpired
-                    PrescriptionFilter.EXPIRED -> prescription.isExpired
+                    PrescriptionFilter.VALID -> prescription.isActive && !prescription.isExpired
+                    PrescriptionFilter.EXPIRED -> prescription.isActive && prescription.isExpired
+                    PrescriptionFilter.HISTORY -> !prescription.isActive
                 }
 
                 matchesSearch && matchesFilter
