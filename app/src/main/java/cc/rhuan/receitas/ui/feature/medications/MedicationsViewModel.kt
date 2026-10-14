@@ -3,7 +3,11 @@ package cc.rhuan.receitas.ui.feature.medications
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.rhuan.receitas.data.repository.MedicationRepository
-import cc.rhuan.receitas.domain.model.MedicationItem
+import cc.rhuan.receitas.domain.model.*
+import java.time.LocalDate
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.catch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,19 +24,26 @@ class MedicationsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MedicationsUiState())
     val uiState: StateFlow<MedicationsUiState> = _uiState.asStateFlow()
 
+    private var loadJob: Job? = null
+
     init {
         loadMedications()
     }
 
     fun loadMedications() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            medicationRepository.getMedications().collect { meds ->
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            medicationRepository.getMedications().catch { error ->
+                if (error is CancellationException) throw error
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Não foi possível carregar os medicamentos.") }
+            }.collect { meds ->
                 _uiState.update { state ->
                     val filtered = applyFilter(meds, state.searchQuery, state.selectedSourceFilter)
                     state.copy(
                         medications = meds,
                         filteredMedications = filtered,
+                        errorMessage = null,
                         isLoading = false
                     )
                 }
@@ -54,10 +65,12 @@ class MedicationsViewModel @Inject constructor(
         }
     }
 
-    fun replenishStock(medicationId: String) {
+    fun registerPickup(medicationId: String, date: LocalDate, early: Boolean, cycle: LocalDate?) {
         viewModelScope.launch {
-            medicationRepository.replenishStock(id = medicationId, title = null, message = null)
-            _uiState.update { it.copy(snackbarMessage = "Retirada registrada com sucesso!") }
+            try { val result = medicationRepository.registerPickup(medicationId, date, early, cycle)
+                _uiState.update { it.copy(snackbarMessage = result.message()) }
+            } catch (e: CancellationException) { throw e }
+            catch (_: Exception) { _uiState.update { it.copy(snackbarMessage = "Não foi possível registrar a retirada.") } }
         }
     }
 
@@ -78,7 +91,7 @@ class MedicationsViewModel @Inject constructor(
 
             val matchesSource = when (filter) {
                 "TODOS" -> true
-                else -> med.category.equals(filter, ignoreCase = true) || med.source.label.equals(filter, ignoreCase = true)
+                else -> med.source.label.equals(filter, ignoreCase = true)
             }
 
             matchesQuery && matchesSource
