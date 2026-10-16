@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="700" viewBox="0 0 1160 700" role="img" aria-labelledby="title desc"><title id="title">Classes do registro de retirada</title><desc id="desc">Dependências do ViewModel, realização da interface de repositório e acesso ao banco.</desc><rect width="100%" height="100%" fill="white"/>
+<text x="32" y="51.400000000000006" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#172554">Classes do registro de retirada</text>
+<rect x="35" y="110" width="410" height="110" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="49" y="139.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">MedicationDetailViewModel</text>
+<polyline points="35,153 445,153" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="49" y="177.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">+ uiState: StateFlow&lt;MedicationDetailUiState&gt;</text>
+<text x="49" y="203.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">+ pickup(date, early, cycle)</text>
+<rect x="645" y="95" width="480" height="110" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="659" y="124.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">«interface» MedicationRepository</text>
+<polyline points="645,138 1125,138" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="659" y="162.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">+ getMedications(): Flow&lt;List&lt;MedicationItem&gt;&gt;</text>
+<text x="659" y="188.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">+ registerPickup(...): OperationResult</text>
+<polyline points="445,165 645,165" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="635.0,160.0 645,165 635.0,170.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="532.0" y="151.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">usa</text>
+<rect x="645" y="340" width="480" height="110" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="659" y="369.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">RoomMedicationRepository</text>
+<polyline points="645,383 1125,383" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="659" y="407.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">+ getMedications(): Flow&lt;List&lt;MedicationItem&gt;&gt;</text>
+<text x="659" y="433.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">+ registerPickup(...): OperationResult</text>
+<polyline points="885,340 885,205" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<polygon points="885,205 877.5,220.0 892.5,220.0" fill="white" stroke="#475569" stroke-width="2"/>
+<rect x="35" y="340" width="410" height="110" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="49" y="369.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">MedicationItem</text>
+<polyline points="35,383 445,383" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="49" y="407.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">+ pickupHistory: List&lt;PickupEvent&gt;</text>
+<text x="49" y="433.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">+ nextAvailableRefillDate: LocalDate?</text>
+<polyline points="645,395 445,395" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<polyline points="455.0,400.0 445,395 455.0,390.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="520.5" y="384.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">produz</text>
+<rect x="645" y="555" width="480" height="110" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="659" y="584.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">AppDatabase</text>
+<polyline points="645,598 1125,598" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="659" y="622.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">+ medicationDao(): MedicationDao</text>
+<text x="659" y="648.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">+ trackingDao(): TrackingDao</text>
+<polyline points="885,450 885,555" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="890.0,545.0 885,555 880.0,545.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="905" y="505.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">usa</text>
+<text x="35" y="680.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Assinaturas resumidas; atributos e dependências auxiliares foram omitidos.</text>
+</svg>

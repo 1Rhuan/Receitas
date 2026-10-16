@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1050" height="730" viewBox="0 0 1050 730" role="img" aria-labelledby="title desc"><title id="title">Arquitetura do Receitas</title><desc id="desc">Apresentação, domínio, dados e tarefas de lembretes. Setas indicam chamadas ou dependências; fluxos devolvem dados à interface.</desc><rect width="100%" height="100%" fill="white"/>
+<text x="32" y="51.400000000000006" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#172554">Arquitetura do Receitas</text>
+<rect x="55" y="105" width="380" height="85" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="148.5" y="138.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Apresentação Compose</text>
+<text x="131.0" y="163.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Rotas, estado e ViewModels</text>
+<rect x="615" y="105" width="380" height="85" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="771.5" y="138.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Domínio</text>
+<text x="708.0" y="163.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Modelos e casos de uso</text>
+<polyline points="435,147 615,147" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="605.0,142.0 615,147 605.0,152.0" fill="none" stroke="#475569" stroke-width="2"/>
+<rect x="55" y="315" width="380" height="85" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="195.0" y="348.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Repositórios</text>
+<text x="96.0" y="373.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Consultas e operações em transação</text>
+<rect x="615" y="315" width="380" height="85" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="762.5" y="348.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Lembretes</text>
+<text x="712.5" y="373.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Worker e sincronizador</text>
+<polyline points="245,190 245,315" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="250.0,305.0 245,315 240.0,305.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="262" y="253.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Ações e consultas</text>
+<polyline points="805,315 805,190" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="800.0,200.0 805,190 810.0,200.0" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="615,357 435,357" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="445.0,362.0 435,357 445.0,352.0" fill="none" stroke="#475569" stroke-width="2"/>
+<rect x="55" y="535" width="380" height="85" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="186.0" y="568.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Room / SQLite</text>
+<text x="125.5" y="593.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">DAOs, entidades e migrações</text>
+<polyline points="245,400 245,535" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="250.0,525.0 245,535 240.0,525.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="263" y="464.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Gravação / observação</text>
+<rect x="615" y="535" width="380" height="85" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="774.0" y="568.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Android</text>
+<text x="691.0" y="593.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">WorkManager e notificações</text>
+<polyline points="805,535 805,400" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="800.0,410.0 805,400 810.0,410.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="821" y="464.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Agenda trabalho</text>
+<polyline points="55,575 25,575 25,147 55,147" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="45.0,142.0 55,147 45.0,152.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="55" y="668.3" font-family="Arial, sans-serif" font-size="17" font-weight="normal" fill="#172554">Dados observados retornam por Flow e StateFlow; não há backend.</text>
+<text x="55" y="694.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">A conciliação dos avisos externos usa as APIs de notificação do Android.</text>
+</svg>

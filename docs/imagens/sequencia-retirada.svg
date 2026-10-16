@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1250" height="850" viewBox="0 0 1250 850" role="img" aria-labelledby="title desc"><title id="title">Sequência UML de uma retirada</title><desc id="desc">Caminho de sucesso e emissão independente dos dados observados.</desc><rect width="100%" height="100%" fill="white"/>
+<text x="32" y="51.400000000000006" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#172554">Sequência UML de uma retirada</text>
+<rect x="18" y="85" width="264" height="65" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="98.5" y="120.3" font-family="Arial, sans-serif" font-size="17" font-weight="normal" fill="#172554">Apresentação</text>
+<polyline points="150,150 150,705" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<rect x="338" y="85" width="264" height="65" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="367.5" y="120.3" font-family="Arial, sans-serif" font-size="17" font-weight="normal" fill="#172554">MedicationDetailViewModel</text>
+<polyline points="470,150 470,705" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<rect x="658" y="85" width="264" height="65" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="687.0" y="120.3" font-family="Arial, sans-serif" font-size="17" font-weight="normal" fill="#172554">RoomMedicationRepository</text>
+<polyline points="790,150 790,705" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<rect x="978" y="85" width="264" height="65" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="1058.0" y="120.3" font-family="Arial, sans-serif" font-size="17" font-weight="normal" fill="#172554">Room / DAOs</text>
+<polyline points="1110,150 1110,705" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<polyline points="150,210 470,210" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="460.0,205.0 470,210 460.0,215.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="222.0078125" y="197.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">pickup(date, early, cycle)</text>
+<polyline points="470,285 790,285" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="780.0,280.0 790,285 780.0,290.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="568.0" y="272.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">registerPickup(...)</text>
+<polyline points="790,360 1110,360" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="1100.0,355.0 1110,360 1100.0,365.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="882.0" y="347.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Ler dados e validar</text>
+<polyline points="790,435 1110,435" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="1100.0,430.0 1110,435 1100.0,440.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="863.5" y="422.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">insertEvent(...) + alertas*</text>
+<polyline points="790,505 470,505" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<polyline points="480.0,510.0 470,505 480.0,500.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="539.5" y="492.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">OperationResult.Success</text>
+<polyline points="470,570 150,570" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<polyline points="160.0,575.0 150,570 160.0,565.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="224.0" y="557.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Mensagem da operação</text>
+<rect x="30" y="610" width="1190" height="190" rx="0" fill="white" stroke="#94a3b8" stroke-width="2"/>
+<text x="45" y="633.4" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#172554">Emissão observada — ordem independente da resposta acima</text>
+<polyline points="150,650 150,790" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<polyline points="470,650 470,790" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<polyline points="790,650 790,790" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<polyline points="1110,650 1110,790" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 6"/>
+<polyline points="1110,685 790,685" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="800.0,690.0 790,685 800.0,680.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="857.5" y="675.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Flow: eventos atualizados</text>
+<polyline points="790,735 470,735" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="480.0,740.0 470,735 480.0,730.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="532.5" y="725.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">MedicationItem recalculado</text>
+<polyline points="470,785 150,785" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="160.0,790.0 150,785 160.0,780.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="246.0" y="775.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">uiState atualizado</text>
+<text x="30" y="835.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">* Alertas são encerrados quando o evento avança a última data real. Operação resumida.</text>
+</svg>

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="1170" viewBox="0 0 980 1170" role="img" aria-labelledby="title desc"><title id="title">Cadastro de receita e confirmação da validade</title><desc id="desc">Fluxo principal da receita; medicamentos são incluídos depois de salvar.</desc><rect width="100%" height="100%" fill="white"/>
+<text x="32" y="51.400000000000006" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#172554">Cadastro de receita e confirmação da validade</text>
+<ellipse cx="458.0" cy="82.0" rx="8.0" ry="8.0" fill="#172554" stroke="#172554" stroke-width="2"/>
+<polyline points="458,90 458,115" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="463.0,105.0 458,115 453.0,105.0" fill="none" stroke="#475569" stroke-width="2"/>
+<rect x="278" y="115" width="360" height="65" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="356.0" y="151.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Informar nome e emissão</text>
+<polyline points="458,180 458,215" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="463.0,205.0 458,215 453.0,205.0" fill="none" stroke="#475569" stroke-width="2"/>
+<polygon points="458,215 628,280 458,345 288,280" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="358.5" y="282.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Como definir a validade?</text>
+<polyline points="288,280 170,280 170,385" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="175.0,375.0 170,385 165.0,375.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="30" y="319.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Predefinido</text>
+<rect x="40" y="385" width="260" height="70" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="80.5" y="411.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Selecionar uma opção</text>
+<text x="125.0" y="436.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">e confirmar</text>
+<polyline points="628,280 750,280 750,385" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="755.0,375.0 750,385 745.0,375.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="755" y="319.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Personalizado</text>
+<rect x="620" y="385" width="300" height="70" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="685.0" y="411.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Informar dias ou data</text>
+<text x="725.0" y="436.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">e confirmar</text>
+<polyline points="170,455 170,505 458,505 458,545" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="463.0,535.0 458,545 453.0,535.0" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="770,455 770,505 458,505" fill="none" stroke="#475569" stroke-width="2"/>
+<rect x="278" y="545" width="360" height="70" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="374.0" y="571.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Configurar lembretes</text>
+<text x="376.0" y="596.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">e detalhes opcionais</text>
+<polyline points="458,615 458,650" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="463.0,640.0 458,650 453.0,640.0" fill="none" stroke="#475569" stroke-width="2"/>
+<rect x="278" y="650" width="360" height="65" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="388.5" y="686.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Revisar os dados</text>
+<polyline points="458,715 458,755" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="463.0,745.0 458,755 453.0,745.0" fill="none" stroke="#475569" stroke-width="2"/>
+<rect x="278" y="755" width="360" height="65" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="356.5" y="791.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Salvar a receita no Room</text>
+<polyline points="458,820 458,855" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="463.0,845.0 458,855 453.0,845.0" fill="none" stroke="#475569" stroke-width="2"/>
+<polygon points="458,855 628,915 458,975 288,915" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="354.5" y="916.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Adicionar medicamentos?</text>
+<polyline points="288,915 170,915 170,1020" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="175.0,1010.0 170,1020 165.0,1010.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="198" y="939.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Sim</text>
+<rect x="40" y="1020" width="290" height="70" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="85.5" y="1046.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Abrir cadastro contextual</text>
+<text x="112.5" y="1071.2" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">da receita já salva</text>
+<polyline points="628,915 770,915 770,1020" fill="none" stroke="#475569" stroke-width="2"/>
+<polyline points="775.0,1010.0 770,1020 765.0,1010.0" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="682" y="939.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Agora não</text>
+<rect x="620" y="1020" width="300" height="70" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="677.0" y="1058.7" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#172554">Abrir detalhe da receita</text>
+<text x="32" y="1140.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Os dados de cada etapa devem ser válidos antes de continuar. Voltar não confirma a escolha.</text>
+</svg>

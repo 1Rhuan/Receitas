@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1030" viewBox="0 0 1200 1030" role="img" aria-labelledby="title desc"><title id="title">Modelo relacional do banco Room</title><desc id="desc">Sete tabelas com chaves relevantes. Cardinalidades são escritas nas extremidades das relações; notificações têm alvo lógico sem chave estrangeira.</desc><rect width="100%" height="100%" fill="white"/>
+<text x="32" y="51.400000000000006" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#172554">Modelo relacional do banco Room</text>
+<rect x="50" y="100" width="310" height="136" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="64" y="129.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">doctors</text>
+<polyline points="50,143 360,143" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="64" y="167.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">PK id</text>
+<text x="64" y="193.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">name</text>
+<text x="64" y="219.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">registration?</text>
+<rect x="50" y="320" width="310" height="214" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="64" y="349.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">prescriptions</text>
+<polyline points="50,363 360,363" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="64" y="387.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">PK id</text>
+<text x="64" y="413.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">FK doctorId?</text>
+<text x="64" y="439.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">FK previousPrescriptionId?</text>
+<text x="64" y="465.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">issueDate / expiresOn?</text>
+<text x="64" y="491.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">validityDays? / validityOrigin</text>
+<text x="64" y="517.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">state</text>
+<rect x="440" y="320" width="310" height="188" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="454" y="349.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">prescription_medications</text>
+<polyline points="440,363 750,363" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="454" y="387.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">PK, FK prescriptionId</text>
+<text x="454" y="413.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">PK, FK medicationId</text>
+<text x="454" y="439.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">posology / quantity</text>
+<text x="454" y="465.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">titleSnapshot</text>
+<text x="454" y="491.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">dosageSnapshot / formSnapshot</text>
+<rect x="830" y="100" width="310" height="136" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="844" y="129.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">medications</text>
+<polyline points="830,143 1140,143" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="844" y="167.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">PK id</text>
+<text x="844" y="193.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">title / activeIngredient?</text>
+<text x="844" y="219.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">dosage / form</text>
+<rect x="830" y="420" width="310" height="214" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="844" y="449.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">pickup_tracking</text>
+<polyline points="830,463 1140,463" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="844" y="487.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">PK id</text>
+<text x="844" y="513.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">FK medicationId [UNIQUE]</text>
+<text x="844" y="539.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">FK prescriptionId?</text>
+<text x="844" y="565.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">enabled / archived</text>
+<text x="844" y="591.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">intervalAmount / intervalUnit</text>
+<text x="844" y="617.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">reminderDaysBefore</text>
+<rect x="830" y="800" width="310" height="162" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="844" y="829.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">pickup_events</text>
+<polyline points="830,843 1140,843" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="844" y="867.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">PK id</text>
+<text x="844" y="893.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">FK trackingId</text>
+<text x="844" y="919.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">occurredOn / recordedAt</text>
+<text x="844" y="945.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">UNIQUE(trackingId, occurredOn)</text>
+<rect x="50" y="750" width="390" height="188" rx="0" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="64" y="779.1" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#172554">notifications</text>
+<polyline points="50,793 440,793" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="64" y="817.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">PK id</text>
+<text x="64" y="843.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">targetId? / targetType? [sem FK]</text>
+<text x="64" y="869.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">phase? / cycleKey?</text>
+<text x="64" y="895.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">isRead / resolvedAt?</text>
+<text x="64" y="921.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">title / message</text>
+<polyline points="205,236 205,320" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="217" y="261.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">0..1</text>
+<text x="217" y="307.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">0..N</text>
+<polyline points="360,420 440,420" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="369" y="407.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">1</text>
+<text x="396" y="445.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">0..N</text>
+<polyline points="985,236 985,280 595,280 595,320" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="998" y="259.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">1</text>
+<text x="608" y="304.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">0..N</text>
+<polyline points="985,236 1170,236 1170,462 1140,462" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="1142" y="257.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">1</text>
+<text x="1145" y="449.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">0..1</text>
+<polyline points="205,534 205,660 780,660 780,550 830,550" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="216" y="564.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">0..1</text>
+<text x="785" y="534.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">0..N</text>
+<text x="395" y="647.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Receita escolhida para retiradas</text>
+<polyline points="985,634 985,800" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="998" y="699.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">1</text>
+<text x="998" y="780.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">0..N</text>
+<polyline points="50,390 20,390 20,280 115,280 115,320" fill="none" stroke="#475569" stroke-width="2"/>
+<text x="45" y="273.5" font-family="Arial, sans-serif" font-size="15" font-weight="normal" fill="#172554">Anterior: 0..1; sucessoras: 0..N</text>
+<text x="50" y="986.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">Campos abreviados: o schema exportado contém o modelo físico completo e as colunas legadas.</text>
+<text x="50" y="1012.4" font-family="Arial, sans-serif" font-size="16" font-weight="normal" fill="#172554">? = opcional   |   PK = chave primária   |   FK = chave estrangeira</text>
+</svg>
