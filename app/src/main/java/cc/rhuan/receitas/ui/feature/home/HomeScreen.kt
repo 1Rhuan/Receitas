@@ -92,10 +92,6 @@ fun HomePresentation(
             is TrackingItem.Prescription -> onRenewPrescription(item.targetId)
             is TrackingItem.Medication -> uiState.medicamentos.find { it.id == item.targetId }?.let { pendingPickup = it to LocalDate.now() }
         } },
-        onSecondaryActionWithDate = { item, date -> when (item) {
-            is TrackingItem.Prescription -> onRenewPrescription(item.targetId)
-            is TrackingItem.Medication -> uiState.medicamentos.find { it.id == item.targetId }?.let { pendingPickup = it to date }
-        } },
         onDismissSnackbar = dismissSnackbar,
         onRefresh = refreshData,
         notificationCount = uiState.unreadNotificationsCount,
@@ -117,7 +113,6 @@ fun HomeScreenContent(
     onCreateMedication: () -> Unit = {},
     onDateSelected: (LocalDate) -> Unit = {},
     onQuickAction: (TrackingItem) -> Unit = {},
-    onSecondaryActionWithDate: (TrackingItem, LocalDate) -> Unit = { _, _ -> },
     onDismissSnackbar: () -> Unit = {},
     onRefresh: () -> Unit = {},
     notificationCount: Int = uiState.unreadNotificationsCount,
@@ -125,7 +120,6 @@ fun HomeScreenContent(
     val navigationClearance = LocalNavigationClearance.current
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
-    var itemForDatePicker by remember { mutableStateOf<TrackingItem?>(null) }
     var showHeaderDatePicker by remember { mutableStateOf(false) }
 
     val portugueseLocale = remember { Locale.forLanguageTag("pt-BR") }
@@ -162,26 +156,6 @@ fun HomeScreenContent(
         ).apply {
             setOnCancelListener { showHeaderDatePicker = false }
             setOnDismissListener { showHeaderDatePicker = false }
-        }.show()
-    }
-
-    if (itemForDatePicker != null) {
-        val activeItem = itemForDatePicker!!
-        val now = LocalDate.now()
-        DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
-                val chosenDate = LocalDate.of(year, month + 1, dayOfMonth)
-                onSecondaryActionWithDate(activeItem, chosenDate)
-                itemForDatePicker = null
-            },
-            now.year,
-            now.monthValue - 1,
-            now.dayOfMonth
-        ).apply {
-            datePicker.maxDate = System.currentTimeMillis()
-            setOnCancelListener { itemForDatePicker = null }
-            setOnDismissListener { itemForDatePicker = null }
         }.show()
     }
 
@@ -263,7 +237,7 @@ fun HomeScreenContent(
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(start = T.margin, end = T.margin, top = T.tight, bottom = navigationClearance + T.section),
-                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                                verticalArrangement = Arrangement.spacedBy(T.padding)
                             ) {
                                 // 1. Lista de acompanhamentos da data selecionada
                                 if (uiState.mainTrackingItems.isEmpty()) {
@@ -287,7 +261,6 @@ fun HomeScreenContent(
                                                 }
                                             },
                                             onPrimaryAction = { item -> onQuickAction(item) },
-                                            onSecondaryAction = { item -> if (item is TrackingItem.Prescription) onQuickAction(item) else itemForDatePicker = item }
                                         )
                                     }
                                 }

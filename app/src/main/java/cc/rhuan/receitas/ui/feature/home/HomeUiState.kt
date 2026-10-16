@@ -27,9 +27,7 @@ data class HomeStatusLabels(
     val prescriptionExpiredDay: String = "Venceu há %d dia",
     val prescriptionExpiredDays: String = "Venceu há %d dias",
     val actionRenewPrescription: String = "Registrar nova receita",
-    val actionRegisterRenewal: String = "Registrar nova receita",
     val actionPickUpMedication: String = "Registrar retirada",
-    val actionRegisterPickup: String = "Registrar retirada",
 )
 
 data class HomeUiState(
@@ -97,7 +95,6 @@ data class HomeUiState(
                                 prescriberName = if (prescription.doctorName.isNotBlank()) prescription.doctorName else null,
                                 userNote = prescription.notes?.takeIf { it.isNotBlank() },
                                 primaryActionText = statusLabels.actionRenewPrescription,
-                                secondaryActionText = statusLabels.actionRegisterRenewal,
                                 rawDate = expirationDate,
                                 isFutureContext = false
                             )
@@ -146,7 +143,6 @@ data class HomeUiState(
                                 stockText = stockVal,
                                 userNote = med.instructions?.takeIf { it.isNotBlank() },
                                 primaryActionText = statusLabels.actionPickUpMedication,
-                                secondaryActionText = statusLabels.actionRegisterPickup,
                                 rawDate = nextRefill,
                                 isFutureContext = false
                             )
@@ -155,7 +151,7 @@ data class HomeUiState(
                 }
             } else {
                 // 2. QUANDO OUTRA DATA ESTIVER SELECIONADA:
-                for (prescription in prescriptions) {
+                for (prescription in prescriptions.filter { it.isActive }) {
                     if (prescription.expirationDate == selectedDate) {
                         val titleText = if (prescription.title.contains("Receita", ignoreCase = true)) {
                             prescription.title
@@ -181,7 +177,6 @@ data class HomeUiState(
                                 prescriberName = if (prescription.doctorName.isNotBlank()) prescription.doctorName else null,
                                 userNote = prescription.notes?.takeIf { it.isNotBlank() },
                                 primaryActionText = statusLabels.actionRenewPrescription,
-                                secondaryActionText = statusLabels.actionRegisterRenewal,
                                 rawDate = prescription.expirationDate,
                                 isFutureContext = false
                             )
@@ -189,8 +184,8 @@ data class HomeUiState(
                     }
                 }
 
-                for (med in medicamentos) {
-                    val nextRefill = med.nextAvailableRefillDate ?: today
+                for (med in medicamentos.filter { it.hasRecurringPickup && !it.trackingArchived }) {
+                    val nextRefill = med.nextAvailableRefillDate ?: continue
                     if (nextRefill == selectedDate) {
                         val titleText = if (med.dosage.isNotBlank()) "${med.title} ${med.dosage}" else med.title
                         val lastRefillText = if (med.lastRefillDate != null) {
@@ -219,7 +214,6 @@ data class HomeUiState(
                                 stockText = stockVal,
                                 userNote = med.instructions?.takeIf { it.isNotBlank() },
                                 primaryActionText = statusLabels.actionPickUpMedication,
-                                secondaryActionText = statusLabels.actionRegisterPickup,
                                 rawDate = nextRefill,
                                 isFutureContext = false
                             )
@@ -239,7 +233,7 @@ data class HomeUiState(
             val shortDateFormatter = DateTimeFormatter.ofPattern("dd/MM")
             val items = mutableListOf<Pair<LocalDate, TrackingItem>>()
 
-            for (prescription in prescriptions) {
+            for (prescription in prescriptions.filter { it.isActive }) {
                 val expirationDate = prescription.expirationDate
                 if (expirationDate.isAfter(selectedDate)) {
                     val daysAway = ChronoUnit.DAYS.between(selectedDate, expirationDate).toInt()
@@ -262,7 +256,6 @@ data class HomeUiState(
                             prescriberName = if (prescription.doctorName.isNotBlank()) prescription.doctorName else null,
                             userNote = prescription.notes?.takeIf { it.isNotBlank() },
                             primaryActionText = statusLabels.actionRenewPrescription,
-                            secondaryActionText = statusLabels.actionRegisterRenewal,
                             rawDate = expirationDate,
                             isFutureContext = true,
                             contextTag = contextTag
@@ -291,7 +284,6 @@ data class HomeUiState(
                             stockText = stockVal,
                             userNote = med.instructions?.takeIf { it.isNotBlank() },
                             primaryActionText = statusLabels.actionPickUpMedication,
-                            secondaryActionText = statusLabels.actionRegisterPickup,
                             rawDate = nextRefill,
                             isFutureContext = true,
                             contextTag = contextTag
@@ -309,7 +301,7 @@ data class HomeUiState(
         var hasOrange = false
         var hasGreen = false
 
-        for (prescription in prescriptions) {
+        for (prescription in prescriptions.filter { it.isActive }) {
             val expDate = prescription.expirationDate
             if (expDate == date) {
                 if (expDate < today) {

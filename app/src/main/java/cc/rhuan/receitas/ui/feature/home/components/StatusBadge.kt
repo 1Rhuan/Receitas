@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun StatusBadge(
@@ -23,7 +22,7 @@ fun StatusBadge(
         TrackingStatus.EXPIRED, TrackingStatus.PICKUP_OVERDUE -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
         TrackingStatus.EXPIRES_TODAY -> AppPalette.warningContainer to AppPalette.warning
         TrackingStatus.PICKUP_TODAY -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.tertiary
-        TrackingStatus.EXPIRES_SOON, TrackingStatus.PICKUP_SOON -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary
+        TrackingStatus.EXPIRES_SOON, TrackingStatus.PICKUP_SOON -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
     }
 
     Surface(
@@ -32,11 +31,10 @@ fun StatusBadge(
         color = backgroundColor
     ) {
         Text(
-            text = label.uppercase(),
-            style = MaterialTheme.typography.labelSmall.copy(
+            text = label,
+            style = MaterialTheme.typography.labelLarge.copy(
                 fontWeight = FontWeight.Bold,
                 color = textColor,
-                fontSize = 11.sp
             ),
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
         )

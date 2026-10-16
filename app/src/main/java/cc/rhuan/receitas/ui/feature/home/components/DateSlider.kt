@@ -1,191 +1,107 @@
 package cc.rhuan.receitas.ui.feature.home.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import cc.rhuan.receitas.R
 import cc.rhuan.receitas.ui.feature.home.DayEventPriority
-import java.time.DayOfWeek
+import cc.rhuan.receitas.ui.theme.DesignTokens as T
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 @Composable
-fun EventIndicator(
-    priority: DayEventPriority,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .size(5.dp)
-            .clip(CircleShape)
-            .background(priority.color)
-    )
+private fun calendarCellWidth() = T.control * (LocalDensity.current.fontScale / 1.5f).coerceAtLeast(1f)
+
+@Composable
+fun EventIndicator(priority: DayEventPriority, modifier: Modifier = Modifier) {
+    Box(modifier.size(T.tight).clip(CircleShape).background(priority.color))
 }
 
 @Composable
-fun DateItem(
-    date: LocalDate,
-    isSelected: Boolean,
-    isToday: Boolean,
-    eventPriority: DayEventPriority?,
-    onDateSelected: (LocalDate) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val dayInitial = when (date.dayOfWeek) {
-        DayOfWeek.SUNDAY -> "D"
-        DayOfWeek.MONDAY -> "S"
-        DayOfWeek.TUESDAY -> "T"
-        DayOfWeek.WEDNESDAY -> "Q"
-        DayOfWeek.THURSDAY -> "Q"
-        DayOfWeek.FRIDAY -> "S"
-        DayOfWeek.SATURDAY -> "S"
-    }
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier
-            .clip(MaterialTheme.shapes.large)
-            .clickable { onDateSelected(date) }
-            .background(
-                if (isSelected) MaterialTheme.colorScheme.outlineVariant else Color.Transparent
-            )
-            .padding(horizontal = 8.dp, vertical = 6.dp)
-    ) {
-        Text(
-            text = dayInitial,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.SemiBold,
-                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 13.sp
-            )
-        )
-
-        if (isSelected) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurface),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = date.dayOfMonth.toString(),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 14.sp
-                    )
-                )
-            }
-        } else {
-            Box(
-                modifier = Modifier.size(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = date.dayOfMonth.toString(),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 14.sp
-                    )
-                )
-            }
+fun DateItem(date: LocalDate, isSelected: Boolean, isToday: Boolean, eventPriority: DayEventPriority?,
+    onDateSelected: (LocalDate) -> Unit, modifier: Modifier = Modifier) {
+    val locale = Locale.forLanguageTag("pt-BR")
+    val description = date.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", locale)) +
+        if (eventPriority != null) stringResource(R.string.calendar_has_events) else ""
+    Column(modifier.width(calendarCellWidth()).heightIn(min = T.control)
+        .testTag("calendar-date-$date")
+        .clip(MaterialTheme.shapes.large)
+        .selectable(isSelected, role = Role.Button, onClick = { onDateSelected(date) })
+        .semantics { contentDescription = description }
+        .padding(vertical = T.small),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(T.tight)) {
+        Text(date.format(DateTimeFormatter.ofPattern("EEE", locale)).removeSuffix("."),
+            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Box(Modifier.size(T.control).clip(CircleShape)
+            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent),
+            contentAlignment = Alignment.Center) {
+            Text(date.dayOfMonth.toString(), style = MaterialTheme.typography.bodyLarge,
+                fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Medium,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
         }
-
-        if (eventPriority != null) {
-            EventIndicator(priority = eventPriority)
-        } else {
-            Spacer(modifier = Modifier.height(5.dp))
-        }
+        if (eventPriority != null) EventIndicator(eventPriority) else Spacer(Modifier.height(T.tight))
     }
 }
 
 @Composable
-fun DateSlider(
-    selectedDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit,
-    getEventIndicator: (LocalDate) -> DayEventPriority?,
-    modifier: Modifier = Modifier
-) {
+fun DateSlider(selectedDate: LocalDate, onDateSelected: (LocalDate) -> Unit,
+    getEventIndicator: (LocalDate) -> DayEventPriority?, modifier: Modifier = Modifier) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val cellWidth = calendarCellWidth()
+        val available = (maxWidth - T.margin * 2).coerceAtLeast(cellWidth)
+        val capacity = ((available + T.small) / (cellWidth + T.small)).toInt().coerceAtLeast(1)
+        val daysPerPage = listOf(7, 5, 3, 1).first { it <= capacity }
+        key(daysPerPage) { DatePager(selectedDate, onDateSelected, getEventIndicator, daysPerPage) }
+    }
+}
+
+@Composable
+private fun DatePager(selectedDate: LocalDate, onDateSelected: (LocalDate) -> Unit,
+    getEventIndicator: (LocalDate) -> DayEventPriority?, daysPerPage: Int) {
     val baseDate = remember { LocalDate.now() }
-    val initialPage = 5000
-    val pageCount = 10000
-
-    val pagerState = rememberPagerState(
-        initialPage = initialPage,
-        pageCount = { pageCount }
-    )
-
+    val initialPage = Int.MAX_VALUE / 2
+    val half = daysPerPage / 2
     val daysFromBase = ChronoUnit.DAYS.between(baseDate, selectedDate)
-    val targetPage = initialPage + Math.floorDiv(daysFromBase + 3, 7L).toInt()
-
-    LaunchedEffect(targetPage) {
-        if (pagerState.currentPage != targetPage) {
-            pagerState.animateScrollToPage(targetPage)
+    val targetPage = initialPage + Math.floorDiv(daysFromBase + half, daysPerPage.toLong()).toInt()
+    val pagerState = rememberPagerState(initialPage = targetPage, pageCount = { Int.MAX_VALUE })
+    LaunchedEffect(targetPage, daysPerPage) {
+        if (pagerState.currentPage != targetPage) pagerState.animateScrollToPage(targetPage)
+    }
+    LaunchedEffect(pagerState.settledPage, daysPerPage) {
+        val center = baseDate.plusDays((pagerState.settledPage - initialPage).toLong() * daysPerPage)
+        val start = center.minusDays(half.toLong())
+        val end = start.plusDays(daysPerPage - 1L)
+        if (selectedDate.isBefore(start) || selectedDate.isAfter(end)) {
+            val position = Math.floorMod(daysFromBase + half, daysPerPage.toLong())
+            onDateSelected(start.plusDays(position))
         }
     }
-
-    LaunchedEffect(pagerState.settledPage) {
-        val currentOffset = pagerState.settledPage - initialPage
-        val centerDate = baseDate.plusDays(currentOffset * 7L)
-        val pageStart = centerDate.minusDays(3)
-        val pageEnd = centerDate.plusDays(3)
-
-        if (selectedDate.isBefore(pageStart) || selectedDate.isAfter(pageEnd)) {
-            val relativeOffset = ChronoUnit.DAYS.between(baseDate, selectedDate) % 7
-            val normalizedOffset = if (relativeOffset < 0) relativeOffset + 7 else relativeOffset
-            val newSelectedDate = pageStart.plusDays(normalizedOffset)
-            onDateSelected(newSelectedDate)
-        }
-    }
-
-    HorizontalPager(
-        state = pagerState,
-        modifier = modifier.fillMaxWidth(),
-    ) { page ->
-        val weekOffset = page - initialPage
-        val centerDate = baseDate.plusDays(weekOffset * 7L)
-        val weekDays = (-3..3).map { centerDate.plusDays(it.toLong()) }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            weekDays.forEach { date ->
-                DateItem(
-                    date = date,
-                    isSelected = date == selectedDate,
-                    isToday = date == baseDate,
-                    eventPriority = getEventIndicator(date),
-                    onDateSelected = onDateSelected
-                )
+    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxWidth().testTag("date-pager")) { page ->
+        val center = baseDate.plusDays((page - initialPage).toLong() * daysPerPage)
+        Row(Modifier.fillMaxWidth().padding(horizontal = T.margin),
+            horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+            (-half..half).forEach { offset ->
+                val date = center.plusDays(offset.toLong())
+                DateItem(date, date == selectedDate, date == baseDate, getEventIndicator(date), onDateSelected)
             }
         }
     }

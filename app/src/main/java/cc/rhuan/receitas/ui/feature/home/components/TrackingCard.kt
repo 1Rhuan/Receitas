@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import cc.rhuan.receitas.ui.theme.DesignTokens as T
+import cc.rhuan.receitas.ui.components.ActionButton
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,16 +21,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import cc.rhuan.receitas.ui.components.AppCard as Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,9 +36,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import cc.rhuan.receitas.R
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TrackingCard(
     type: String,
@@ -50,7 +47,7 @@ fun TrackingCard(
     title: String,
     leadingIcon: @Composable () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
-    actions: @Composable RowScope.() -> Unit,
+    actions: @Composable ColumnScope.() -> Unit,
     modifier: Modifier = Modifier,
     userNote: String? = null,
     onClick: (() -> Unit)? = null,
@@ -64,21 +61,20 @@ fun TrackingCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(T.padding),
+            verticalArrangement = Arrangement.spacedBy(T.gap)
         ) {
             // 1. Header: Tipo do Item e Badge de Status
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(T.small),
+                verticalArrangement = Arrangement.spacedBy(T.small)
             ) {
                 Text(
                     text = type,
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp
                     )
                 )
 
@@ -113,11 +109,9 @@ fun TrackingCard(
                         text = title,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
+
                             color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        )
                     )
 
                     content()
@@ -145,7 +139,6 @@ fun TrackingCard(
                         Text(
                             text = userNote,
                             style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             ),
                             maxLines = 2,
@@ -164,13 +157,7 @@ fun TrackingCard(
             )
 
             // 4. Ações
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                actions()
-            }
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(T.small)) { actions() }
         }
     }
 }
@@ -180,7 +167,6 @@ fun MedicationTrackingCard(
     item: TrackingItem.Medication,
     onClick: () -> Unit,
     onPrimaryAction: () -> Unit,
-    onSecondaryAction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     TrackingCard(
@@ -208,12 +194,12 @@ fun MedicationTrackingCard(
             }
         },
         content = {
+            Text(item.formattedDateText, style = MaterialTheme.typography.bodyLarge)
             if (!item.lastPickupDateText.isNullOrBlank()) {
                 Text(
                     text = item.lastPickupDateText,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 )
@@ -233,7 +219,6 @@ fun MedicationTrackingCard(
                     Text(
                         text = item.stockText,
                         style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -241,63 +226,7 @@ fun MedicationTrackingCard(
                 }
             }
         },
-        actions = {
-            Button(
-                onClick = onPrimaryAction,
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                modifier = Modifier
-                    .weight(1f)
-                    .height(34.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = item.primaryActionText,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            OutlinedButton(
-                onClick = onSecondaryAction,
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                modifier = Modifier
-                    .weight(1f)
-                    .height(34.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Event,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = item.secondaryActionText,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
+        actions = { ActionButton(item.primaryActionText, onPrimaryAction, Modifier.fillMaxWidth()) }
     )
 }
 
@@ -306,7 +235,6 @@ fun PrescriptionTrackingCard(
     item: TrackingItem.Prescription,
     onClick: () -> Unit,
     onPrimaryAction: () -> Unit,
-    onSecondaryAction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     TrackingCard(
@@ -328,12 +256,13 @@ fun PrescriptionTrackingCard(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_bold_document_medicine),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(20.dp)
                 )
             }
         },
         content = {
+            Text(item.formattedDateText, style = MaterialTheme.typography.bodyLarge)
             if (!item.prescriberName.isNullOrBlank()) {
                 Column(
                     modifier = Modifier.padding(top = 2.dp),
@@ -342,7 +271,6 @@ fun PrescriptionTrackingCard(
                     Text(
                         text = stringResource(R.string.ui_prescritor),
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -350,7 +278,6 @@ fun PrescriptionTrackingCard(
                     Text(
                         text = item.prescriberName,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -358,62 +285,6 @@ fun PrescriptionTrackingCard(
                 }
             }
         },
-        actions = {
-            Button(
-                onClick = onPrimaryAction,
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                modifier = Modifier
-                    .weight(1f)
-                    .height(34.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = item.primaryActionText,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            OutlinedButton(
-                onClick = onSecondaryAction,
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                modifier = Modifier
-                    .weight(1f)
-                    .height(34.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Event,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = item.secondaryActionText,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
+        actions = { ActionButton(item.primaryActionText, onPrimaryAction, Modifier.fillMaxWidth()) }
     )
 }

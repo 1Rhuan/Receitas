@@ -10,7 +10,6 @@ sealed interface TrackingItem {
     val statusLabel: String
     val userNote: String?
     val primaryActionText: String
-    val secondaryActionText: String
     val rawDate: LocalDate?
     val isFutureContext: Boolean
     val contextTag: String?
@@ -26,7 +25,6 @@ sealed interface TrackingItem {
         val stockText: String? = null,
         override val userNote: String? = null,
         override val primaryActionText: String,
-        override val secondaryActionText: String,
         override val rawDate: LocalDate? = null,
         override val isFutureContext: Boolean = false,
         override val contextTag: String? = null,
@@ -42,7 +40,6 @@ sealed interface TrackingItem {
         val prescriberName: String? = null,
         override val userNote: String? = null,
         override val primaryActionText: String,
-        override val secondaryActionText: String,
         override val rawDate: LocalDate? = null,
         override val isFutureContext: Boolean = false,
         override val contextTag: String? = null,
