@@ -4,6 +4,7 @@ WorkManager verifica as datas diariamente, sem exigir rede ou horário exato. Um
 
 - Receitas: antecedência configurada no banco (padrão: 5 dias), dia do vencimento e receita vencida. O dia do vencimento ainda é considerado válido.
 - Retiradas recorrentes: antecedência configurada (padrão: 3 dias) e data alcançada ou atrasada. A data vem da retirada real mais recente mais o intervalo em dias, semanas, meses ou anos, independentemente do estoque. Registros sem data ou com intervalo inválido não geram lembretes.
+- Conflito entre prazos: receita ativa escolhida para retiradas, já emitida, com vencimento anterior à próxima retirada gera aviso imediatamente, sem esperar a janela de antecedência. Vencimento no mesmo dia não é conflito. O aviso permite consultar o medicamento, sem sugerir registrar uma retirada para resolver a validade. Renovação, ajuste dos prazos, desvinculação ou arquivamento encerram o aviso quando a condição deixa de existir.
 - Cada etapa de cada ciclo gera um aviso. O histórico de entrega é persistido separadamente do histórico interno para que apagar notificações não provoque reenvio.
 - Renovação, retirada, exclusão e mudança de etapa cancelam avisos antigos na barra e marcam alertas internos obsoletos como lidos.
 - Android 13 ou superior solicita autorização na primeira abertura. Se recusada, os avisos internos continuam funcionando; a autorização pode ser habilitada nas configurações do Android. A próxima abertura verifica novamente os alertas pendentes.
@@ -26,6 +27,8 @@ Referência: https://developer.android.com/jetpack/androidx/releases/work
 A tela observa o mesmo histórico Room alimentado pela verificação diária. Atualizar chama a mesma sincronização utilizada pelo Worker e mantém apenas uma assinatura da lista. Categorias são identificadas por campos explícitos de ciclo, alvo e etapa do alerta, sem inferência por palavras no título. Eventos antigos de dose ou estoque ficam fora da lista atual.
 
 Ler, excluir ou limpar alertas cancela os respectivos avisos do Android. Excluir persiste a supressão daquela etapa, impedindo que atualizar recrie o item. A etapa seguinte e ciclos futuros continuam elegíveis. Tocar em um aviso do Android abre a tela de notificações e o marca como lido. Descartar o aviso deslizando na barra do Android não marca o histórico interno como lido.
+
+Limpar todas as notificações exige confirmação e informa que receitas, medicamentos e retiradas serão preservados. O cabeçalho separa título e ações, com botões que acomodam texto ampliado. Cabeçalho e filtros participam da rolagem da lista, preservando a área de leitura com fontes ampliadas.
 
 Registrar nova receita abre um cadastro e preserva o documento anterior. Registrar retirada pede a data real; antecipação exige confirmação adicional. Retirada cria um evento de histórico e preserva os demais dados do medicamento. Alertas de ciclos encerrados ficam no histórico sem ações de registro. Ver receita abre os detalhes da receita vinculada.
 

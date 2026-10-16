@@ -8,7 +8,7 @@ A referência atual é a One UI, documentada em [DESIGN.md](../DESIGN.md) e [one
 - `FormComponents.kt`: campos, seleção, grupos opcionais e alternâncias.
 - `WizardQuestionScreen`: conteúdo rolável, erro acessível e ação principal junto à base, respeitando o teclado.
 
-A barra flutuante mostra somente Início, Receitas e Remédios. Nova receita e Novo medicamento ficam no início rolável de suas páginas, inclusive no vazio. Não há “+” na barra nem FAB separado. A cápsula preserva transparência externa e sua altura medida determina a reserva ao fim da lista.
+A barra flutuante mostra somente Início, Receitas e Remédios. Em Receitas e Remédios, a ação “+” contextual (Criar receita, Criar medicamento) fica junto à cápsula, com o mesmo acabamento; no Início ela não aparece. As listas preenchidas não têm botão de criação no topo, e o estado vazio oferece a ação na orientação central. Não há FAB em outro lugar. A cápsula preserva transparência externa e sua altura medida determina a reserva ao fim da lista.
 
 O padrão aprovado é listas agrupadas: `GroupedSection`/`GroupedValueRow` para informação; cartões para registros e resumos. `DetailIdentityHeader` oferece ícones tonais de editar/remover e reativar quando aplicável. `RemovalChoiceDialog` permite escolher arquivar ou excluir, seguido da confirmação existente. `TimelineEntry` organiza a prévia de três retiradas e o histórico completo, com menus por evento somente no histórico completo.
 

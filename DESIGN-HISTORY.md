@@ -127,16 +127,16 @@ Em 14/10/2026 foram consultadas mais 17 páginas sobre componentes, cores, escri
 
 ### Valores documentados encontrados
 
-| Item | Valor publicado | Fonte e limite de aplicação |
-| --- | --- | --- |
-| Azul `Primary dark` | claro `#0072DE`; escuro `#3E91FF` | [Color system](https://developer.samsung.com/one-ui/color/system.html), exemplos para botões preenchidos e subtexto |
-| Azul `Primary` | `#0381FE` nos dois temas | mesma página, exemplos de FAB e slider |
-| `Color control activated` | `#3E91FF` nos dois temas | mesma página, checkbox e switch |
-| Raio de botão | 18 dp | [Buttons](https://developer.samsung.com/one-ui/comp/button.html), exemplo XML de fundo/máscara; não é raio universal de cartões |
-| Ampliação de texto | até 200% | [Layout and typography](https://developer.samsung.com/one-ui/accessibility/layout-and-typo.html); a página excetua subtítulos e texto em imagens |
-| Contraste | texto pequeno 4,5:1; grande 3:1 | [Color and contrast](https://developer.samsung.com/one-ui/accessibility/color-contrast.html); a fonte define grande como mais de 18 dp normal ou 14 dp bold |
-| Movimento | de 100 a 500 ms; curva `[0.22, 0.25, 0.00, 1.00]` | [Motion](https://developer.samsung.com/one-ui/motion/basic.html), duração depende do objeto e deslocamento |
-| Classes de largura | compacta <600 dp; média de 600 a <840 dp; expandida ≥840 dp | [Large screen layout](https://developer.samsung.com/one-ui/largescreen-and-foldable/large_screen_layout.html), largura da janela disponível |
+| Item                      | Valor publicado                                             | Fonte e limite de aplicação                                                                                                                                 |
+| ------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Azul `Primary dark`       | claro `#0072DE`; escuro `#3E91FF`                           | [Color system](https://developer.samsung.com/one-ui/color/system.html), exemplos para botões preenchidos e subtexto                                         |
+| Azul `Primary`            | `#0381FE` nos dois temas                                    | mesma página, exemplos de FAB e slider                                                                                                                      |
+| `Color control activated` | `#3E91FF` nos dois temas                                    | mesma página, checkbox e switch                                                                                                                             |
+| Raio de botão             | 18 dp                                                       | [Buttons](https://developer.samsung.com/one-ui/comp/button.html), exemplo XML de fundo/máscara; não é raio universal de cartões                             |
+| Ampliação de texto        | até 200%                                                    | [Layout and typography](https://developer.samsung.com/one-ui/accessibility/layout-and-typo.html); a página excetua subtítulos e texto em imagens            |
+| Contraste                 | texto pequeno 4,5:1; grande 3:1                             | [Color and contrast](https://developer.samsung.com/one-ui/accessibility/color-contrast.html); a fonte define grande como mais de 18 dp normal ou 14 dp bold |
+| Movimento                 | de 100 a 500 ms; curva `[0.22, 0.25, 0.00, 1.00]`           | [Motion](https://developer.samsung.com/one-ui/motion/basic.html), duração depende do objeto e deslocamento                                                  |
+| Classes de largura        | compacta <600 dp; média de 600 a <840 dp; expandida ≥840 dp | [Large screen layout](https://developer.samsung.com/one-ui/largescreen-and-foldable/large_screen_layout.html), largura da janela disponível                 |
 
 Na segunda versão foram aplicados os azuis `Primary dark` aos temas e o raio de 18 dp aos botões. Texto escuro sobre o botão azul no tema escuro é uma escolha do projeto para preservar contraste. A fonte dá medidas em dp para os limiares de texto grande; a implementação continua usando sp e contabiliza a escala do usuário. Para textos do projeto, adotar 4,5:1 como critério conservador simplifica a verificação. Valores publicados de curva, duração e classes de largura continuam disponíveis para a migração; não são implementados automaticamente em toda a interface.
 
@@ -155,24 +155,24 @@ Na segunda versão, as revisões de cabeçalho, botão, navegação textual e re
 
 Código fonte: `ui/theme/DesignSystem.kt`. Nunca repetir números ou hexadecimais em telas.
 
-| Categoria | Valor | Origem |
-| --- | --- | --- |
-| Margem lateral | 24 dp | mínimo documentado no Grid Samsung |
-| Espaçamentos | 8, 12, 16, 24 dp | projeto |
-| Respiro vertical do cabeçalho expandido | 24 dp acima e abaixo | projeto; altura cresce com texto |
-| Raios | 12 / 16 / 24 / 28 dp | projeto |
-| Raio dos botões | 18 dp | exemplo documentado Samsung Buttons |
-| Cabeçalho compacto | altura disponível <600 dp ou escala de fonte ≥1,5× | projeto; esse limiar de altura não é a classe de largura Samsung |
-| Alvo mínimo dos filtros | 48 dp | projeto |
-| Busca | mínimo 56 dp | projeto |
-| Ícones | 24 dp | projeto / tamanho padrão Material |
-| Reserva inferior da lista | 24 dp | projeto; somada à altura medida da barra no contentPadding da lista |
-| Fonte | sistema Android (`FontFamily.Default`) | projeto, substitui Poppins no piloto |
-| Título expandido | 36 sp / linha 44 sp, bold | projeto |
-| Título condensado | 22 sp / linha 28 sp, semibold | projeto |
-| Títulos de seção e registro | 18 sp / linha 26 sp, semibold | projeto |
-| Corpo | 16/24, 14/20, 12/18 sp | projeto |
-| Rótulos | 14/20 e 12/18 sp | projeto |
+| Categoria                               | Valor                                              | Origem                                                              |
+| --------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------- |
+| Margem lateral                          | 24 dp                                              | mínimo documentado no Grid Samsung                                  |
+| Espaçamentos                            | 8, 12, 16, 24 dp                                   | projeto                                                             |
+| Respiro vertical do cabeçalho expandido | 24 dp acima e abaixo                               | projeto; altura cresce com texto                                    |
+| Raios                                   | 12 / 16 / 24 / 28 dp                               | projeto                                                             |
+| Raio dos botões                         | 18 dp                                              | exemplo documentado Samsung Buttons                                 |
+| Cabeçalho compacto                      | altura disponível <600 dp ou escala de fonte ≥1,5× | projeto; esse limiar de altura não é a classe de largura Samsung    |
+| Alvo mínimo dos filtros                 | 48 dp                                              | projeto                                                             |
+| Busca                                   | mínimo 56 dp                                       | projeto                                                             |
+| Ícones                                  | 24 dp                                              | projeto / tamanho padrão Material                                   |
+| Reserva inferior da lista               | 24 dp                                              | projeto; somada à altura medida da barra no contentPadding da lista |
+| Fonte                                   | sistema Android (`FontFamily.Default`)             | projeto, substitui Poppins no piloto                                |
+| Título expandido                        | 36 sp / linha 44 sp, bold                          | projeto                                                             |
+| Título condensado                       | 22 sp / linha 28 sp, semibold                      | projeto                                                             |
+| Títulos de seção e registro             | 18 sp / linha 26 sp, semibold                      | projeto                                                             |
+| Corpo                                   | 16/24, 14/20, 12/18 sp                             | projeto                                                             |
+| Rótulos                                 | 14/20 e 12/18 sp                                   | projeto                                                             |
 
 Paleta semântica definida no mesmo arquivo. Claro: fundo `#F2F2F2`, cartão `#FFFFFF`, texto `#171717`, secundário `#595959`, ação `#0072DE`, destaque `#E8F0FF`. Escuro: fundo `#000000`, cartão `#1C1C1E`, texto `#F5F5F5`, secundário `#BDBDBD`, ação `#3E91FF`, texto sobre ação `#001A3D`, destaque `#1B355C`. Os azuis de ação são documentados; os demais pares são decisões do projeto. Alertas usam `errorContainer`/`onErrorContainer` e rótulo textual. Não usar cores dinâmicas no novo sistema para manter a direção aprovada.
 
@@ -257,6 +257,7 @@ Detalhes usam cabeçalho compartilhado com altura pelo conteúdo, cartões e aç
 ### Limites e acompanhamento
 
 A adoção do tema global não equivale a uma auditoria completa das superfícies: os componentes específicos de Início, Notificações e Menu ainda precisam de revisão de composição e acessibilidade. A prioridade desta rodada, conforme esclarecimento do usuário, foi o cadastro. Validação manual com TalkBack continua pendente. Os registros anteriores de validação descrevem versões anteriores; os resultados desta rodada constam abaixo.
+
 ### Validação desta rodada
 
 - `:app:assembleDebug`, `:app:lintDebug` e 40 testes de `:app:testDebugUnitTest` passaram. O novo teste cobre a etapa condicional, a validação da antecedência no momento correto e o retorno à revisão após desativar a recorrência.
