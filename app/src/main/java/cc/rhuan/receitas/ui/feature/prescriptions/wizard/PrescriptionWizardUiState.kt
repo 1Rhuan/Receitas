@@ -55,6 +55,9 @@ data class MedicationDraft(
         ChronoUnit.DAYS.between(date, PickupInterval(amount, intervalUnit).nextAfter(date)).toInt()
     } ?: 30
 
+    // Legacy calendar intervals keep their schedule until the user edits the days field.
+    val pickupIntervalDisplayInput: String get() = if (intervalUnit != IntervalUnit.DAYS && pickupIntervalDays in 1..3650) intervalDurationDays.toString() else pickupIntervalInput
+
     fun pickupError(today: LocalDate = LocalDate.now()): String? = when {
         !hasRecurringPickup -> null
         lastPickupDate == null -> "Informe a data da última retirada."
@@ -65,12 +68,31 @@ data class MedicationDraft(
     }
 }
 
+data class PrescriptionTypeDraft(
+    val type: PrescriptionType?,
+    val validityDays: Int?,
+    val validityDaysInput: String,
+    val validityOrigin: String,
+    val useExpirationDate: Boolean,
+    val manualValidityDaysInput: String? = validityDaysInput.takeIf { validityOrigin == "USER_ENTERED" },
+    val manualUseExpirationDate: Boolean = useExpirationDate,
+) : Serializable {
+    val error: String? get() = when {
+        type == null -> "Escolha o tipo da receita."
+        validityDays == null || validityDays !in 1..3650 -> "Informe uma validade de 1 a 3650 dias."
+        else -> null
+    }
+}
+
 data class PrescriptionWizardUiState(
     val entryMode: WizardEntryMode = WizardEntryMode.FULL_PRESCRIPTION,
     val editingPrescriptionId: String? = null,
     val previousPrescriptionId: String? = null,
     val recordState: RecordState = RecordState.ACTIVE,
     val editingMedicationId: String? = null,
+    val addToPrescriptionId: String? = null,
+    val addToPrescriptionTitle: String = "",
+    val existingPrescriptionMedicationIds: List<String> = emptyList(),
     val currentStep: Int = 1,
     val registrationId: String = UUID.randomUUID().toString(),
     val savedPrescriptionId: String? = null,
@@ -93,6 +115,8 @@ data class PrescriptionWizardUiState(
     val validityDays: Int? = 180,
     val validityDaysInput: String = "180",
     val validityOrigin: String = "SUGGESTED",
+    val validityDateMode: Boolean = false,
+    val typeEditor: PrescriptionTypeDraft? = null,
     val renewalReminderEnabled: Boolean = true,
     val renewalReminderDaysBefore: Int = 5,
 
@@ -115,12 +139,30 @@ data class PrescriptionWizardUiState(
     val errorMessage: String? = null,
 ) : Serializable {
     val pickupOptionsStep: Int? get() = if (allMedications.any { it.hasRecurringPickup }) pickupStep + 1 else null
-    val maxSteps: Int get() = (if (entryMode == WizardEntryMode.STANDALONE_MEDICATION) 3 else 4) + if (pickupOptionsStep != null) 1 else 0
-    val medicationStep: Int get() = if (entryMode == WizardEntryMode.STANDALONE_MEDICATION) 1 else 2
-    val pickupStep: Int get() = if (entryMode == WizardEntryMode.STANDALONE_MEDICATION) 2 else 3
+    val pickupContextStep: Int? get() = pickupOptionsStep?.plus(1)
+    val recipeNameStep: Int? get() = if (entryMode == WizardEntryMode.FULL_PRESCRIPTION) 1 else null
+    val recipeIdentityStep: Int? get() = if (entryMode == WizardEntryMode.FULL_PRESCRIPTION) 2 else null
+    val renewalOptionsStep: Int? get() = if (entryMode == WizardEntryMode.FULL_PRESCRIPTION) 3 else null
+    val recipeDetailsStep: Int? get() = if (entryMode == WizardEntryMode.FULL_PRESCRIPTION) optionalDetailsStep else null
+    val optionalDetailsStep: Int get() = if (entryMode == WizardEntryMode.FULL_PRESCRIPTION && allMedications.isEmpty()) medicationStep + 1 else (pickupContextStep ?: pickupStep) + 1
+    val maxSteps: Int get() = optionalDetailsStep + 1
+    val medicationStep: Int get() = if (entryMode == WizardEntryMode.STANDALONE_MEDICATION) 1 else 4
+    val pickupStep: Int get() = medicationStep + 1
     val progress: Float get() = currentStep.toFloat() / maxSteps
+    val canSkipCurrentStep: Boolean get() {
+        if (isLoading || isSaved || initialLoadFailed || typeEditor != null || currentStep == maxSteps) return false
+        return when (currentStep) {
+            recipeNameStep -> false
+            optionalDetailsStep -> true
+            medicationStep -> entryMode == WizardEntryMode.FULL_PRESCRIPTION && medicationError == null
+            renewalOptionsStep -> recipeError == null
+            pickupStep -> medicationError == null && allMedications.none { it.hasRecurringPickup }
+            pickupOptionsStep, pickupContextStep -> medicationError == null && pickupError == null
+            else -> false
+        }
+    }
     val allMedications: List<MedicationDraft> get() {
-        if (!showMedicationEditor || currentMedicationDraft == MedicationDraft()) return medications
+        if (!showMedicationEditor || currentMedicationDraft == MedicationDraft(linkedPrescriptionId = addToPrescriptionId)) return medications
         val index = editingMedicationIndex
         return if (index != null && index in medications.indices) medications.mapIndexed { i, draft -> if (i == index) currentMedicationDraft else draft }
         else medications + currentMedicationDraft
@@ -128,27 +170,34 @@ data class PrescriptionWizardUiState(
     val recipeError: String? get() = when {
         initialLoadFailed -> "Não foi possível carregar a receita. Tente novamente antes de editar."
         entryMode == WizardEntryMode.STANDALONE_MEDICATION -> null
+        prescriptionTitle.isBlank() -> "Informe o nome da receita."
         issueDate.isAfter(LocalDate.now()) -> "A data de emissão não pode estar no futuro."
         validityDays == null || validityDays !in 1..3650 -> "Informe uma validade de 1 a 3650 dias."
         renewalReminderEnabled && renewalReminderDaysBefore !in 0..validityDays -> "A antecedência do lembrete deve caber na validade."
         else -> null
     }
     val medicationError: String? get() = when {
-        allMedications.isEmpty() -> "Adicione pelo menos um medicamento."
+        allMedications.isEmpty() && entryMode == WizardEntryMode.STANDALONE_MEDICATION -> "Adicione pelo menos um medicamento."
         allMedications.any { !it.isComplete } -> "Informe o nome de cada medicamento."
+        allMedications.any { it.id in existingPrescriptionMedicationIds } -> "Esse medicamento já está na receita. Edite o item existente."
         allMedications.mapNotNull { it.id }.distinct().size != allMedications.mapNotNull { it.id }.size -> "Esse medicamento já está na receita. Edite o item existente."
         else -> null
     }
     val pickupError: String? get() = allMedications.firstNotNullOfOrNull { draft -> draft.pickupError()?.let { draft.title + ": " + it } }
     val currentStepError: String? get() = when (currentStep) {
+        maxSteps -> recipeError ?: medicationError ?: pickupError
         medicationStep -> medicationError
         pickupStep -> allMedications.firstNotNullOfOrNull { draft ->
             // Reminder lead time is configured on the next screen, after the schedule.
             draft.copy(pickupReminderDaysBefore = 0).pickupError()?.let { draft.title + ": " + it }
         }
         pickupOptionsStep -> pickupError
-        maxSteps -> recipeError ?: medicationError ?: pickupError
-        else -> recipeError
+        pickupContextStep -> pickupError
+        renewalOptionsStep -> recipeError
+        recipeIdentityStep -> copy(renewalReminderEnabled = false).recipeError
+        recipeDetailsStep -> null
+        recipeNameStep -> if (prescriptionTitle.isBlank()) "Informe o nome da receita." else null
+        else -> if (issueDate.isAfter(LocalDate.now())) "A data de emissão não pode estar no futuro." else null
     }
     val canSave: Boolean get() = recipeError == null && medicationError == null && pickupError == null && !isLoading
 }

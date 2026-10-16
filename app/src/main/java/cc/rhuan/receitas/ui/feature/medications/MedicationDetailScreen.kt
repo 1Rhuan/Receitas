@@ -1,6 +1,6 @@
 package cc.rhuan.receitas.ui.feature.medications
 
-import cc.rhuan.receitas.ui.components.intervalUnitText
+import cc.rhuan.receitas.ui.components.intervalText
 
 import cc.rhuan.receitas.ui.theme.DesignTokens as T
 import cc.rhuan.receitas.R
@@ -17,9 +17,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Restore
 import cc.rhuan.receitas.domain.model.*
 import cc.rhuan.receitas.ui.components.*
 import java.time.format.DateTimeFormatter
@@ -62,8 +62,8 @@ fun MedicationDetailContent(
             onArchive = { choosingRemoval = false; archiving = true },
             onDelete = { choosingRemoval = false; deleting = true }, onDismiss = { choosingRemoval = false })
         if (pickup) PickupDialog(m, onDismiss = { pickup = false }, onConfirm = onPickup)
-        if (deleting) AlertDialog(onDismissRequest = { deleting = false }, title = { Text(stringResource(R.string.ui_excluir_medicamento_definitivamente)) }, text = { Text(stringResource(R.string.ui_o_acompanhamento_e_suas_retiradas_tambem_serao_excluidos_esta_acao_nao_pode)) }, confirmButton = { TextButton(onClick = { deleting = false; onDelete() }) { Text(stringResource(R.string.action_delete)) } }, dismissButton = { TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.action_cancel)) } })
-        if (archiving) AlertDialog(onDismissRequest = { archiving = false }, title = { Text(stringResource(R.string.ui_arquivar_acompanhamento)) }, text = { Text(stringResource(R.string.ui_o_historico_sera_preservado_e_os_lembretes_serao_encerrados)) }, confirmButton = { TextButton(onClick = { archiving = false; onArchive(true) }) { Text(stringResource(R.string.action_archive)) } }, dismissButton = { TextButton(onClick = { archiving = false }) { Text(stringResource(R.string.action_cancel)) } })
+        if (deleting) ConfirmationSheet(title = stringResource(R.string.ui_excluir_medicamento_definitivamente), message = stringResource(R.string.ui_o_acompanhamento_e_suas_retiradas_tambem_serao_excluidos_esta_acao_nao_pode), confirmLabel = stringResource(R.string.action_delete), onConfirm = { deleting = false; onDelete() }, onDismiss = { deleting = false }, destructive = true)
+        if (archiving) ConfirmationSheet(title = stringResource(R.string.ui_arquivar_acompanhamento), message = stringResource(R.string.ui_o_historico_sera_preservado_e_os_lembretes_serao_encerrados), confirmLabel = stringResource(R.string.action_archive), onConfirm = { archiving = false; onArchive(true) }, onDismiss = { archiving = false }, destructive = false)
     }
     Scaffold(topBar = { DetailHeader(stringResource(R.string.design_medication_details), onBack) }, snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(detailScrollState).padding(horizontal = T.margin, vertical = T.padding), verticalArrangement = Arrangement.spacedBy(T.gap)) {
@@ -73,13 +73,13 @@ fun MedicationDetailContent(
             else med?.let { m ->
                 DetailIdentityHeader(m.title) {
                     FilledTonalIconButton({ onEdit(m.id) }, Modifier.size(T.control)) {
-                        Icon(Icons.Default.Edit, stringResource(R.string.design_edit_tracking))
+                        Icon(Icons.Rounded.Edit, stringResource(R.string.design_edit_tracking))
                     }
                     if (m.trackingArchived) FilledTonalIconButton({ onArchive(false) }, Modifier.size(T.control)) {
-                        Icon(Icons.Default.Restore, stringResource(R.string.action_reactivate))
+                        Icon(Icons.Rounded.Restore, stringResource(R.string.action_reactivate))
                     }
                     FilledTonalIconButton({ choosingRemoval = true }, Modifier.size(T.control)) {
-                        Icon(Icons.Default.DeleteOutline, stringResource(R.string.action_delete))
+                        Icon(Icons.Rounded.DeleteOutline, stringResource(R.string.action_delete))
                     }
                 }
                 if (m.dosage.isNotBlank()) Text(m.dosage, style = MaterialTheme.typography.bodyLarge,
@@ -107,12 +107,24 @@ fun MedicationDetailContent(
                     }), divider = false)
                     m.lastRefillDate?.let { GroupedValueRow(stringResource(R.string.design_last_pickup), it.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) }
                     if (m.hasRecurringPickup) GroupedValueRow(stringResource(R.string.design_pickup_interval),
-                        "${m.refillCycleDays} ${intervalUnitText(m.refillCycleDays, m.intervalUnit)}")
+                        intervalText(m.refillCycleDays, m.intervalUnit))
                     m.nextAvailableRefillDate?.let { GroupedValueRow(stringResource(R.string.design_next_pickup), it.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) }
                     if (m.quantity.isNotBlank()) GroupedValueRow(stringResource(R.string.design_pickup_amount), m.quantity)
                     GroupedValueRow(stringResource(R.string.design_pickup_location), m.sourceName?.takeIf { it.isNotBlank() } ?: m.source.label)
                     if (m.linkedPrescriptionId != null) GroupedValueRow(stringResource(R.string.design_tracking_recipe),
-                        state.pickupPrescription?.title ?: stringResource(R.string.design_tracking_recipe_unavailable))
+                        state.pickupPrescription?.title ?: stringResource(R.string.design_tracking_recipe_unavailable), stacked = true)
+                    val validityStatus = cc.rhuan.receitas.domain.usecase.CheckRefillStatusUseCase()(m, listOfNotNull(state.pickupPrescription))
+                    when (validityStatus) {
+                        is RefillStatus.PrescriptionExpiresBeforeRefill -> GroupedValueRow(
+                            stringResource(R.string.pickup_validity_warning),
+                            stringResource(R.string.pickup_validity_conflict,
+                                validityStatus.expirationDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                                validityStatus.nextRefillDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))), stacked = true)
+                        is RefillStatus.PrescriptionExpired -> GroupedValueRow(
+                            stringResource(R.string.pickup_validity_warning),
+                            stringResource(R.string.pickup_recipe_expired, validityStatus.prescriptionTitle), stacked = true)
+                        else -> Unit
+                    }
                 }
                 if (m.hasRecurringPickup && !m.trackingArchived) ActionButton(stringResource(R.string.action_register_pickup), { pickup = true }, Modifier.fillMaxWidth())
                 SectionHeading(stringResource(R.string.design_recent_pickups))

@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
@@ -30,9 +29,7 @@ class ReceitasPreviewTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private fun capture(name: String) {
         compose.waitForIdle()
-        val bitmap = if (name.contains("empty") || name.contains("no-results")) {
-            requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot())
-        } else compose.onRoot().captureToImage().asAndroidBitmap()
+        val bitmap = compose.captureActiveRoot()
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val file = File(context.getExternalFilesDir(null), name + ".png")
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
@@ -61,13 +58,17 @@ class ReceitasPreviewTest {
         compose.waitForIdle()
     }
     @Test fun lightPreviewAndLongRecipe() {
-        show()
-        compose.onNodeWithText("Próxima compra").assertIsDisplayed()
+        val sample = designPreviewState()
+        show(data = sample.copy(prescriptions = sample.prescriptions + List(4) { index ->
+            sample.prescriptions.last().copy(id = "scroll-extra-$index", title = "Receita adicional $index")
+        }))
+        compose.onNodeWithText("Próxima compra").assertDoesNotExist()
         capture("receitas-light")
         compose.onNodeWithTag("prescription-list").performScrollToNode(hasText("Tratamento de uso contínuo"))
         compose.onNodeWithText("Tratamento de uso contínuo").assertIsDisplayed()
         compose.onNodeWithTag("prescription-list").performTouchInput { swipeUp() }
-        compose.onNodeWithTag("page-app-bar").assertIsDisplayed()
+        compose.onNodeWithTag("prescription-list").performScrollToIndex(4)
+        compose.onNodeWithTag("floating-list-toolbar").assertIsDisplayed()
         capture("receitas-scrolled")
     }
     @Test fun darkPreview() { show(dark = true); capture("receitas-dark") }
@@ -75,17 +76,17 @@ class ReceitasPreviewTest {
         show(small = true)
         compose.onNodeWithText("Buscar receitas").assertIsDisplayed()
         capture("receitas-small")
-        compose.onNodeWithTag("prescription-list").performScrollToIndex(4)
+        compose.onNodeWithTag("prescription-list").performScrollToNode(hasText("Acompanhamento e controle da pressão arterial"))
         compose.onNodeWithText("Acompanhamento e controle da pressão arterial", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
     }
     @Test fun doubleFontPreview() {
         show(small = true, scale = 2f)
         capture("receitas-font-200")
-        compose.onNodeWithContentDescription("Nova receita").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Nova receita").assertDoesNotExist()
         compose.onNodeWithTag("prescription-list").performScrollToNode(hasTestTag("record-search"))
         compose.onNodeWithTag("record-search").assertIsDisplayed()
         capture("receitas-font-200-search")
-        compose.onNodeWithTag("prescription-list").performScrollToIndex(4)
+        compose.onNodeWithTag("prescription-list").performScrollToNode(hasText("Acompanhamento e controle da pressão arterial"))
         compose.onNodeWithText("Acompanhamento e controle da pressão arterial", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         capture("receitas-font-200-list")
     }
@@ -94,16 +95,16 @@ class ReceitasPreviewTest {
         var purchased = ""
         var opened = ""
         compose.setContent { ReceitasTheme {
-            DesignTheme { Scaffold(bottomBar = { TextNavigationBar("prescriptions", {}) }) { padding ->
+            DesignTheme { Scaffold(bottomBar = { TextNavigationBar("prescriptions", {}, { created++ }) }) { padding ->
             PrescriptionsScreenContent(designPreviewState(), {}, {}, Modifier.padding(padding),
                 onCreatePrescriptionClick = { created++ }, onPurchaseClick = { purchased = it.id },
                 onPrescriptionClick = { opened = it.id })
             } }
         } }
-        compose.onNodeWithContentDescription("Nova receita").performClick()
+        compose.onNodeWithContentDescription("Criar receita").performClick()
         assertEquals(1, created)
-        compose.onNodeWithText("Losartana potássica · 50 mg").performClick()
-        assertEquals("preview-med", purchased)
+        compose.onNodeWithText("Próxima compra").assertDoesNotExist()
+        assertEquals("", purchased)
         compose.onNodeWithTag("prescription-list").performScrollToNode(hasText("Tratamento de uso contínuo"))
         compose.onNodeWithText("Tratamento de uso contínuo").performClick()
         assertEquals("preview-1", opened)

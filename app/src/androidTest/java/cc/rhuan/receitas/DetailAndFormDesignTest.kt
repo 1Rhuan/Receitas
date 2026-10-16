@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -27,8 +26,8 @@ import org.junit.Assert.*
 class DetailAndFormDesignTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val longTitle = "Cloridrato de metformina de liberação prolongada para acompanhamento"
-    private fun clickFormOption(label: String) {
-        val node = compose.onNodeWithText(label).performScrollTo()
+    private fun clickFormOption(label: String, description: Boolean = false) {
+        val node = (if (description) compose.onNodeWithContentDescription(label) else compose.onNodeWithText(label)).performScrollTo()
         val actionTop = compose.onNodeWithTag("wizard-primary-action").fetchSemanticsNode().boundsInRoot.top
         val bounds = node.fetchSemanticsNode().boundsInRoot
         if (bounds.bottom >= actionTop) {
@@ -50,61 +49,95 @@ class DetailAndFormDesignTest {
         compose.waitForIdle()
         val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
         val file = File(InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null), "$name.png")
-        val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
+        val bitmap = compose.captureActiveRoot()
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         listOf("mkdir -p /sdcard/Download/design-migration", "cp ${file.absolutePath} /sdcard/Download/design-migration/$name.png").forEach {
             android.os.ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(it)).use { stream -> stream.readBytes() }
         }
     }
     @Test fun recipeEntryShowsEssentialsAndOptionalFieldsRemainAvailable() {
-        show { PrescriptionWizardContent(PrescriptionWizardUiState(), WizardCallbacks()) }
-        compose.onNodeWithText("Nome da receita (opcional)").assertDoesNotExist()
-        compose.onNodeWithText("Continuar para medicamentos").assertIsDisplayed()
-        compose.onNodeWithText("Emissão e tipo").assertIsDisplayed()
-        compose.onNodeWithText("Validade da receita").performScrollTo().assertIsDisplayed()
+        show {
+            var state by remember { mutableStateOf(PrescriptionWizardUiState()) }
+            PrescriptionWizardContent(state, WizardCallbacks(next = { state = state.copy(currentStep = state.currentStep + 1) }))
+        }
+        compose.onNodeWithText("Nome da receita").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Avançar").assertIsDisplayed()
+        compose.onNodeWithText("Data de emissão").assertDoesNotExist()
+        compose.onNodeWithText("Validade da receita").assertDoesNotExist()
         capture("recipe-entry-light")
-        clickFormOption("Nome e profissional (opcional)")
-        compose.onNodeWithText("Nome da receita (opcional)").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Avançar").performClick()
+        compose.onNodeWithText("Data de emissão").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Avançar").performClick()
+        compose.onNodeWithText("Validade em dias").assertDoesNotExist()
+        capture("recipe-validity-light")
+        compose.onNodeWithText("Avançar").performClick()
+        clickFormOption("Adicionar Profissional responsável", description = true)
+        compose.onNodeWithText("Nome do profissional").performScrollTo().assertIsDisplayed()
+        capture("recipe-optional-light")
     }
     @Test fun recipeEntryDarkLargeFontKeepsValidityAndContinueReachable() {
         var continued = false
         show(dark = true, scale = 2f) {
-            PrescriptionWizardContent(PrescriptionWizardUiState(), WizardCallbacks(next = { continued = true }))
+            var state by remember { mutableStateOf(PrescriptionWizardUiState()) }
+            PrescriptionWizardContent(state, WizardCallbacks(next = {
+                if (state.currentStep == state.recipeDetailsStep) continued = true
+                else state = state.copy(currentStep = state.currentStep + 1)
+            }))
         }
-        compose.onNodeWithText("Etapa 1 de 4").assertIsDisplayed()
-        compose.onNodeWithText("Continuar para medicamentos").assertIsDisplayed()
-        compose.onNodeWithText("Data de emissão").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Etapa 1 de 6").assertDoesNotExist()
+        compose.onNodeWithText("Avançar").assertIsDisplayed()
+        compose.onNodeWithText("Nome da receita").performScrollTo().assertIsDisplayed()
         capture("recipe-entry-dark-200")
-        compose.onNodeWithText("Validade em dias").performScrollTo().assertIsDisplayed()
-        clickFormOption("Nome e profissional (opcional)")
-        compose.onNodeWithText("Nome da receita (opcional)").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Continuar para medicamentos").performClick()
+        compose.onNodeWithText("Avançar").performClick()
+        compose.onNodeWithText("Data de emissão").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Avançar").performClick()
+        compose.onNodeWithText("Validade em dias").assertDoesNotExist()
+        capture("recipe-validity-dark-200")
+        compose.onNodeWithText("Avançar").performClick()
+        clickFormOption("Adicionar Profissional responsável", description = true)
+        compose.onNodeWithText("Nome do profissional").performScrollTo().assertIsDisplayed()
+        capture("recipe-optional-dark-200")
+        compose.onNodeWithText("Avançar").performClick()
         assertTrue(continued)
     }
-    @Test fun standaloneLargeFontHasOnePrimaryActionAndReachableOptionalDetails() {
+    @Test fun standaloneLargeFontKeepsOptionalDetailsForTheFinalScreen() {
         var continued = false
         show(dark = true, scale = 2f) {
             PrescriptionWizardContent(PrescriptionWizardUiState(entryMode = WizardEntryMode.STANDALONE_MEDICATION),
                 WizardCallbacks(next = { continued = true }))
         }
-        compose.onNodeWithText("Continuar para lembretes").assertIsDisplayed()
-        compose.onNodeWithText("Nome do medicamento *").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Avançar").assertIsDisplayed()
+        compose.onNodeWithText("Nome do medicamento").performScrollTo().assertIsDisplayed()
         capture("medication-form-dark-200")
-        clickFormOption("Mais detalhes (opcional)")
-        compose.onNodeWithText("Princípio ativo").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Continuar para lembretes").performClick()
+        clickFormOption("Adicionar Princípio ativo", description = true)
+        compose.onNode(hasText("Princípio ativo") and hasSetTextAction()).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Avançar").performClick()
         assertTrue(continued)
     }
+    @Test fun optionalProfessionalKeepsSummaryAndValueWhenReopened() {
+        show {
+            var state by remember { mutableStateOf(PrescriptionWizardUiState(currentStep = PrescriptionWizardUiState().optionalDetailsStep)) }
+            PrescriptionWizardContent(state, WizardCallbacks(update = { change -> state = change(state) }))
+        }
+        clickFormOption("Adicionar Profissional responsável", description = true)
+        compose.onNodeWithContentDescription("Nome do profissional").performScrollTo().performTextInput("Dra. Ana")
+        compose.onNodeWithText("Concluído").performClick()
+        compose.onNodeWithText("Dra. Ana").assertIsDisplayed()
+        compose.onNodeWithText("Nome do profissional").assertDoesNotExist()
+        clickFormOption("Editar Profissional responsável", description = true)
+        compose.onNode(hasText("Dra. Ana") and hasSetTextAction()).performScrollTo().assertIsDisplayed()
+    }
+
     @Test fun reviewLargeFontKeepsEditAndSaveReachable() {
         var edited = 0
         var saved = false
         show(scale = 2f) {
-            PrescriptionWizardContent(PrescriptionWizardUiState(currentStep = 4, showMedicationEditor = false,
+            PrescriptionWizardContent(PrescriptionWizardUiState(currentStep = 7, showMedicationEditor = false,
                 medications = listOf(MedicationDraft(title = longTitle))),
                 WizardCallbacks(goToStep = { edited = it }, save = { saved = true }))
         }
         compose.onNodeWithText("Salvar receita").assertIsDisplayed()
-        compose.onAllNodesWithText("Editar")[0].performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Editar Nome da receita").performScrollTo().performClick()
         assertEquals(1, edited)
         compose.onAllNodesWithText(longTitle)[0].performScrollTo().assertIsDisplayed()
         capture("review-light-200")
@@ -132,6 +165,50 @@ class DetailAndFormDesignTest {
         assertTrue(renewed)
         assertTrue(archived)
     }
+    private fun validityConflict(dark: Boolean, scale: Float, name: String) {
+        val today = LocalDate.now()
+        val prescription = PrescriptionItem("warning-recipe", "Receita de acompanhamento com identificação extensa para teste de leitura", "",
+            issueDate = today.minusDays(20), customValidityDays = 30)
+        show(dark = dark, scale = scale) {
+            MedicationDetailContent(MedicationDetailUiState(isLoading = false, medication = MedicationItem(
+                id = "warning-med", title = longTitle, lastRefillDate = today, refillCycleDays = 30, linkedPrescriptionId = prescription.id),
+                pickupPrescription = prescription), null, {}, {}, {}, { _, _, _ -> }, {}, {}, {}, { _, _ -> }, {})
+        }
+        compose.onNodeWithText("Atenção à validade").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("A receita escolhida vence em ${prescription.expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))}, antes da retirada prevista para ${today.plusDays(30).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))}. Providencie uma nova receita.")
+            .performScrollTo().assertIsDisplayed()
+        capture(name)
+        compose.onNodeWithText("Registrar retirada").performScrollTo().assertIsDisplayed()
+    }
+    @Test fun validityConflictIsReadableOnSmallLightScreen() { validityConflict(false, 1f, "validity-conflict-light") }
+    @Test fun validityConflictIsReadableWithDarkThemeAndDoubleFont() { validityConflict(true, 2f, "validity-conflict-dark-200") }
+
+    @Test fun conflictAlertHasClearActionsAndSafeClearAtDoubleFont() {
+        var cleared = 0
+        val alert = NotificationItem("pickup:preview:conflict", "Receita vence antes da retirada", "Confira a validade antes da próxima retirada.",
+            "15/10/2026", NotificationType.MEDICATION_PICKUP, targetId = "preview", phase = ReminderPhase.PRESCRIPTION_PICKUP_CONFLICT, targetType = "PICKUP")
+        show(dark = true, scale = 2f) {
+            cc.rhuan.receitas.ui.feature.notifications.NotificationsScreenContent(
+                uiState = cc.rhuan.receitas.ui.feature.notifications.NotificationsUiState(notifications = listOf(alert)),
+                onFilterSelected = {}, onMarkAsRead = {}, onMarkAllAsRead = {}, onDeleteNotification = {}, onClearAll = { cleared++ },
+                onPerformAction = { _, _ -> }, onDismissSnackbar = {}, onRefresh = {})
+        }
+        compose.onNodeWithText("Registrar retirada").assertDoesNotExist()
+        compose.onNodeWithTag("notification-list").performScrollToNode(hasText("Ver medicamento"))
+        compose.onNodeWithText("Ver medicamento").performScrollTo().assertIsDisplayed()
+        capture("notification-conflict-dark-200")
+        compose.onNodeWithTag("notification-list").performScrollToIndex(0)
+        compose.onNodeWithContentDescription("Opções de notificações").performClick()
+        compose.onNodeWithText("Limpar todas as notificações").performClick()
+        compose.onNodeWithText("Limpar notificações?").assertIsDisplayed()
+        compose.onNodeWithText("Cancelar").performClick()
+        assertEquals(0, cleared)
+        compose.onNodeWithContentDescription("Opções de notificações").performClick()
+        compose.onNodeWithText("Limpar todas as notificações").performClick()
+        compose.onAllNodesWithText("Limpar todas as notificações").onLast().performClick()
+        assertEquals(1, cleared)
+    }
+
     @Test fun medicationDarkDetailKeepsPickupAndHistory() {
         show(dark = true) {
             MedicationDetailContent(MedicationDetailUiState(isLoading = false, medication = MedicationItem(
@@ -393,14 +470,18 @@ class DetailAndFormDesignTest {
     }
     @Test fun recurringPreferencesRemainSeparateAndReachableAtLargeFont() {
         show(scale = 2f) {
-            PrescriptionWizardContent(PrescriptionWizardUiState(entryMode = WizardEntryMode.STANDALONE_MEDICATION,
+            var state by remember { mutableStateOf(PrescriptionWizardUiState(entryMode = WizardEntryMode.STANDALONE_MEDICATION,
                 currentStep = 3, showMedicationEditor = false, medications = listOf(MedicationDraft(
-                    title = "Losartana", hasRecurringPickup = true, lastPickupDate = LocalDate.now()))), WizardCallbacks())
+                    title = longTitle, hasRecurringPickup = true, lastPickupDate = LocalDate.now())))) }
+            PrescriptionWizardContent(state, WizardCallbacks(next = { state = state.copy(currentStep = state.currentStep + 1) }))
         }
-        compose.onNodeWithText("Etapa 3 de 4").assertIsDisplayed()
-        compose.onNodeWithText("Revisar cadastro").assertIsDisplayed()
+        compose.onNodeWithText("Etapa 3 de 5").assertDoesNotExist()
+        compose.onNodeWithText("Avançar").assertIsDisplayed()
         compose.onNodeWithText("Avisar com antecedência").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Sem receita para retiradas").assertDoesNotExist()
         capture("pickup-preferences-light-200")
-        compose.onNodeWithText("Sem receita vinculada").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Avançar").performClick()
+        compose.onNodeWithText("Sem receita para retiradas").performScrollTo().assertIsDisplayed()
+        capture("pickup-context-light-200")
     }
 }

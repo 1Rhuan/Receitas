@@ -22,9 +22,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -42,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.activity.compose.BackHandler
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import cc.rhuan.receitas.domain.model.RecordState
 import androidx.compose.ui.Alignment
@@ -68,14 +67,15 @@ fun PrescriptionDetailPresentation(
     onEditClick: (String) -> Unit = {},
     onRenewClick: (String) -> Unit = {},
     onMedicationClick: (String) -> Unit = {},
+    onAddMedicationClick: (String) -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var pendingPickup by remember { mutableStateOf<MedicationItem?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
     var confirmArchive by remember { mutableStateOf(false) }
     pendingPickup?.let { med -> cc.rhuan.receitas.ui.components.PickupDialog(med, onDismiss = { pendingPickup = null }) { date, early, cycle -> registerPickup(med.id, date, early, cycle) } }
-    if (confirmDelete) AlertDialog(onDismissRequest = { confirmDelete = false }, title = { Text(stringResource(R.string.ui_excluir_receita_definitivamente)) }, text = { Text(stringResource(R.string.ui_o_documento_sera_removido_retiradas_e_acompanhamentos_serao_preservados_sem)) }, confirmButton = { TextButton(onClick = { confirmDelete = false; deleteRecipe() }) { Text(stringResource(R.string.action_delete)) } }, dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.action_cancel)) } })
-    if (confirmArchive) AlertDialog(onDismissRequest = { confirmArchive = false }, title = { Text(stringResource(R.string.ui_arquivar_receita)) }, text = { Text(stringResource(R.string.ui_os_dados_ficam_no_historico_os_lembretes_e_acompanhamentos_vinculados_serao)) }, confirmButton = { TextButton(onClick = { confirmArchive = false; archive(true) }) { Text(stringResource(R.string.action_archive)) } }, dismissButton = { TextButton(onClick = { confirmArchive = false }) { Text(stringResource(R.string.action_cancel)) } })
+    if (confirmDelete) ConfirmationSheet(title = stringResource(R.string.ui_excluir_receita_definitivamente), message = stringResource(R.string.ui_o_documento_sera_removido_retiradas_e_acompanhamentos_serao_preservados_sem), confirmLabel = stringResource(R.string.action_delete), onConfirm = { confirmDelete = false; deleteRecipe() }, onDismiss = { confirmDelete = false }, destructive = true)
+    if (confirmArchive) ConfirmationSheet(title = stringResource(R.string.ui_arquivar_receita), message = stringResource(R.string.ui_os_dados_ficam_no_historico_os_lembretes_e_acompanhamentos_vinculados_serao), confirmLabel = stringResource(R.string.action_archive), onConfirm = { confirmArchive = false; archive(true) }, onDismiss = { confirmArchive = false }, destructive = false)
 
     LaunchedEffect(uiState.isDeleted) { if (uiState.isDeleted) onBackClick() }
     LaunchedEffect(uiState.actionMessage) {
@@ -88,6 +88,7 @@ fun PrescriptionDetailPresentation(
     PrescriptionDetailContent(
         uiState = uiState,
         onMedicationClick = onMedicationClick,
+        onAddMedicationClick = { uiState.prescription?.id?.let(onAddMedicationClick) },
         onBackClick = onBackClick,
         onRenewClick = { uiState.prescription?.id?.let(onRenewClick) },
         onReplenishClick = { id -> pendingPickup = uiState.medications.find { it.medication.id == id }?.medication },
@@ -115,6 +116,7 @@ fun PrescriptionDetailContent(
     onCorrectPickup: (String, java.time.LocalDate) -> Unit = { _, _ -> }, onDeletePickup: (String) -> Unit = {},
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onMedicationClick: (String) -> Unit = {},
+    onAddMedicationClick: () -> Unit = {},
 ) {
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
     val detailListState = rememberLazyListState()
@@ -129,7 +131,7 @@ fun PrescriptionDetailContent(
     BackHandler(enabled = viewingMedications) { viewingMedications = false }
     if (viewingMedications) {
         PrescriptionMedicationList(uiState, { viewingMedications = false }, onMedicationClick, modifier,
-            snackbarHost = { SnackbarHost(snackbarHostState) })
+            snackbarHost = { SnackbarHost(snackbarHostState) }, onAddMedication = onAddMedicationClick)
         return
     }
 
@@ -208,13 +210,13 @@ private fun PrescriptionHeaderCard(
         if (prescription.specialty.isNotBlank()) Text(prescription.specialty, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         DetailIdentityHeader(prescription.title) {
             if (prescription.state != RecordState.REPLACED) FilledTonalIconButton(onEditClick, Modifier.size(T.control)) {
-                Icon(Icons.Default.Edit, stringResource(R.string.ui_editar_receita))
+                Icon(Icons.Rounded.Edit, stringResource(R.string.ui_editar_receita))
             }
             if (prescription.state == RecordState.ARCHIVED) FilledTonalIconButton(onReactivateClick, Modifier.size(T.control)) {
-                Icon(Icons.Default.Restore, stringResource(R.string.action_reactivate))
+                Icon(Icons.Rounded.Restore, stringResource(R.string.action_reactivate))
             }
             FilledTonalIconButton(onRemoveClick, Modifier.size(T.control)) {
-                Icon(Icons.Default.DeleteOutline, stringResource(R.string.action_delete))
+                Icon(Icons.Rounded.DeleteOutline, stringResource(R.string.action_delete))
             }
         }
         StatusLabel(when {
@@ -233,7 +235,7 @@ private fun PrescriptionHeaderCard(
                 RecordState.REPLACED -> R.string.ui_substituida
             }))
             if (prescription.doctorName.isNotBlank()) GroupedValueRow(stringResource(R.string.ui_profissional_responsavel), prescription.doctorName)
-            prescription.notes?.takeIf { it.isNotBlank() }?.let { GroupedValueRow(stringResource(R.string.ui_observacoes_opcional), it) }
+            prescription.notes?.takeIf { it.isNotBlank() }?.let { GroupedValueRow(stringResource(R.string.recipe_notes_group), it, stacked = true) }
         }
         ActionButton(stringResource(R.string.action_register_new_prescription), onRenewClick, Modifier.fillMaxWidth(), enabled = prescription.isActive)
     }
@@ -246,7 +248,7 @@ internal fun MedicationDetailCard(
 ) {
     val openLabel = stringResource(R.string.design_view_medication)
     ContentCard(modifier.clickable(onClickLabel = openLabel, onClick = onMedicationClick)) {
-        Text(medication.title, style = MaterialTheme.typography.titleLarge)
+        Text(medication.title, style = MaterialTheme.typography.titleMedium)
         Text(listOf(medication.form.label, medication.dosage).filter { it.isNotBlank() }.joinToString(" · "), style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (medication.prescribedPosology.isNotBlank()) DetailValue(stringResource(R.string.design_prescribed_instructions), medication.prescribedPosology)

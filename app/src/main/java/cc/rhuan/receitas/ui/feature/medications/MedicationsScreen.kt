@@ -8,6 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -55,29 +57,34 @@ fun MedicationsScreenContent(
     val emptyLibrary = !uiState.isLoading && uiState.errorMessage == null && uiState.medications.isEmpty() &&
         uiState.searchQuery.isBlank() && uiState.selectedSourceFilter.equals("TODOS", true)
     val sources = listOf("TODOS") + MedicationSource.entries.map { it.label }
+    val density = LocalDensity.current
+    var searchHeight by remember { mutableIntStateOf(0) }
+    var filtersHeight by remember { mutableIntStateOf(0) }
+    var headingHeight by remember { mutableIntStateOf(0) }
+    val tools = RecordListTools(uiState.searchQuery, onSearchQueryChange,
+        stringResource(R.string.design_medication_search), stringResource(R.string.search), stringResource(R.string.clear_search),
+        listOf(ListOptionGroup(stringResource(R.string.list_options_source),
+            sources.map { if (it == "TODOS") stringResource(R.string.design_all_medications) else it },
+            sources.indexOfFirst { it.equals(uiState.selectedSourceFilter, true) }.coerceAtLeast(0))),
+        stringResource(R.string.list_options_medications), { onFilterSelected(sources[it[0]]) })
     RecordListScaffold(title = stringResource(R.string.design_medications_title),
         subtitle = if (emptyLibrary) "" else pluralStringResource(R.plurals.design_medication_count,
             uiState.medications.size, uiState.medications.size),
-        listTag = "medication-list", modifier = modifier,
-        createLabel = stringResource(R.string.ui_novo_medicamento), onCreate = onAddMedicationClick,
+        listTag = "medication-list", modifier = modifier, floatingTools = if (emptyLibrary) null else tools,
         snackbarHost = { SnackbarHost(snackbarHostState) }) {
         if (!emptyLibrary) {
             item("search") {
                 SearchField(uiState.searchQuery, onSearchQueryChange,
                     stringResource(R.string.design_medication_search), stringResource(R.string.search),
-                    stringResource(R.string.clear_search), Modifier.fillMaxWidth().padding(horizontal = T.margin))
+                    stringResource(R.string.clear_search), Modifier.fillMaxWidth().padding(horizontal = T.margin)
+                        .onSizeChanged { searchHeight = it.height })
             }
             item("sources") {
-                androidx.compose.foundation.lazy.LazyRow(modifier = Modifier.testTag("medication-sources"), contentPadding = PaddingValues(horizontal = T.margin),
-                    horizontalArrangement = Arrangement.spacedBy(T.small)) {
-                    items(sources) { source ->
-                        FilterPill(uiState.selectedSourceFilter.equals(source, true),
-                            if (source == "TODOS") stringResource(R.string.design_all_medications) else source,
-                            { onFilterSelected(source) })
-                    }
-                }
+                ListOptionsMenu(tools.optionGroups, tools.optionsLabel, tools.onOptionsApply,
+                    Modifier.padding(horizontal = T.margin).testTag("medication-sources")
+                        .onSizeChanged { filtersHeight = it.height })
             }
-            item("section") { Column(Modifier.padding(horizontal = T.margin)) {
+            item("section") { Column(Modifier.padding(horizontal = T.margin).onSizeChanged { headingHeight = it.height }) {
                 SectionHeading(stringResource(R.string.design_your_medications))
             } }
         }
@@ -85,19 +92,21 @@ fun MedicationsScreenContent(
             uiState.isLoading -> item { Box(Modifier.fillMaxWidth().padding(T.section), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
             uiState.errorMessage != null -> item { LoadErrorPanel(uiState.errorMessage, onRetry, Modifier.padding(T.margin)) }
             emptyLibrary -> item {
-                EmptyStateCard(stringResource(R.string.ui_nenhum_medicamento_cadastrado),
-                    stringResource(R.string.design_first_medication), null,
-                    onAddMedicationClick, Modifier.padding(horizontal = T.margin))
-            }
-            uiState.filteredMedications.isEmpty() -> item { Column(Modifier.padding(horizontal = T.margin)) {
-                ContentCard {
-                    Text(stringResource(R.string.ui_nenhum_medicamento_encontrado), style = MaterialTheme.typography.titleMedium)
-                    Text(stringResource(R.string.design_medication_no_results), style = MaterialTheme.typography.bodyMedium)
-                    TextButton(onClick = { onSearchQueryChange(""); onFilterSelected("TODOS") }) {
-                        Text(stringResource(R.string.design_clear_filters))
-                    }
+                CenteredListGuidance {
+                    EmptyListGuidance(stringResource(R.string.ui_nenhum_medicamento_cadastrado),
+                        stringResource(R.string.design_first_medication), stringResource(R.string.ui_novo_medicamento),
+                        onAddMedicationClick, iconRes = R.drawable.ic_bold_pills)
                 }
-            } }
+            }
+            uiState.filteredMedications.isEmpty() -> item {
+                CenteredListGuidance(occupiedHeight = with(density) {
+                    (searchHeight + filtersHeight + headingHeight).toDp()
+                } + T.gap * 3) {
+                    EmptyListGuidance(stringResource(R.string.ui_nenhum_medicamento_encontrado),
+                        stringResource(R.string.design_medication_no_results), stringResource(R.string.design_clear_filters),
+                        { onSearchQueryChange(""); onFilterSelected("TODOS") }, iconRes = R.drawable.ic_bold_pills)
+                }
+            }
             else -> items(uiState.filteredMedications, key = { it.id }) { medication ->
                 MedicationCardItem(medication, { onMedicationClick(medication) }, { onRegisterPickup(medication.id) },
                     Modifier.padding(horizontal = T.margin))

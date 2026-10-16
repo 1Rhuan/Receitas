@@ -2,6 +2,7 @@ package cc.rhuan.receitas.ui.feature.prescriptions.wizard
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -13,10 +14,19 @@ fun PrescriptionWizardScreen(
     onViewSaved: (String?) -> Unit = { onNavigateUp() },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(state.isSaved) {
+        if (state.isSaved && state.addToPrescriptionId != null) onNavigateUp()
+    }
     PrescriptionWizardPresentation(
         state = state,
         onNavigateUp = onNavigateUp,
         actions = WizardCallbacks(
+            skip = viewModel::skipStep,
+            updateIssueDate = viewModel::updateIssueDate,
+            openTypeEditor = viewModel::openTypeEditor,
+            confirmTypeEditor = viewModel::confirmTypeEditor,
+            cancelTypeEditor = viewModel::cancelTypeEditor,
+            setValidityDateMode = viewModel::setValidityDateMode,
             selectType = viewModel::selectPrescriptionType,
             updateValidityDays = viewModel::updateValidityDays,
             updateExpirationDate = viewModel::updateExpirationDate,

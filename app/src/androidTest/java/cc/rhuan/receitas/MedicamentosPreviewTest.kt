@@ -28,7 +28,7 @@ class MedicamentosPreviewTest {
     private fun capture(name: String) {
         compose.waitForIdle()
         val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
-        val bitmap = requireNotNull(automation.takeScreenshot())
+        val bitmap = compose.captureActiveRoot()
         val file = File(InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null), name + ".png")
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         for (command in listOf("mkdir -p /sdcard/Download/medicamentos-preview",
@@ -43,7 +43,7 @@ class MedicamentosPreviewTest {
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 DesignTheme {
                     Box(if (small) Modifier.requiredSize(320.dp, 640.dp) else Modifier.fillMaxSize()) {
-                        MainScreenContent("medications", true, {}) { padding ->
+                        MainScreenContent("medications", true, {}, onCreateRecord = {}) { padding ->
                             MedicationsScreenContent(data, {}, {}, {}, {}, {}, remember { SnackbarHostState() }, Modifier.padding(padding))
                         }
                     }
@@ -60,22 +60,34 @@ class MedicamentosPreviewTest {
         compose.onAllNodesWithContentDescription("Novo medicamento").assertCountEquals(1)
         capture("medicamentos-empty")
     }
-    @Test fun noResultsCanClearQueryAndSource() {
+    @Test fun noResultsCanClearQueryAndSource() = noResults(1f)
+    @Test fun noResultsDoubleFontKeepsFiltersAndClearActionReachable() = noResults(2f)
+    private fun noResults(scale: Float) {
         var query = "sem resultado"
         var source = MedicationSource.OUTRO.label
-        compose.setContent { ReceitasTheme {
-            MedicationsScreenContent(medicationPreviewState().copy(searchQuery = query, selectedSourceFilter = source,
-                filteredMedications = emptyList()), { query = it }, { source = it }, {}, {}, {}, remember { SnackbarHostState() })
+        compose.setContent { ReceitasTheme(darkTheme = scale > 1f) {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
+                Box(Modifier.requiredSize(320.dp, 640.dp)) {
+                    MedicationsScreenContent(medicationPreviewState().copy(searchQuery = query, selectedSourceFilter = source,
+                        filteredMedications = emptyList()), { query = it }, { source = it }, {}, {}, {}, remember { SnackbarHostState() })
+                }
+            }
         } }
+        compose.onNodeWithTag("record-search").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Filtros de medicamentos").assertIsDisplayed()
+        compose.onNodeWithText("Seus medicamentos").assertIsDisplayed()
+        compose.onNodeWithText("Novo medicamento").assertDoesNotExist()
         compose.onNodeWithTag("medication-list").performScrollToNode(hasText("Limpar busca e filtros"))
-        capture("medicamentos-no-results")
+        capture("medicamentos-no-results-$scale")
         compose.onNodeWithText("Limpar busca e filtros").performClick()
         assertEquals("", query)
         assertEquals("TODOS", source)
     }
     @Test fun smallAndLongText() {
         show(small = true, scale = 2f)
-        compose.onNodeWithContentDescription("Novo medicamento").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-create").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithContentDescription("Novo medicamento").assertDoesNotExist()
         capture("medicamentos-font-200")
         compose.onNodeWithTag("medication-list").performScrollToNode(hasText("Cloridrato de metformina de liberação prolongada"))
         compose.onNodeWithText("Cloridrato de metformina de liberação prolongada", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
@@ -95,18 +107,21 @@ class MedicamentosPreviewTest {
         var opened = ""
         var created = 0
         compose.setContent { ReceitasTheme {
-            DesignTheme { Scaffold(bottomBar = { TextNavigationBar("medications", {}) }) { padding ->
+            DesignTheme { Scaffold(bottomBar = { TextNavigationBar("medications", {}, { created++ }) }) { padding ->
             MedicationsScreenContent(medicationPreviewState().copy(searchQuery = query), { query = it }, { source = it }, {},
                 { opened = it.id }, { created++ }, remember { SnackbarHostState() }, Modifier.padding(padding))
             } }
         } }
-        compose.onNodeWithContentDescription("Novo medicamento").performClick()
+        compose.onNodeWithContentDescription("Criar medicamento").performClick()
         assertEquals(1, created)
         compose.onNodeWithTag("record-search").performTextInput("50")
         androidx.test.espresso.Espresso.closeSoftKeyboard()
         compose.waitForIdle()
         assertEquals("50", query)
-        compose.onNode(hasText("Compra própria") and hasAnyAncestor(hasTestTag("medication-sources"))).performClick()
+        compose.onNodeWithContentDescription("Filtros de medicamentos").performClick()
+        compose.onNode(hasText("Compra própria") and hasAnyAncestor(hasTestTag("list-options-scroll"))).performScrollTo().performClick()
+        assertEquals("", source)
+        compose.onNodeWithText("Concluir").performClick()
         assertEquals(MedicationSource.COMPRA_PROPRIA.label, source)
         compose.onNodeWithTag("medication-list").performScrollToNode(hasText("Losartana potássica"))
         compose.onNodeWithText("Losartana potássica").performClick()

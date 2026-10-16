@@ -27,6 +27,16 @@ class EvaluateRemindersUseCase {
         }
         medications.filter { it.hasRecurringPickup && !it.trackingArchived }.forEach { m ->
             val pickup = m.nextAvailableRefillDate ?: return@forEach
+            val prescription = prescriptions.find { it.id == m.linkedPrescriptionId }
+            // Warn as soon as the conflict is known, allowing time to renew before pickup.
+            if (prescription != null && prescription.isActive && !today.isBefore(prescription.issueDate)
+                && prescription.expirationDate.isBefore(pickup)) {
+                val cycle = "pickup:${m.id}:$pickup"
+                add(Reminder("$cycle:conflict:${prescription.id}:${prescription.expirationDate}", m.id,
+                    "Receita vence antes da retirada",
+                    "${m.title}: a receita ${prescription.title} vence em ${prescription.expirationDate.format(format)}, antes da retirada prevista para ${pickup.format(format)}. Providencie uma nova receita.",
+                    NotificationType.MEDICATION_PICKUP, ReminderPhase.PRESCRIPTION_PICKUP_CONFLICT, "PICKUP", cycle))
+            }
             val phase = when {
                 !today.isBefore(pickup) -> ReminderPhase.PICKUP_DUE
                 !today.isBefore(pickup.minusDays(m.pickupReminderDaysBefore.coerceAtLeast(0).toLong())) -> ReminderPhase.PICKUP_UPCOMING

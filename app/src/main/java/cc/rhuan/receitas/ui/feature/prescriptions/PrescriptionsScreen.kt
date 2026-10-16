@@ -45,12 +45,23 @@ fun PrescriptionsScreenContent(
         val emptyLibrary = !uiState.isLoading && uiState.errorMessage == null && uiState.prescriptions.isEmpty() &&
             uiState.searchQuery.isBlank() && uiState.selectedFilter == PrescriptionFilter.ALL && uiState.medicationFilterId == null
         val count = if (uiState.medicationFilterId != null) uiState.filteredPrescriptions.size else uiState.prescriptions.size
+        val tools = RecordListTools(uiState.searchQuery, onSearchQueryChange,
+            stringResource(R.string.design_search_short), stringResource(R.string.search), stringResource(R.string.clear_search),
+            listOf(
+                ListOptionGroup(stringResource(R.string.list_options_sort),
+                    PrescriptionSortOrder.entries.map { stringResource(it.labelRes) }, uiState.selectedSortOrder.ordinal),
+                ListOptionGroup(stringResource(R.string.list_options_status),
+                    PrescriptionFilter.entries.map { stringResource(it.labelRes) }, uiState.selectedFilter.ordinal)),
+            stringResource(R.string.list_options_prescriptions), { choices ->
+                onSortOrderSelected(PrescriptionSortOrder.entries[choices[0]])
+                onFilterSelected(PrescriptionFilter.entries[choices[1]])
+            })
         RecordListScaffold(
             title = stringResource(R.string.label_prescription_list),
             subtitle = if (emptyLibrary) "" else pluralStringResource(R.plurals.design_record_count, count, count),
             listTag = "prescription-list", modifier = modifier,
-            createLabel = if (uiState.medicationFilterId == null) stringResource(R.string.action_new_prescription) else null,
-            onCreate = onCreatePrescriptionClick, onBack = onBack,
+            onBack = onBack, floatingTools = if (emptyLibrary) null else tools,
+            floatingAfterItems = if (uiState.medicationFilterId == null) 3 else 4,
         ) {
                 if (uiState.medicationFilterId != null) item("medication-filter") {
                     ContentCard(Modifier.padding(horizontal = T.margin)) {
@@ -62,33 +73,6 @@ fun PrescriptionsScreenContent(
                         SecondaryActionButton(stringResource(R.string.design_show_all_recipes), onClearMedicationFilter, Modifier.fillMaxWidth())
                     }
                 }
-                if (uiState.medicationFilterId == null && !uiState.isLoading && uiState.errorMessage == null && (uiState.nextPurchase != null || uiState.purchaseError)) {
-                    item("purchase") {
-                        Column(Modifier.padding(horizontal = T.margin)) {
-                            val purchase = uiState.nextPurchase
-                            val openLabel = stringResource(R.string.design_purchase_open)
-                            ContentCard(if (purchase != null && !uiState.purchaseError) Modifier.clickable(onClickLabel = openLabel) { onPurchaseClick(purchase) } else Modifier) {
-                                Text(stringResource(R.string.design_next_purchase), style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                when {
-                                    uiState.purchaseError -> {
-                                        Text(stringResource(R.string.design_purchase_error))
-                                        TextButton(onClick = onRetry) { Text(stringResource(R.string.design_retry)) }
-                                    }
-                                    purchase == null -> Text(stringResource(R.string.design_no_purchase),
-                                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    else -> {
-                                        Text(purchase.title, style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                                        Text(stringResource(R.string.design_purchase_date,
-                                            purchase.nextAvailableRefillDate!!.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))),
-                                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
                 if (!emptyLibrary) item("search") {
                     SearchField(uiState.searchQuery, onSearchQueryChange,
                         label = stringResource(R.string.design_search_short), shortLabel = stringResource(R.string.search),
@@ -96,25 +80,8 @@ fun PrescriptionsScreenContent(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = T.margin))
                 }
                 if (!emptyLibrary) item("filters") {
-                    LazyRow(contentPadding = PaddingValues(horizontal = T.margin), horizontalArrangement = Arrangement.spacedBy(T.small)) {
-                        item {
-                            var menu by remember { mutableStateOf(false) }
-                            Box {
-                                FilterPill(selected = uiState.selectedSortOrder != PrescriptionSortOrder.EXPIRATION,
-                                    onClick = { menu = true }, label = stringResource(uiState.selectedSortOrder.labelRes))
-                                DropdownMenu(menu, { menu = false }) {
-                                    PrescriptionSortOrder.entries.forEach { order ->
-                                        DropdownMenuItem(text = { Text(stringResource(order.labelRes)) },
-                                            trailingIcon = { if (order == uiState.selectedSortOrder) Icon(Icons.Default.Check, null) },
-                                            onClick = { onSortOrderSelected(order); menu = false })
-                                    }
-                                }
-                            }
-                        }
-                        items(PrescriptionFilter.entries) { filter ->
-                            FilterPill(uiState.selectedFilter == filter, stringResource(filter.labelRes), { onFilterSelected(filter) })
-                        }
-                    }
+                    ListOptionsMenu(tools.optionGroups, tools.optionsLabel, tools.onOptionsApply,
+                        Modifier.padding(horizontal = T.margin))
                 }
                 if (!emptyLibrary) item("list_title") { Column(Modifier.padding(horizontal = T.margin)) {
                     SectionHeading(stringResource(R.string.design_your_prescriptions))
@@ -123,9 +90,11 @@ fun PrescriptionsScreenContent(
                     uiState.isLoading -> item { Box(Modifier.fillMaxWidth().padding(T.section), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
                     uiState.errorMessage != null -> item { LoadErrorPanel(uiState.errorMessage, onRetry, Modifier.padding(T.margin)) }
                     emptyLibrary -> item {
-                        EmptyStateCard(stringResource(R.string.no_prescription_registered),
-                            stringResource(R.string.design_first_prescription), null,
-                            onCreatePrescriptionClick, Modifier.padding(horizontal = T.margin))
+                        CenteredListGuidance {
+                            EmptyListGuidance(stringResource(R.string.no_prescription_registered),
+                                stringResource(R.string.design_first_prescription), stringResource(R.string.action_new_prescription),
+                                onCreatePrescriptionClick, iconRes = R.drawable.ic_bold_document_medicine)
+                        }
                     }
                     uiState.filteredPrescriptions.isEmpty() -> item {
                         Column(Modifier.padding(horizontal = T.margin)) {

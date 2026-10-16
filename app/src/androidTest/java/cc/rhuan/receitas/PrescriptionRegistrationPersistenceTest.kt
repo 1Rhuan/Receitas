@@ -27,6 +27,68 @@ class PrescriptionRegistrationPersistenceTest {
     private fun registration() = RoomPrescriptionRegistrationRepository(db, recipes, medications, doctors)
     private fun med() = MedicationItem("m", "Losartana", hasRecurringPickup = true, lastRefillDate = today.minusDays(30), quantity = "2 caixas", prescribedPosology = "Pela manhã", linkedPrescriptionId = "p")
     private fun recipe() = PrescriptionItem("p", "Receita", "", medicationIds = listOf("m"), renewalReminderEnabled = false, renewalReminderDaysBefore = 9)
+    @Test fun emptyRecipeCanReceiveItemsWithoutReplacingExistingSnapshotsOrTracking() = runBlocking {
+        val registration = registration()
+        registration.save(recipe().copy(medicationIds = emptyList()), emptyList(), null)
+        assertTrue(recipes.getPrescriptionById("p")!!.medicationIds.isEmpty())
+        val first = med().copy(linkedPrescriptionId = null)
+        registration.addToPrescription("p", listOf(first))
+        val snapshot = recipes.getPrescriptionById("p")!!.items.single()
+        val tracking = medications.getMedicationById("m")!!
+        assertEquals("p", tracking.linkedPrescriptionId)
+        registration.addToPrescription("p", listOf(MedicationItem("m2", "Segundo", prescribedQuantity = "2 caixas")))
+        val saved = recipes.getPrescriptionById("p")!!
+        assertEquals(setOf("m", "m2"), saved.medicationIds.toSet())
+        assertEquals(snapshot, saved.items.single { it.medicationId == "m" })
+        assertEquals(tracking.pickupHistory, medications.getMedicationById("m")!!.pickupHistory)
+        assertEquals(tracking.nextAvailableRefillDate, medications.getMedicationById("m")!!.nextAvailableRefillDate)
+        assertEquals("2 caixas", saved.items.single { it.medicationId == "m2" }.quantity)
+        try { registration.addToPrescription("p", listOf(first)); fail("Esperava duplicado") } catch (_: BusinessRuleViolation) {}
+        assertEquals(2, recipes.getPrescriptionById("p")!!.items.size)
+    }
+
+    @Test fun appendAutomaticallyUsesOriginForPickupsAndKeepsHistory() = runBlocking {
+        registration().save(recipe().copy(medicationIds = emptyList()), emptyList(), null)
+        val date = LocalDate.of(2026, 1, 31)
+        medications.addMedication(MedicationItem("legacy", "Medicamento mensal", hasRecurringPickup = true,
+            lastRefillDate = date, refillCycleDays = 1, intervalUnit = IntervalUnit.MONTHS))
+        val legacy = medications.getMedicationById("legacy")!!
+        registration().addToPrescription("p", listOf(legacy.copy(refillCycleDays = 45, intervalUnit = IntervalUnit.DAYS)))
+        val saved = medications.getMedicationById("legacy")!!
+        assertEquals("p", saved.linkedPrescriptionId)
+        assertEquals(listOf("legacy"), recipes.getPrescriptionById("p")!!.medicationIds)
+        assertEquals(legacy.pickupHistory, saved.pickupHistory)
+        assertEquals(date.plusDays(45), saved.nextAvailableRefillDate)
+    }
+
+    @Test fun addingToMissingReplacedOrInvalidTrackingRollsBackNewProductsAndMembership() = runBlocking {
+        val registration = registration()
+        registration.save(recipe().copy(medicationIds = emptyList()), emptyList(), null)
+        try { registration.addToPrescription("p", listOf(med().copy(lastRefillDate = today.plusDays(1)))); fail("Esperava validação") } catch (_: BusinessRuleViolation) {}
+        assertTrue(recipes.getPrescriptionById("p")!!.items.isEmpty())
+        assertNull(medications.getMedicationById("m"))
+        try { registration.addToPrescription("missing", listOf(med())); fail("Esperava receita") } catch (_: BusinessRuleViolation) {}
+        val old = db.prescriptionDao().getPrescriptionById("p")!!
+        db.prescriptionDao().updatePrescription(old.copy(state = "ARCHIVED"))
+        try { registration.addToPrescription("p", listOf(med())); fail("Esperava receita ativa") } catch (_: BusinessRuleViolation) {}
+        db.prescriptionDao().updatePrescription(old.copy(state = "REPLACED"))
+        try { registration.addToPrescription("p", listOf(med())); fail("Esperava histórico") } catch (_: BusinessRuleViolation) {}
+        assertNull(medications.getMedicationById("m"))
+        try { registration.save(null, emptyList(), null); fail("Esperava medicamento avulso") } catch (_: BusinessRuleViolation) {}
+    }
+
+    @Test fun recipeNotesDoNotRequireProfessionalAndAreKeptOnDoctorChanges() = runBlocking {
+        val note = "Observações gerais da receita"
+        val original = recipe().copy(medicationIds = emptyList(), notes = note)
+        registration().save(original, emptyList(), null)
+        assertEquals(note, recipes.getPrescriptionById("p")!!.notes)
+        assertNull(recipes.getPrescriptionById("p")!!.doctorId)
+        assertTrue(doctors.getDoctors().first().isEmpty())
+        registration().save(original.copy(doctorId = "d", doctorName = "Profissional"), emptyList(), Doctor("d", "Profissional"))
+        doctors.updateDoctor(Doctor("d", "Nome atualizado"))
+        assertEquals(note, recipes.getPrescriptionById("p")!!.notes)
+    }
+
     @Test fun reminderPreferencesAndDisabledTrackingPreserveHistory() = runBlocking {
         registration().save(recipe(), listOf(med().copy(pickupReminderDaysBefore = 7)), null)
         assertFalse(recipes.getPrescriptionById("p")!!.renewalReminderEnabled)
