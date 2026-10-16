@@ -1,150 +1,72 @@
 # Arquitetura
 
-Visão técnica do Receitas, verificada no código em 15/10/2026. Para regras de negócio, veja [modelagem.md](modelagem.md). Para o padrão de telas, veja [apresentacao.md](apresentacao.md).
+O Receitas usa uma Activity e interface em Jetpack Compose. O código está em um único módulo Android, `:app`, organizado em apresentação, domínio e dados. Essa organização usa ViewModels e repositórios, com fluxo reativo de dados; não pressupõe uma implementação rigorosa de Clean Architecture.
+
+A separação permite testar o cálculo de um prazo sem abrir uma tela e salvar um registro sem colocar operações de banco dentro de composables. As funcionalidades continuam próximas em `ui/feature/`, enquanto componentes visuais reutilizáveis ficam em `ui/components/`.
 
 ## Visão geral
 
-App de módulo único (`:app`), Kotlin, Jetpack Compose com Material 3, Room, Hilt, Navigation Compose e WorkManager. Não há rede, backend nem conta de usuário.
+![Arquitetura com apresentação, domínio, repositórios e Room, e o caminho independente de verificação de lembretes.](imagens/arquitetura.png)
 
-```mermaid
-flowchart TD
-    subgraph UI["ui/"]
-        Route["*Route.kt\n(coleta estado, liga callbacks)"]
-        Screen["*Screen.kt / Content\n(visual puro)"]
-        VM["ViewModel + UiState\n(Hilt)"]
-        Comp["ui/components + ui/theme"]
-    end
-    subgraph Domain["domain/"]
-        Model["model/\nPrescriptionItem, MedicationItem…"]
-        UseCase["usecase/\nEvaluateRemindersUseCase,\nCheckRefillStatusUseCase"]
-    end
-    subgraph Data["data/"]
-        Repo["repository/\ninterfaces + Room*Repository"]
-        Local["local/\nAppDatabase, DAOs, entidades"]
-    end
-    subgraph BG["notifications/"]
-        Sched["ReminderScheduler"]
-        Worker["ReminderWorker"]
-        Sync["ReminderSynchronizer"]
-    end
-    Route --> VM
-    Route --> Screen
-    Screen --> Comp
-    VM --> Repo
-    VM --> UseCase
-    UseCase --> Model
-    Repo --> Local
-    Repo --> Model
-    Sched --> Worker --> Sync
-    Sync --> UseCase
-    Sync --> Repo
-```
+[Versão vetorial](imagens/arquitetura.svg).
 
-## Camadas
-
-### `data/`
-
-- `local/AppDatabase.kt`: Room **versão 4**, schema exportado em `app/schemas/`. Banco `receitas_database`. Migrações explícitas `FROM_2_TO_3` e `FROM_3_TO_4` em `DatabaseMigrations.kt`. Não há fallback destrutivo.
-- Sete entidades: `DoctorEntity`, `MedicationEntity`, `PrescriptionEntity`, `PrescriptionMedicationEntity` (item da receita), `PickupTrackingEntity` (acompanhamento), `PickupEventEntity` (retirada) e `NotificationEntity`.
-- `Converters.kt` converte tipos para texto. O tipo da receita usa o conversor textual existente, sem alterar o schema.
-- `repository/`: interfaces para médicos, medicamentos, receitas, notificações e **registro completo de receita** (`PrescriptionRegistrationRepository`). O registro grava receita, itens, acompanhamentos e eventos em **uma transação Room**.
-
-### `domain/`
-
-- `model/`: modelos de domínio e as exceções de regra de negócio (`BusinessRuleViolation`). Falhas técnicas são tratadas à parte e recebem mensagem de recuperação na interface.
-- `usecase/EvaluateRemindersUseCase.kt`: recebe receitas, medicamentos e a data atual e devolve os alertas devidos. É código puro, coberto por testes unitários.
-- `usecase/CheckRefillStatusUseCase.kt`: situação de retirada de um acompanhamento.
-
-### `ui/`
-
-Cada funcionalidade em `ui/feature/<área>/` segue `Route → estado e callbacks → Screen/Content`:
-
-- `*Route.kt` coleta o estado respeitando o ciclo de vida e liga callbacks ao ViewModel.
-- `*Screen.kt` recebe `UiState` e callbacks. Não importa ViewModel, repositório nem navegação.
-- ViewModels carregam, salvam e coordenam ações.
-
-`ui/components` reúne os componentes compartilhados e `ui/theme/DesignSystem.kt` os tokens. As regras de uso estão em [DESIGN.md](../DESIGN.md).
-
-### `di/`
-
-Dois módulos Hilt em `SingletonComponent`:
-
-- `DatabaseModule` provê o `AppDatabase` e os DAOs.
-- `RepositoryModule` liga as interfaces às implementações Room.
-
-`ReceitasApplication` é `@HiltAndroidApp` e `MainActivity` é `@AndroidEntryPoint`. Todos os ViewModels são `@HiltViewModel`.
-
-### `notifications/`
-
-O caminho de lembretes **não usa Hilt**:
-
-- `ReminderScheduler` agenda `daily-reminders` (periódico, 1 dia, política `KEEP`) e `reminder-refresh` (execução única, `APPEND_OR_REPLACE`).
-- `ReminderWorker` é um `CoroutineWorker` simples. Chama `ReminderSynchronizer.sync`. Falhas viram `Result.retry()` e o cancelamento é propagado.
-- `ReminderSynchronizer` é um `object` que obtém o banco por `AppDatabase.getDatabase(context)`, instancia os repositórios Room manualmente, avalia os alertas, grava o histórico interno e entrega as notificações do Android. Cria o canal de notificações e respeita permissão negada e canal desativado.
-
-A verificação extra roda em `ReceitasApplication` (ao mudar receitas, medicamentos, acompanhamentos ou retiradas, com até três novas tentativas se a observação falhar) e em `MainActivity` (ao abrir o app e quando a permissão é concedida). Regras completas em [lembretes.md](lembretes.md).
-
-> [!NOTE]
-> Como o sincronizador cria os repositórios por conta própria, qualquer mudança no construtor de `RoomPrescriptionRepository` ou `RoomMedicationRepository` precisa ser refletida em `ReminderSynchronizer`. O Hilt não vai avisar.
-
-## Navegação
-
-`MainScreen` cria o `NavController`, observa o destino atual e decide qual aba está selecionada, se a barra aparece e qual ação de criação mostrar. `ReceitasNavHost` define o grafo e injeta os ViewModels com `hiltViewModel()`.
-
-| Rota | Tela | Observação |
-| --- | --- | --- |
-| `home` | Início | Destino inicial. Abre Notificações pelo sino. |
-| `prescriptions` | Receitas | Aba. |
-| `medications` | Remédios | Aba. O título interno em `NavRoute` é "Medicamentos". |
-| `prescription_detail/{prescriptionId}` | Detalhe da receita | |
-| `medication_detail/{medicationId}` | Detalhe do medicamento | Mesma rota para quem chega por Remédios ou pela receita. |
-| `prescriptions_for_medication/{medicationId}` | Receitas filtradas por medicamento | Reutiliza `PrescriptionsScreen` com `medicationFilterId`. O filtro pertence a essa entrada. |
-| `prescription_wizard?prescriptionId&entryMode&renewalOf&medicationId&addToPrescriptionId` | Cadastro | Veja os modos abaixo. |
-| `notifications` | Notificações | Também aberta ao tocar numa notificação do Android. |
-| `menu` | Menu | Registrada no grafo, mas **fora da barra**. Veja [pendencias.md](pendencias.md#d4). |
-
-### Modos do wizard
-
-`WizardEntryMode` só distingue `FULL_PRESCRIPTION` (padrão) de `STANDALONE_MEDICATION`. O fluxo concreto vem da combinação dos parâmetros da rota:
-
-| Entrada | Parâmetros |
+| Parte | Responsabilidade no Receitas |
 | --- | --- |
-| Nova receita | nenhum |
-| Medicamento avulso | `entryMode=STANDALONE_MEDICATION` |
-| Editar receita | `prescriptionId=<id>` |
-| Editar medicamento | `entryMode=STANDALONE_MEDICATION&medicationId=<id>` |
-| Renovar receita | `renewalOf=<id>` |
-| Adicionar medicamento pela lista da receita | `entryMode=STANDALONE_MEDICATION&addToPrescriptionId=<id>` |
+| `ui/feature/` | Cadastros, listas e detalhes, com estados e ViewModels por funcionalidade |
+| `ui/navigation/` | Destinos e callbacks de navegação |
+| `ui/components/` e `ui/theme/` | Componentes, cores, medidas e tipografia compartilhados |
+| `domain/model/` | Receita, medicamento, intervalo, eventos e propriedades calculadas |
+| `domain/usecase/` | Situação de retirada e condições dos lembretes |
+| `data/repository/` | Operações de leitura e escrita e coordenação de transações |
+| `data/local/` | Entidades, DAOs, conversores, banco e migrações Room |
+| `notifications/` | Agendamento, sincronização e entrega de avisos Android |
+| `di/` e `text/` | Fornecimento de dependências e resolução de mensagens |
 
-O último é a exceção que vincula automaticamente a receita de origem ao acompanhamento. O estado do cadastro sobrevive à recriação da Activity via `SavedStateHandle`.
+Os diretórios partem de `app/src/main/java/cc/rhuan/receitas/`. O banco local é a fonte persistente dos registros; não existe outra fonte remota para sincronizar.
 
-### Barra de navegação
+## Exemplo completo: registrar uma retirada
 
-`TextNavigationBar` desenha a cápsula flutuante. `NavRoute.bottomNavItems` ainda inclui `Menu`, mas a barra o filtra e mostra só Início, Receitas e Remédios. Sua altura medida é a reserva no fim das listas. Em Receitas e Remédios, `MainScreen` passa `onCreateRecord` e a barra mostra a ação "+" junto à cápsula (decisão do autor em 15/10/2026). Nas demais rotas, a ação não aparece.
+Ao confirmar a data no detalhe do medicamento, a apresentação chama `MedicationDetailViewModel.pickup`. O ViewModel executa a ação em coroutine e chama `MedicationRepository.registerPickup`. A implementação Room valida o medicamento e o acompanhamento dentro de uma transação.
 
-## Estado e erros
+Se a operação for permitida, o repositório grava `PickupEventEntity` e encerra os alertas de retirada quando o evento avança a última data real. O resultado da operação produz uma mensagem para a interface. Em paralelo à resposta da ação, os fluxos Room emitem a mudança do histórico: o repositório reconstrói `MedicationItem` e o ViewModel atualiza `uiState`. A próxima previsão é uma propriedade derivada, não uma data fixa gravada no evento.
 
-- Estado de tela é um `UiState` imutável exposto por `StateFlow`.
-- Cada lista distingue **carregando, erro, vazio e vazio por filtro**. Ao trocar uma tela, preserve os quatro.
-- Recarregar cancela o coletor anterior antes de assinar de novo.
-- Argumento de rota ausente vira estado recuperável, não exceção.
-- Regra de negócio violada usa `BusinessRuleViolation`. Falha técnica é registrada em log e mostra mensagem de recuperação.
+![Diagrama de sequência UML do caminho de sucesso de uma retirada e da atualização observada do estado.](imagens/sequencia-retirada.png)
 
-A auditoria que fixou esses padrões está em [auditoria.md](auditoria.md).
+[Versão vetorial](imagens/sequencia-retirada.svg). O desenho separa a resposta da operação da emissão dos fluxos; a ordem relativa entre esses dois retornos pode variar. Caminhos de recusa estão no [fluxo de retirada](funcionamento.md#registro-de-retirada).
 
-## Testes
+| Etapa | Código para acompanhar |
+| --- | --- |
+| Receber a ação e apresentar o resultado | [MedicationDetailViewModel.kt](../app/src/main/java/cc/rhuan/receitas/ui/feature/medications/MedicationDetailViewModel.kt) |
+| Validar e gravar em transação | [MedicationRepository.kt](../app/src/main/java/cc/rhuan/receitas/data/repository/MedicationRepository.kt) |
+| Persistir e observar eventos | [TrackingDao.kt](../app/src/main/java/cc/rhuan/receitas/data/local/dao/TrackingDao.kt) |
+| Derivar a próxima previsão | [MedicationItem.kt](../app/src/main/java/cc/rhuan/receitas/domain/model/MedicationItem.kt) |
 
-| Tipo | Pasta | O que cobre |
-| --- | --- | --- |
-| Unitários | `app/src/test` | Regras de lembrete, estados do wizard, filtros, tratamento de falhas, apresentação de notificações, situação de retirada. |
-| Instrumentados | `app/src/androidTest` | Migrações 2→3 e 3→4, persistência e rollback, fluxos de interface, composição em 320 × 640 dp, fonte 200% e temas claro/escuro. |
+### Classes desse percurso
 
-`ComposeCapture.kt` salva capturas de tela dos testes de interface. A aquisição da imagem repete até três vezes só para falhas transitórias de captura. Cliques e asserções nunca são repetidos.
+![Recorte UML de classes mostrando ViewModel, interface de repositório, implementação Room, modelo e banco.](imagens/classes-retirada.png)
 
-## Configuração de build a conhecer
+[Versão vetorial](imagens/classes-retirada.svg). As assinaturas estão resumidas e as dependências auxiliares foram omitidas. A seta tracejada com triângulo indica que a implementação Room realiza a interface; as demais relações mostram dependências.
 
-- `minSdk` 26, `targetSdk` e `compileSdk` 37, `versionName` 1.0.
-- `compileOptions` em Java 11, enquanto o Gradle roda com JDK 25.
-- Build `release` com otimização **desativada** (`optimization { enable = false }`) e sem assinatura própria. Veja [pendencias.md](pendencias.md#d6).
-- `gradle.properties` define `android.disallowKotlinSourceSets=false`, opção experimental que gera aviso em todo build.
-- Backup e transferência entre dispositivos estão desativados, e os arquivos de dados são excluídos explicitamente (`backup_rules.xml`, `data_extraction_rules.xml`).
+## Estado dos cadastros
+
+Os percursos de receita e medicamento são separados, mas compartilham `PrescriptionWizardViewModel` e `PrescriptionWizardUiState`. O estado contém campos, rascunhos, etapa atual, validações e situação do salvamento. A apresentação muda o conteúdo conforme a etapa, sem abrir uma rota independente para cada pergunta.
+
+O ViewModel expõe um `StateFlow` e mantém uma cópia serializável em `SavedStateHandle`, na chave `registration_draft`, sem as listas de sugestões carregadas dos repositórios. Isso permite recuperação quando o Android recria a tela ou restaura a entrada. Não oferece uma lista de rascunhos permanentes para retomar depois de descartar o cadastro.
+
+Subeditores opcionais usam rascunhos próprios: confirmar aplica a alteração; voltar preserva o formulário anterior. A revisão permite editar um assunto e retornar diretamente ao resumo. O estado serializado completo pode crescer com o formulário; esse é um limite técnico a considerar se o cadastro aumentar.
+
+## Navegação e apresentação
+
+`MainScreen` cria o controlador de navegação e `PrescriptionsNavHost` define o grafo. As funções em `*Route.kt` coletam o estado com o ciclo de vida e conectam ações aos composables de apresentação. Estes recebem dados e callbacks em vez de consultar DAOs diretamente.
+
+Uma receita abre a lista de seus medicamentos; selecionar um item abre o mesmo detalhe usado em Remédios. No caminho inverso, Receitas vinculadas abre uma entrada de lista filtrada por participação. Esse filtro pertence à entrada e não modifica a aba principal de Receitas.
+
+Carregamento, falha, coleção vazia, busca sem resultados e registro ausente são tratados como situações diferentes. Recarregar cancela a observação anterior antes de iniciar outra. O cancelamento de coroutines é preservado; falhas recuperáveis recebem retorno na interface.
+
+## Execução dos lembretes
+
+`ReminderScheduler` agenda o trabalho diário e verificações pontuais. `ReminderWorker` chama `ReminderSynchronizer`, que consulta os dados, usa `EvaluateRemindersUseCase` e concilia os alertas internos com as notificações Android. O algoritmo de avaliação recebe a data atual, o que permite testar limites de antecedência e conflitos sem depender do relógio do dispositivo.
+
+Os alertas internos ficam no Room. Informações de entrega e supressão por etapa também são mantidas em preferências locais, para evitar reenvios indevidos. O Android pode adiar a execução periódica; a aplicação também verifica os dados ao abrir e depois de alterações relevantes.
+
+O caminho de sincronização constrói repositórios manualmente, enquanto os ViewModels usam Hilt. Portanto, mudanças nos construtores desses repositórios também precisam ser refletidas no sincronizador. Essa é uma diferença da implementação atual que não aparece se o projeto for descrito apenas como “usa injeção de dependências”.

@@ -1,47 +1,36 @@
 # Documentação do Receitas
 
-Ponto de partida para quem chega ao projeto. Se esta é a primeira vez, leia [onboarding.md](onboarding.md) antes de qualquer outro arquivo.
+Uma receita pode continuar válida quando chega a hora de retirar um medicamento, ou vencer antes dessa data. O Receitas foi desenvolvido para acompanhar essas duas informações em conjunto: a validade do documento e a previsão de uma nova retirada ou compra.
 
-## Qual documento vale mais
+O projeto é uma prova de conceito Android para uso pessoal, desenvolvida como TCC. A pessoa cadastra seus documentos e medicamentos, informa a última retirada e o intervalo que utiliza e acompanha os prazos e avisos calculados. A aplicação não consulta farmácias nem autoriza dispensações. Também não avalia adesão ao tratamento ou resultados clínicos.
 
-Quando dois documentos discordam, use esta ordem:
+## Um exemplo
 
-1. **O código** em `app/src/main`. É o que o aplicativo realmente faz.
-2. **Regras de negócio:** [modelagem.md](modelagem.md), [lembretes.md](lembretes.md) e [reposicao.md](reposicao.md).
-3. **Interface:** [DESIGN.md](../DESIGN.md), que descreve as decisões vigentes, e [cadastro.md](cadastro.md), que descreve o fluxo de cadastro.
-4. **Pesquisa e histórico:** servem para entender o porquê de uma decisão. Não são instruções. Veja a tabela abaixo.
+Considere uma receita com vencimento em 20 de novembro e um medicamento cuja próxima retirada esteja prevista para 25 de novembro. O medicamento ainda não está na data da retirada, mas já existe um conflito de prazos. Se essa for a receita escolhida para seu acompanhamento, o aplicativo pode avisar antes da janela habitual de lembrete de retirada.
 
-Em 15/10/2026 o autor decidiu que, na divergência sobre o botão de criação, vale o código (ação "+" contextual junto à cápsula). `AGENTS.md`, `visual.md` e `DESIGN.md` foram alinhados. Frases antigas no histórico do `DESIGN.md` e em `revisao-publicacao.md` estão marcadas como **[Substituído]**.
+Esse exemplo reúne os conceitos que orientam o sistema:
 
-## Mapa dos documentos
+- **Receita** é o documento, com emissão, validade e itens prescritos.
+- **Medicamento** é um cadastro reutilizável, que pode aparecer em mais de uma receita.
+- **Acompanhamento de retiradas** define intervalo, última data real e, opcionalmente, a receita usada como referência de validade.
 
-| Documento                                                  | Status                           | Quando ler                                                                            |
-| ---------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------- |
-| [onboarding.md](onboarding.md)                             | Vigente                          | Primeiro dia: o que é o app, como rodar, onde mexer, glossário.                       |
-| [arquitetura.md](arquitetura.md)                           | Vigente                          | Antes de alterar camadas, navegação, banco ou notificações.                           |
-| [pendencias.md](pendencias.md)                             | Vigente                          | Antes de planejar trabalho: decisões em aberto, divergências e dívidas.               |
-| [modelagem.md](modelagem.md)                               | Vigente                          | Regras de datas, vínculos, renovação, arquivamento e migração do Room.                |
-| [lembretes.md](lembretes.md)                               | Vigente                          | Regras de alertas, WorkManager, notificações e roteiro de teste manual.               |
-| [reposicao.md](reposicao.md)                               | Vigente                          | Regras de retirada e previsão. Curto; complementa a modelagem.                        |
-| [cadastro.md](cadastro.md)                                 | Vigente, com resumo no topo      | Fluxo de cadastro em etapas, regras de Pular e validações. O corpo é cronológico.     |
-| [apresentacao.md](apresentacao.md)                         | Vigente                          | Padrão `Route → estado → Screen/Content` e onde alterar o visual.                     |
-| [visual.md](visual.md)                                     | Vigente                          | Resumo dos componentes e da barra de navegação.                                       |
-| [../DESIGN.md](../DESIGN.md)                               | Vigente, com guia rápido no topo | Decisões de interface. O corpo é um registro cronológico.                             |
-| [textos.md](textos.md)                                     | Referência                       | Por que certos textos da interface foram trocados.                                    |
-| [auditoria.md](auditoria.md)                               | Referência                       | Resultado da auditoria de falhas e da limpeza de código.                              |
-| [revisao-publicacao.md](revisao-publicacao.md)             | Referência                       | Revisão antes de publicar no GitHub, com limites de validação.                        |
-| [one-ui-research.md](one-ui-research.md)                   | Pesquisa                         | Referências Samsung consultadas. Retrata o piloto inicial, não o estado atual.        |
-| [pillo-research.md](pillo-research.md)                     | Pesquisa                         | Observação de um app de terceiros. Não são requisitos do Receitas.                    |
-| [design-standard-proposal.md](design-standard-proposal.md) | Histórico                        | Comparação que levou às listas agrupadas. Não implementar as alternativas.            |
-| [../DESIGN-HISTORY.md](../DESIGN-HISTORY.md)               | Histórico                        | Decisões substituídas. Nunca restaurar um padrão a partir dele.                       |
-| [../AGENTS.md](../AGENTS.md)                               | Instruções para agentes de IA    | Regras que assistentes devem seguir. Atualizado em 15/10/2026 para refletir o código. |
+A participação em uma receita e a escolha da receita para retiradas são relações distintas. Essa separação aparece nos fluxos, no banco e nos alertas.
 
-`docs/references/pillo/` guarda capturas de pesquisa de um app de terceiros. Não são recursos de produção.
+## Leitura da documentação
 
-## Como manter esta documentação
+| Documento | O que explica |
+| --- | --- |
+| [Requisitos](requisitos.md) | O escopo do TCC, os casos de uso e a relação entre requisitos e implementação |
+| [Funcionamento](funcionamento.md) | Cadastro, validade, retiradas, conflitos de prazo e ciclo dos registros |
+| [Arquitetura](arquitetura.md) | Organização do código e caminho de uma retirada da tela ao banco e de volta |
+| [Banco de dados](banco-de-dados.md) | Tabelas, chaves, cardinalidades, histórico e migrações |
+| [Desenvolvimento](desenvolvimento.md) | Ambiente, execução, localização do código e comandos de testes |
+| [Validação](validacao.md) | Cenários de verificação, evidências e limites da avaliação |
 
-- **Uma regra, um lugar.** Regra de negócio vai em `modelagem.md`, `lembretes.md` ou `reposicao.md`. Decisão de interface vai em `DESIGN.md`. Se outro documento precisar citar, use link.
-- **Registre o que mudou no lugar certo.** Ao substituir uma decisão, atualize o texto vigente e mova o antigo para `DESIGN-HISTORY.md`. Não deixe as duas versões lado a lado no texto vigente.
-- **Contagens de testes são pontuais.** Os documentos citam 36, 45, 56, 65, 69 e 72 testes unitários porque cada número pertence à sua rodada. A contagem atual está em [onboarding.md](onboarding.md#verificar-o-estado-do-projeto).
-- **Marque divergências em vez de ignorá-las.** Se encontrar um documento que não bate com o código, corrija-o ou acrescente a divergência em [pendencias.md](pendencias.md).
-- **Datas.** Use o formato `dd/mm/aaaa` e informe a data de qualquer validação citada.
+Para entender o aplicativo, leia Requisitos e Funcionamento. Para trabalhar no código, comece por Desenvolvimento e siga para Arquitetura. Os diagramas estão incluídos nos respectivos capítulos em PNG; as versões vetoriais SVG ficam em `imagens/`.
+
+## Limites do protótipo
+
+Os dados ficam no dispositivo, sem conta, servidor ou sincronização. Não há exportação nem restauração; backup e transferência pelo Android estão desativados. Limpar os dados ou desinstalar o aplicativo remove os registros locais.
+
+O aplicativo não controla horários de doses, estoque, anexos ou informações de outras pessoas. A ausência desses recursos é coerente com o escopo do trabalho. Notificações externas dependem das permissões e da execução em segundo plano do Android; não há compromisso de entrega em horário exato.
