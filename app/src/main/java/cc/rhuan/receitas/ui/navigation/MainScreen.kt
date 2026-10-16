@@ -41,6 +41,6 @@ fun MainScreen(openedNotificationId: String? = null, onNotificationOpened: () ->
             }
         },
     ) { innerPadding ->
-        ReceitasNavHost(navController, Modifier.padding(innerPadding).consumeWindowInsets(innerPadding))
+        PrescriptionsNavHost(navController, Modifier.padding(innerPadding).consumeWindowInsets(innerPadding))
     }
 }

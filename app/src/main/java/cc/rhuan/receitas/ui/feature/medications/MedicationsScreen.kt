@@ -55,8 +55,8 @@ fun MedicationsScreenContent(
     snackbarHostState: SnackbarHostState, modifier: Modifier = Modifier, onRetry: () -> Unit = {},
 ) {
     val emptyLibrary = !uiState.isLoading && uiState.errorMessage == null && uiState.medications.isEmpty() &&
-        uiState.searchQuery.isBlank() && uiState.selectedSourceFilter.equals("TODOS", true)
-    val sources = listOf("TODOS") + MedicationSource.entries.map { it.label }
+        uiState.searchQuery.isBlank() && uiState.selectedSourceFilter.equals("ALL", true)
+    val sources = listOf("ALL") + MedicationSource.entries.map { it.name }
     val density = LocalDensity.current
     var searchHeight by remember { mutableIntStateOf(0) }
     var filtersHeight by remember { mutableIntStateOf(0) }
@@ -64,7 +64,7 @@ fun MedicationsScreenContent(
     val tools = RecordListTools(uiState.searchQuery, onSearchQueryChange,
         stringResource(R.string.design_medication_search), stringResource(R.string.search), stringResource(R.string.clear_search),
         listOf(ListOptionGroup(stringResource(R.string.list_options_source),
-            sources.map { if (it == "TODOS") stringResource(R.string.design_all_medications) else it },
+            listOf(stringResource(R.string.design_all_medications)) + MedicationSource.entries.map { stringResource(it.labelRes) },
             sources.indexOfFirst { it.equals(uiState.selectedSourceFilter, true) }.coerceAtLeast(0))),
         stringResource(R.string.list_options_medications), { onFilterSelected(sources[it[0]]) })
     RecordListScaffold(title = stringResource(R.string.design_medications_title),
@@ -93,8 +93,8 @@ fun MedicationsScreenContent(
             uiState.errorMessage != null -> item { LoadErrorPanel(uiState.errorMessage, onRetry, Modifier.padding(T.margin)) }
             emptyLibrary -> item {
                 CenteredListGuidance {
-                    EmptyListGuidance(stringResource(R.string.ui_nenhum_medicamento_cadastrado),
-                        stringResource(R.string.design_first_medication), stringResource(R.string.ui_novo_medicamento),
+                    EmptyListGuidance(stringResource(R.string.no_medications_registered),
+                        stringResource(R.string.design_first_medication), stringResource(R.string.new_medication),
                         onAddMedicationClick, iconRes = R.drawable.ic_bold_pills)
                 }
             }
@@ -102,9 +102,9 @@ fun MedicationsScreenContent(
                 CenteredListGuidance(occupiedHeight = with(density) {
                     (searchHeight + filtersHeight + headingHeight).toDp()
                 } + T.gap * 3) {
-                    EmptyListGuidance(stringResource(R.string.ui_nenhum_medicamento_encontrado),
+                    EmptyListGuidance(stringResource(R.string.no_medications_found),
                         stringResource(R.string.design_medication_no_results), stringResource(R.string.design_clear_filters),
-                        { onSearchQueryChange(""); onFilterSelected("TODOS") }, iconRes = R.drawable.ic_bold_pills)
+                        { onSearchQueryChange(""); onFilterSelected("ALL") }, iconRes = R.drawable.ic_bold_pills)
                 }
             }
             else -> items(uiState.filteredMedications, key = { it.id }) { medication ->
@@ -120,13 +120,13 @@ fun MedicationCardItem(medication: MedicationItem, onClick: () -> Unit, onRegist
     modifier: Modifier = Modifier) {
     val format = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
     ContentCard(modifier.clickable(onClick = onClick)) {
-        Text(medication.source.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(medication.source.labelRes), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(medication.title, style = MaterialTheme.typography.titleMedium)
-        StatusLabel(medication.dosage.ifBlank { medication.form.label })
+        StatusLabel(medication.dosage.ifBlank { stringResource(medication.form.labelRes) })
         medication.activeIngredient?.takeIf { it.isNotBlank() }?.let {
             Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        medication.sourceName?.takeIf { it.isNotBlank() && !it.equals(medication.source.label, true) }?.let {
+        medication.sourceName?.takeIf { it.isNotBlank() && !it.equals(stringResource(medication.source.labelRes), true) }?.let {
             Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (medication.quantity.isNotBlank()) Text(stringResource(R.string.pickup_quantity, medication.quantity), style = MaterialTheme.typography.bodyMedium)
@@ -141,35 +141,35 @@ fun MedicationCardItem(medication: MedicationItem, onClick: () -> Unit, onRegist
             SecondaryActionButton(stringResource(R.string.action_register_pickup), onRegisterPickup, Modifier.fillMaxWidth())
         }
         medication.trackingError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
-        if (medication.trackingArchived) StatusLabel(stringResource(R.string.ui_acompanhamento_arquivado))
+        if (medication.trackingArchived) StatusLabel(stringResource(R.string.tracking_archived))
     }
 }
 
-fun medicationPreviewState(): MedicationsUiState {
+fun medicationPreviewState(texts: cc.rhuan.receitas.text.TextResolver): MedicationsUiState {
     val medications = listOf(
-        MedicationItem("med-preview-1", "Losartana potássica", activeIngredient = "Losartana", dosage = "50 mg",
-            quantity = "30 comprimidos", prescribedPosology = "Tomar 1 comprimido por dia.",
+        MedicationItem("med-preview-1", texts.get(R.string.preview_losartan), activeIngredient = texts.get(R.string.preview_medication), dosage = "50 mg",
+            quantity = "30 comprimidos", prescribedPosology = texts.get(R.string.preview_daily_instruction),
             lastRefillDate = LocalDate.now().minusDays(27)),
-        MedicationItem("med-preview-2", "Cloridrato de metformina de liberação prolongada", dosage = "500 mg",
-            quantity = "60 comprimidos", source = MedicationSource.FARMACIA_BASICA, sourceName = "Unidade de Saúde",
+        MedicationItem("med-preview-2", texts.get(R.string.preview_metformin), dosage = "500 mg",
+            quantity = texts.get(R.string.preview_quantity), source = MedicationSource.PUBLIC_PHARMACY, sourceName = texts.get(R.string.preview_health_unit),
             lastRefillDate = LocalDate.now().minusDays(35)))
     return MedicationsUiState(medications = medications, filteredMedications = medications)
 }
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
-private fun MedicationsPreview() { ReceitasTheme {
-    MedicationsScreenContent(medicationPreviewState(), {}, {}, {}, {}, {}, remember { SnackbarHostState() })
+private fun MedicationsPreview() { AppTheme {
+    MedicationsScreenContent(medicationPreviewState(cc.rhuan.receitas.text.AndroidTextResolver(androidx.compose.ui.platform.LocalContext.current)), {}, {}, {}, {}, {}, remember { SnackbarHostState() })
 } }
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
-private fun MedicationsDarkPreview() { ReceitasTheme(darkTheme = true) {
-    MedicationsScreenContent(medicationPreviewState(), {}, {}, {}, {}, {}, remember { SnackbarHostState() })
+private fun MedicationsDarkPreview() { AppTheme(darkTheme = true) {
+    MedicationsScreenContent(medicationPreviewState(cc.rhuan.receitas.text.AndroidTextResolver(androidx.compose.ui.platform.LocalContext.current)), {}, {}, {}, {}, {}, remember { SnackbarHostState() })
 } }
 
 @Preview(showBackground = true, widthDp = 320, heightDp = 640, fontScale = 2f)
 @Composable
-private fun MedicationsLargeTextPreview() { ReceitasTheme {
-    MedicationsScreenContent(medicationPreviewState(), {}, {}, {}, {}, {}, remember { SnackbarHostState() })
+private fun MedicationsLargeTextPreview() { AppTheme {
+    MedicationsScreenContent(medicationPreviewState(cc.rhuan.receitas.text.AndroidTextResolver(androidx.compose.ui.platform.LocalContext.current)), {}, {}, {}, {}, {}, remember { SnackbarHostState() })
 } }

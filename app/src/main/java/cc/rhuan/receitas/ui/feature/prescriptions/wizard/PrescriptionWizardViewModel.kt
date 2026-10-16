@@ -1,5 +1,11 @@
 package cc.rhuan.receitas.ui.feature.prescriptions.wizard
 
+import cc.rhuan.receitas.text.TextMessage
+
+import cc.rhuan.receitas.text.TextResolver
+
+import cc.rhuan.receitas.R
+
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,6 +29,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class PrescriptionWizardViewModel @Inject constructor(
+    private val texts: TextResolver,
     private val savedStateHandle: SavedStateHandle,
     private val prescriptionRepository: PrescriptionRepository,
     private val medicationRepository: MedicationRepository,
@@ -68,11 +75,11 @@ class PrescriptionWizardViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, initialLoadFailed = false) }
             try {
-                val recipe = prescriptionRepository.getPrescriptionById(id) ?: throw BusinessRuleViolation("Receita não encontrada")
-                requireBusiness(recipe.state == RecordState.ACTIVE) { "Reative a receita antes de adicionar medicamentos" }
+                val recipe = prescriptionRepository.getPrescriptionById(id) ?: throw BusinessRuleViolation(TextMessage(R.string.prescription_not_found))
+                requireBusiness(recipe.state == RecordState.ACTIVE) { TextMessage(R.string.reactivate_prescription_before_adding) }
                 _uiState.update { it.copy(isLoading = false, addToPrescriptionTitle = recipe.title, existingPrescriptionMedicationIds = recipe.medicationIds, errorMessage = null) }
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { _uiState.update { it.copy(isLoading = false, initialLoadFailed = true, errorMessage = if (e is BusinessRuleViolation) e.message else "Não foi possível carregar a receita. Tente novamente.") } }
+            catch (e: Exception) { _uiState.update { it.copy(isLoading = false, initialLoadFailed = true, errorMessage = if (e is BusinessRuleViolation) texts.resolve(e.userMessage) else texts.get(R.string.prescription_load_retry)) } }
         }
     }
 
@@ -85,7 +92,7 @@ class PrescriptionWizardViewModel @Inject constructor(
         viewModelScope.launch {
             medicationRepository.getMedications().catch { error ->
                 if (error is CancellationException) throw error
-                _uiState.update { it.copy(errorMessage = "Não foi possível carregar os medicamentos cadastrados.") }
+                _uiState.update { it.copy(errorMessage = texts.get(R.string.medication_suggestions_load_error)) }
             }.collect { meds ->
                 _uiState.update { it.copy(availableMedications = meds) }
             }
@@ -93,7 +100,7 @@ class PrescriptionWizardViewModel @Inject constructor(
         viewModelScope.launch {
             doctorRepository.getDoctors().catch { error ->
                 if (error is CancellationException) throw error
-                _uiState.update { it.copy(errorMessage = "Não foi possível carregar os profissionais cadastrados.") }
+                _uiState.update { it.copy(errorMessage = texts.get(R.string.doctor_suggestions_load_error)) }
             }.collect { doctors ->
                 _uiState.update { it.copy(availableDoctors = doctors) }
             }
@@ -106,7 +113,7 @@ class PrescriptionWizardViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, initialLoadFailed = false) }
             val prescription = prescriptionRepository.getPrescriptionById(id)
             if (prescription != null) {
-                require(prescription.state != RecordState.REPLACED) { "Receita substituída" }
+                require(prescription.state != RecordState.REPLACED) { texts.get(R.string.prescription_replaced) }
                 val doctor = prescription.doctorId?.let { doctorRepository.getDoctorById(it) }
 
                 val linkedDrafts = mutableListOf<MedicationDraft>()
@@ -165,10 +172,10 @@ class PrescriptionWizardViewModel @Inject constructor(
                     )
                 }
             } else {
-                _uiState.update { it.copy(isLoading = false, initialLoadFailed = true, errorMessage = "Receita não encontrada") }
+                _uiState.update { it.copy(isLoading = false, initialLoadFailed = true, errorMessage = texts.get(R.string.prescription_not_found)) }
             }
             } catch (e: CancellationException) { throw e }
-            catch (_: Exception) { _uiState.update { it.copy(isLoading = false, initialLoadFailed = true, errorMessage = "Não foi possível carregar a receita. Tente novamente.") } }
+            catch (_: Exception) { _uiState.update { it.copy(isLoading = false, initialLoadFailed = true, errorMessage = texts.get(R.string.prescription_load_retry)) } }
         }
     }
 
@@ -181,11 +188,11 @@ class PrescriptionWizardViewModel @Inject constructor(
     private fun loadMedicationForEditing(id: String) {
         viewModelScope.launch {
             try {
-                val medication = medicationRepository.getMedicationById(id) ?: error("Medicamento não encontrado")
+                val medication = medicationRepository.getMedicationById(id) ?: error(texts.get(R.string.medication_not_found))
                 val draft = medicationDraft(medication)
                 _uiState.update { it.copy(medications = listOf(draft), showMedicationEditor = false, isLoading = false) }
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { _uiState.update { it.copy(isLoading = false, initialLoadFailed = true, errorMessage = "Não foi possível carregar o medicamento. Tente novamente.") } }
+            catch (e: Exception) { _uiState.update { it.copy(isLoading = false, initialLoadFailed = true, errorMessage = texts.get(R.string.medication_load_retry)) } }
         }
     }
     private fun persistDraft(state: PrescriptionWizardUiState) {
@@ -203,7 +210,7 @@ class PrescriptionWizardViewModel @Inject constructor(
     fun nextStep() {
         val state = _uiState.value
         if (state.isLoading || state.typeEditor != null) return
-        state.currentStepError?.let { error -> _uiState.update { it.copy(errorMessage = error) }; return }
+        state.currentStepError?.let { error -> _uiState.update { it.copy(errorMessage = texts.resolve(error)) }; return }
         if (state.currentStep == state.medicationStep && state.showMedicationEditor && !commitMedicationDraft()) return
         _uiState.update {
             val target = if (it.reviewEditStep != null) it.maxSteps else (it.currentStep + 1).coerceAtMost(it.maxSteps)
@@ -252,7 +259,7 @@ class PrescriptionWizardViewModel @Inject constructor(
         val suggested = original.type?.defaultValidityDays
         val draft = if (suggested != null) original.copy(validityDays = suggested, validityDaysInput = suggested.toString(), validityOrigin = "SUGGESTED", useExpirationDate = false) else original
         if (state.isLoading) return
-        draft.error?.let { error -> _uiState.update { it.copy(errorMessage = error) }; return }
+        draft.error?.let { error -> _uiState.update { it.copy(errorMessage = texts.resolve(error)) }; return }
         change { it.copy(type = draft.type, validityDays = draft.validityDays, validityDaysInput = draft.validityDaysInput,
             validityOrigin = draft.validityOrigin, validityDateMode = draft.useExpirationDate,
             renewalReminderDaysBefore = it.renewalReminderDaysBefore.coerceIn(0, requireNotNull(draft.validityDays)), typeEditor = null,
@@ -287,7 +294,6 @@ class PrescriptionWizardViewModel @Inject constructor(
                     useExpirationDate = if (type.defaultValidityDays == null) draft.useExpirationDate else false)
             }
             _uiState.update { it.copy(typeEditor = selected, errorMessage = null) }
-            if (type.defaultValidityDays != null) confirmTypeEditor()
             return
         }
         change {
@@ -357,10 +363,10 @@ class PrescriptionWizardViewModel @Inject constructor(
             change { it.copy(showMedicationEditor = it.medications.isEmpty()) }
             return true
         }
-        if (!draft.isComplete) { _uiState.update { it.copy(errorMessage = "Informe o nome do medicamento.") }; return false }
+        if (!draft.isComplete) { _uiState.update { it.copy(errorMessage = texts.get(R.string.medication_name_required)) }; return false }
         val index = state.editingMedicationIndex
         if (draft.id in state.existingPrescriptionMedicationIds || state.medications.withIndex().any { it.index != index && draft.id != null && it.value.id == draft.id }) {
-            _uiState.update { it.copy(errorMessage = "Esse medicamento já foi adicionado. Edite o item existente.") }
+            _uiState.update { it.copy(errorMessage = texts.get(R.string.medication_already_added)) }
             return false
         }
         val completed = draft.copy(id = draft.id ?: UUID.randomUUID().toString(), title = draft.title.trim())
@@ -400,7 +406,7 @@ class PrescriptionWizardViewModel @Inject constructor(
         val state = _uiState.value
         if (state.isLoading || state.isSaved || state.typeEditor != null) return
         val validation = state.recipeError ?: state.medicationError ?: state.pickupError
-        if (validation != null) { _uiState.update { it.copy(errorMessage = validation) }; return }
+        if (validation != null) { _uiState.update { it.copy(errorMessage = texts.resolve(validation)) }; return }
         val drafts = state.allMedications.map { it.copy(id = it.id ?: UUID.randomUUID().toString()) }
         // Keep IDs before the first write so retrying after failure never creates duplicate records.
         _uiState.update { it.copy(medications = drafts, currentMedicationDraft = MedicationDraft(), showMedicationEditor = false, editingMedicationIndex = null, isLoading = true, errorMessage = null) }
@@ -433,7 +439,7 @@ class PrescriptionWizardViewModel @Inject constructor(
                 }
                 val recipe = if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION) PrescriptionItem(
                     id = state.editingPrescriptionId ?: state.registrationId,
-                    title = state.prescriptionTitle.trim().ifBlank { (drafts.firstOrNull()?.title ?: "Receita") + " — " + state.issueDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) },
+                    title = state.prescriptionTitle.trim().ifBlank { (drafts.firstOrNull()?.title ?: texts.get(R.string.prescription_default_title)) + " — " + state.issueDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) },
                     specialty = state.doctorSpecialty, doctorId = doctorId, doctorName = state.doctorName,
                     doctorRegistration = state.doctorRegistration.takeIf { it.isNotBlank() }, issueDate = state.issueDate,
                     type = state.type, customValidityDays = state.validityDays, notes = state.notes.takeIf { it.isNotBlank() },
@@ -445,7 +451,7 @@ class PrescriptionWizardViewModel @Inject constructor(
                 else registrationRepository.save(recipe, medications, newDoctor)
                 _uiState.update { it.copy(isLoading = false, isSaved = true, savedPrescriptionId = recipe?.id, prescriptionTitle = recipe?.title ?: it.prescriptionTitle, hasUnsavedChanges = false) }
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { _uiState.update { it.copy(isLoading = false, errorMessage = if (e is BusinessRuleViolation) e.message else "Não foi possível salvar. Seus dados continuam aqui; tente novamente.") } }
+            catch (e: Exception) { _uiState.update { it.copy(isLoading = false, errorMessage = if (e is BusinessRuleViolation) texts.resolve(e.userMessage) else texts.get(R.string.registration_save_retry)) } }
         }
     }
 }

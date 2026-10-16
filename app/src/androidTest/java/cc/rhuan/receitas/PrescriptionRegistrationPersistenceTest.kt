@@ -19,12 +19,12 @@ class PrescriptionRegistrationPersistenceTest {
     private val today = LocalDate.now()
     @Before fun setup() {
         db = Room.inMemoryDatabaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext, AppDatabase::class.java).build()
-        medications = RoomMedicationRepository(db)
-        recipes = RoomPrescriptionRepository(db)
+        medications = RoomMedicationRepository(TestTexts, db)
+        recipes = RoomPrescriptionRepository(TestTexts, db)
         doctors = RoomDoctorRepository(db.doctorDao())
     }
     @After fun close() { db.close() }
-    private fun registration() = RoomPrescriptionRegistrationRepository(db, recipes, medications, doctors)
+    private fun registration() = RoomPrescriptionRegistrationRepository(TestTexts, db, recipes, medications, doctors)
     private fun med() = MedicationItem("m", "Losartana", hasRecurringPickup = true, lastRefillDate = today.minusDays(30), quantity = "2 caixas", prescribedPosology = "Pela manhã", linkedPrescriptionId = "p")
     private fun recipe() = PrescriptionItem("p", "Receita", "", medicationIds = listOf("m"), renewalReminderEnabled = false, renewalReminderDaysBefore = 9)
     @Test fun emptyRecipeCanReceiveItemsWithoutReplacingExistingSnapshotsOrTracking() = runBlocking {
@@ -163,7 +163,7 @@ class PrescriptionRegistrationPersistenceTest {
         }
         val recipe = recipe().copy(doctorId = "d")
         val doctor = Doctor("d", "Profissional teste")
-        try { RoomPrescriptionRegistrationRepository(db, failingRecipes, medications, doctors).save(recipe, listOf(med()), doctor); fail("Esperava falha") } catch (_: IllegalStateException) {}
+        try { RoomPrescriptionRegistrationRepository(TestTexts, db, failingRecipes, medications, doctors).save(recipe, listOf(med()), doctor); fail("Esperava falha") } catch (_: IllegalStateException) {}
         assertTrue(db.prescriptionDao().getAllPrescriptions().first().isEmpty())
         assertTrue(db.medicationDao().getAllMedications().first().isEmpty())
         assertTrue(doctors.getDoctors().first().isEmpty())

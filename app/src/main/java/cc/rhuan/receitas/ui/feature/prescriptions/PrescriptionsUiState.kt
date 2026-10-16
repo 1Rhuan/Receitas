@@ -31,7 +31,7 @@ data class PrescriptionsUiState(
     val medicationFilterId: String? = null,
 ) {
     val nextPurchase: cc.rhuan.receitas.domain.model.MedicationItem?
-        get() = medications.filter { it.source == cc.rhuan.receitas.domain.model.MedicationSource.COMPRA_PROPRIA && it.nextAvailableRefillDate != null }
+        get() = medications.filter { it.source == cc.rhuan.receitas.domain.model.MedicationSource.SELF_PURCHASE && it.nextAvailableRefillDate != null }
             .minByOrNull { it.nextAvailableRefillDate!! }
     val filteredPrescriptions: List<PrescriptionItem>
         get() {

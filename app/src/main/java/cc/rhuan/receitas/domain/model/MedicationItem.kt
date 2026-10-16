@@ -11,7 +11,7 @@ data class MedicationItem(
     val prescribedPosology: String = "",
     val prescribedQuantity: String = "",
     val form: PharmaceuticalForm = PharmaceuticalForm.TABLET,
-    val source: MedicationSource = MedicationSource.COMPRA_PROPRIA,
+    val source: MedicationSource = MedicationSource.SELF_PURCHASE,
     val sourceName: String? = null,
     val instructions: String? = null,
     val lastRefillDate: LocalDate? = null,

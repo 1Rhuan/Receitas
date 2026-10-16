@@ -51,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -68,7 +69,6 @@ fun WizardQuestionScreen(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scrollState = rememberScrollState()
-    val largeText = LocalDensity.current.fontScale >= T.compactFontScale
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) scrollState.animateScrollTo(0)
     }
@@ -85,9 +85,8 @@ fun WizardQuestionScreen(
                     IconButton(onClick = onBack, enabled = !isBusy, modifier = Modifier.size(T.control)) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
-                    Text(question, Modifier.weight(1f).padding(horizontal = T.small),
-                        style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                    if (!largeText) onSkip?.let { skip ->
+                    Spacer(Modifier.weight(1f))
+                    onSkip?.let { skip ->
                         TextButton(onClick = skip, enabled = primaryButtonEnabled && !isBusy,
                             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
                             modifier = Modifier.heightIn(min = T.control).testTag("wizard-skip-action")) {
@@ -95,15 +94,11 @@ fun WizardQuestionScreen(
                         }
                     }
                 }
-                if (largeText) onSkip?.let { skip ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        TextButton(onClick = skip, enabled = primaryButtonEnabled && !isBusy,
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
-                            modifier = Modifier.heightIn(min = T.control).testTag("wizard-skip-action")) {
-                            Text(stringResource(R.string.action_skip))
-                        }
-                    }
-                }
+                Text(question, Modifier.fillMaxWidth().padding(
+                    horizontal = if (LocalDensity.current.fontScale >= T.compactFontScale) T.small else T.margin,
+                    vertical = T.section),
+                    style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold)
             }
         },
     ) { padding ->

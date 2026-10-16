@@ -64,7 +64,7 @@ class PrescriptionRegistrationUiTest {
         val medId = fixture + "-med"
         val db = AppDatabase.getDatabase(compose.activity)
         runBlocking {
-            RoomPrescriptionRegistrationRepository(db, RoomPrescriptionRepository(db), RoomMedicationRepository(db), RoomDoctorRepository(db.doctorDao())).save(
+            RoomPrescriptionRegistrationRepository(TestTexts, db, RoomPrescriptionRepository(TestTexts, db), RoomMedicationRepository(TestTexts, db), RoomDoctorRepository(db.doctorDao())).save(
                 PrescriptionItem(oldId, fixture, "", issueDate = today.minusDays(181), customValidityDays = 180, medicationIds = listOf(medId), notes = "Observação anterior"),
                 listOf(MedicationItem(medId, fixture + " medicamento", hasRecurringPickup = true, lastRefillDate = today.minusDays(30), linkedPrescriptionId = oldId)), null)
         }
@@ -85,13 +85,13 @@ class PrescriptionRegistrationUiTest {
         click("Pular")
         click("Salvar receita")
         compose.waitUntil(15000) { compose.onAllNodesWithText("Receita cadastrada").fetchSemanticsNodes().isNotEmpty() }
-        val newRecipe = runBlocking { RoomPrescriptionRepository(db).getPrescriptions().first().single { it.title == fixture + " renovada" } }
+        val newRecipe = runBlocking { RoomPrescriptionRepository(TestTexts, db).getPrescriptions().first().single { it.title == fixture + " renovada" } }
         assertNotEquals(oldId, newRecipe.id)
         assertEquals(oldId, newRecipe.previousPrescriptionId)
         assertEquals("Observação anterior", newRecipe.notes)
-        assertEquals(RecordState.REPLACED, runBlocking { RoomPrescriptionRepository(db).getPrescriptionById(oldId)!!.state })
-        assertEquals("Observação anterior", runBlocking { RoomPrescriptionRepository(db).getPrescriptionById(oldId)!!.notes })
-        val med = runBlocking { RoomMedicationRepository(db).getMedicationById(medId)!! }
+        assertEquals(RecordState.REPLACED, runBlocking { RoomPrescriptionRepository(TestTexts, db).getPrescriptionById(oldId)!!.state })
+        assertEquals("Observação anterior", runBlocking { RoomPrescriptionRepository(TestTexts, db).getPrescriptionById(oldId)!!.notes })
+        val med = runBlocking { RoomMedicationRepository(TestTexts, db).getMedicationById(medId)!! }
         assertEquals(newRecipe.id, med.linkedPrescriptionId)
         assertEquals(today, med.nextAvailableRefillDate)
         assertEquals(1, med.pickupHistory.size)
@@ -110,7 +110,7 @@ class PrescriptionRegistrationUiTest {
         click("Salvar receita")
         compose.waitUntil(15000) { compose.onAllNodesWithText("Receita cadastrada").fetchSemanticsNodes().isNotEmpty() }
         val db = AppDatabase.getDatabase(compose.activity)
-        val recipes = RoomPrescriptionRepository(db)
+        val recipes = RoomPrescriptionRepository(TestTexts, db)
         val recipeId = runBlocking { recipes.getPrescriptions().first().single { it.title == fixture }.id }
         assertTrue(runBlocking { recipes.getPrescriptionById(recipeId)!!.medicationIds.isEmpty() })
         click("Ver receita")
@@ -127,7 +127,7 @@ class PrescriptionRegistrationUiTest {
         assertTrue(runBlocking { recipes.getPrescriptionById(recipeId)!!.medicationIds.isEmpty() })
         listOf(" A", " B").forEachIndexed { index, suffix ->
             if (index == 1) runBlocking {
-                RoomMedicationRepository(db).addMedication(MedicationItem(fixture + "-B", fixture + suffix,
+                RoomMedicationRepository(TestTexts, db).addMedication(MedicationItem(fixture + "-B", fixture + suffix,
                     hasRecurringPickup = true, lastRefillDate = LocalDate.now().minusDays(30),
                     refillCycleDays = 1, intervalUnit = IntervalUnit.MONTHS))
             }
@@ -156,7 +156,7 @@ class PrescriptionRegistrationUiTest {
             assertEquals(index + 1, recipe.medicationIds.size)
             assertEquals(index + 1, recipe.items.size)
             runBlocking {
-                val savedMeds = recipe.medicationIds.map { RoomMedicationRepository(db).getMedicationById(it)!! }
+                val savedMeds = recipe.medicationIds.map { RoomMedicationRepository(TestTexts, db).getMedicationById(it)!! }
                 assertEquals(recipeId, savedMeds.single { it.title == fixture + " A" }.linkedPrescriptionId)
                 if (index == 1) {
                     val selected = savedMeds.single { it.title == fixture + " B" }
@@ -237,7 +237,7 @@ class PrescriptionRegistrationUiTest {
         assertEquals(2, saved.medicationIds.size)
         assertEquals(45, saved.validityDays)
         assertEquals(fixture + " observação da receita", saved.notes)
-        assertEquals(PrescriptionType.PERSONALIZADO, saved.type)
+        assertEquals(PrescriptionType.CUSTOM, saved.type)
         assertFalse(saved.renewalReminderEnabled)
         val savedMed = runBlocking { AppDatabase.getDatabase(compose.activity).medicationDao().getMedicationById(saved.medicationIds.first())!! }
         assertEquals("2 caixas", runBlocking { AppDatabase.getDatabase(compose.activity).trackingDao().tracking(savedMed.id)!!.quantity })

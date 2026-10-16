@@ -40,7 +40,7 @@ fun EventIndicator(priority: DayEventPriority, modifier: Modifier = Modifier) {
 fun DateItem(date: LocalDate, isSelected: Boolean, isToday: Boolean, eventPriority: DayEventPriority?,
     onDateSelected: (LocalDate) -> Unit, modifier: Modifier = Modifier) {
     val locale = Locale.forLanguageTag("pt-BR")
-    val description = date.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", locale)) +
+    val description = date.format(DateTimeFormatter.ofPattern(stringResource(R.string.calendar_accessible_date_format), locale)) +
         if (eventPriority != null) stringResource(R.string.calendar_has_events) else ""
     Column(modifier.width(calendarCellWidth()).heightIn(min = T.control)
         .testTag("calendar-date-$date")

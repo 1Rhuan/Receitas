@@ -1,5 +1,9 @@
 package cc.rhuan.receitas.ui.feature.prescriptions
 
+import cc.rhuan.receitas.text.TextResolver
+
+import cc.rhuan.receitas.R
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.rhuan.receitas.data.repository.PrescriptionRepository
@@ -15,6 +19,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class PrescriptionsViewModel @Inject constructor(
+    private val texts: TextResolver,
     private val repository: PrescriptionRepository,
     private val medicationRepository: cc.rhuan.receitas.data.repository.MedicationRepository,
 ) : ViewModel() {
@@ -58,7 +63,7 @@ class PrescriptionsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "Não foi possível carregar as receitas.",
+                        errorMessage = texts.get(R.string.prescriptions_load_error),
                     )
                 }
             }

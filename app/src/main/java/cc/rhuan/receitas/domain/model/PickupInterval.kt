@@ -1,11 +1,15 @@
 package cc.rhuan.receitas.domain.model
 
+import cc.rhuan.receitas.text.TextMessage
+
+import cc.rhuan.receitas.R
+
 import java.time.LocalDate
 import java.io.Serializable
 
-enum class IntervalUnit(val label: String) { DAYS("Dias"), WEEKS("Semanas"), MONTHS("Meses"), YEARS("Anos") }
+enum class IntervalUnit { DAYS, WEEKS, MONTHS, YEARS }
 data class PickupInterval(val amount: Int, val unit: IntervalUnit = IntervalUnit.DAYS) : Serializable {
-    init { require(amount in 1..3650) { "Informe um intervalo de 1 a 3650." } }
+    init { require(amount in 1..3650) { "Pickup interval must be between 1 and 3650" } }
     fun nextAfter(date: LocalDate): LocalDate = when (unit) {
         IntervalUnit.DAYS -> date.plusDays(amount.toLong())
         IntervalUnit.WEEKS -> date.plusWeeks(amount.toLong())
@@ -26,13 +30,13 @@ sealed interface OperationResult {
     data object InvalidPrescription : OperationResult
     data object ObsoleteCycle : OperationResult
 }
-fun OperationResult.message(): String = when (this) {
-    OperationResult.Success -> "Retirada registrada."
-    OperationResult.NotFound -> "Registro não encontrado."
-    OperationResult.InvalidDate -> "Selecione uma data igual ou anterior a hoje."
-    OperationResult.AlreadyRecorded -> "Já existe uma retirada nesta data."
-    OperationResult.Inactive -> "O acompanhamento está desativado."
-    OperationResult.ConfirmationRequired -> "Confirme a retirada antecipada."
-    OperationResult.InvalidPrescription -> "Escolha uma receita ativa ou remova o vínculo antes de reativar o acompanhamento."
-    OperationResult.ObsoleteCycle -> "Os dados deste acompanhamento mudaram. Atualize a tela e tente novamente."
-}
+fun OperationResult.message(): TextMessage = TextMessage(when (this) {
+    OperationResult.Success -> R.string.pickup_recorded_feedback
+    OperationResult.NotFound -> R.string.record_not_found
+    OperationResult.InvalidDate -> R.string.pickup_date_not_future
+    OperationResult.AlreadyRecorded -> R.string.pickup_duplicate_date
+    OperationResult.Inactive -> R.string.tracking_inactive
+    OperationResult.ConfirmationRequired -> R.string.early_pickup_confirmation_required
+    OperationResult.InvalidPrescription -> R.string.tracking_active_prescription_required
+    OperationResult.ObsoleteCycle -> R.string.tracking_changed_retry
+})

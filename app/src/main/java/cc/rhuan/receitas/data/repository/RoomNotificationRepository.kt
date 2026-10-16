@@ -62,7 +62,7 @@ class RoomNotificationRepository @Inject constructor(
         val editor = context.getSharedPreferences("delivered_reminders", Context.MODE_PRIVATE).edit()
         ids.forEach { id -> editor.putBoolean(id, true); if (deleted) editor.putBoolean("dismissed:" + id, true) }
         // Durable suppression must succeed before deleting Room history; run blocking I/O off the UI thread.
-        check(editor.commit()) { "Não foi possível preservar a supressão dos alertas" }
+        check(editor.commit()) { "Failed to persist notification suppression" }
         val manager = context.getSystemService(NotificationManager::class.java)
         ids.forEach { manager.cancel("reminder:" + it, 0) }
     }

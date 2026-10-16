@@ -26,7 +26,7 @@ fun HomeHeader(title: String, notificationCount: Int, onNotificationClick: () ->
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(T.small)) {
             Text(title, Modifier.weight(1f), style = if (compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium)
             FilledTonalIconButton(onCalendarClick, Modifier.size(T.control)) {
-                Icon(Icons.Rounded.CalendarMonth, stringResource(R.string.ui_calendario), Modifier.size(T.icon))
+                Icon(Icons.Rounded.CalendarMonth, stringResource(R.string.calendar), Modifier.size(T.icon))
             }
         }
         if (compact) cc.rhuan.receitas.ui.components.SecondaryActionButton(

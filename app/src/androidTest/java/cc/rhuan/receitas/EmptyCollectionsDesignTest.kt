@@ -16,7 +16,7 @@ import cc.rhuan.receitas.domain.model.*
 import cc.rhuan.receitas.ui.feature.home.*
 import cc.rhuan.receitas.ui.feature.medications.*
 import cc.rhuan.receitas.ui.feature.prescriptions.*
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -25,7 +25,7 @@ import java.io.File
 class EmptyCollectionsDesignTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private fun show(scale: Float = 1f, content: @Composable () -> Unit) {
-        compose.setContent { ReceitasTheme(darkTheme = scale > 1f) {
+        compose.setContent { AppTheme(darkTheme = scale > 1f) {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 Box(Modifier.requiredSize(320.dp, 640.dp)) { content() }
@@ -88,7 +88,7 @@ class EmptyCollectionsDesignTest {
     @Test fun homeEmptyDoubleFontKeepsBothActionsReachable() {
         var recipes = 0
         var medications = 0
-        show(2f) { HomeScreenContent(HomeUiState(), onCreatePrescription = { recipes++ }, onCreateMedication = { medications++ }) }
+        show(2f) { HomeScreenContent(HomeUiState(texts = TestTexts, ), onCreatePrescription = { recipes++ }, onCreateMedication = { medications++ }) }
         compose.onNodeWithText("Adicionar receita").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithText("Adicionar medicamento").performScrollTo().assertIsDisplayed().performClick()
         assertEquals(1, recipes)

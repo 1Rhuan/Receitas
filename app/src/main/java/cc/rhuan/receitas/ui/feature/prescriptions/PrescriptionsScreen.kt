@@ -130,9 +130,9 @@ private fun PrescriptionCard(prescription: PrescriptionItem, onClick: () -> Unit
         Text(stringResource(R.string.issued_on, prescription.issueDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         val label = when {
-            !prescription.isActive -> stringResource(if (prescription.state == RecordState.ARCHIVED) R.string.ui_arquivada else R.string.ui_substituida)
+            !prescription.isActive -> stringResource(if (prescription.state == RecordState.ARCHIVED) R.string.state_archived else R.string.state_replaced)
             prescription.isExpired -> stringResource(R.string.expired)
-            prescription.daysUntilExpiration == 0 -> stringResource(R.string.ui_vence_hoje_2)
+            prescription.daysUntilExpiration == 0 -> stringResource(R.string.expires_today_alternate)
             prescription.daysUntilExpiration <= 30 -> pluralStringResource(R.plurals.prescription_expires_in_days,
                 prescription.daysUntilExpiration, prescription.daysUntilExpiration)
             else -> stringResource(R.string.valid)
@@ -142,23 +142,23 @@ private fun PrescriptionCard(prescription: PrescriptionItem, onClick: () -> Unit
     }
 }
 
-fun designPreviewState() = PrescriptionsUiState(
+fun designPreviewState(texts: cc.rhuan.receitas.text.TextResolver) = PrescriptionsUiState(
     prescriptions = listOf(
-        PrescriptionItem("preview-1", "Tratamento de uso contínuo", "Cardiologia", doctorName = "Dra. Ana Paula",
-            issueDate = LocalDate.now().minusDays(30), notes = "Apresentar a receita na próxima compra."),
-        PrescriptionItem("preview-2", "Acompanhamento e controle da pressão arterial", "Clínica médica",
-            doctorName = "Dr. Carlos Eduardo", issueDate = LocalDate.now().minusDays(165))),
-    medications = listOf(MedicationItem("preview-med", "Losartana potássica · 50 mg",
+        PrescriptionItem("preview-1", texts.get(R.string.preview_continuous_treatment), texts.get(R.string.preview_cardiology), doctorName = texts.get(R.string.preview_doctor_name),
+            issueDate = LocalDate.now().minusDays(30), notes = texts.get(R.string.preview_prescription_note)),
+        PrescriptionItem("preview-2", texts.get(R.string.preview_blood_pressure_treatment), texts.get(R.string.preview_general_practice),
+            doctorName = texts.get(R.string.preview_second_doctor), issueDate = LocalDate.now().minusDays(165))),
+    medications = listOf(MedicationItem("preview-med", texts.get(R.string.preview_losartan_dosage),
         lastRefillDate = LocalDate.now().minusDays(27))))
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
-private fun PrescriptionsLightPreview() { ReceitasTheme { PrescriptionsScreenContent(designPreviewState(), {}, {}) } }
+private fun PrescriptionsLightPreview() { AppTheme { PrescriptionsScreenContent(designPreviewState(cc.rhuan.receitas.text.AndroidTextResolver(androidx.compose.ui.platform.LocalContext.current)), {}, {}) } }
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
-private fun PrescriptionsDarkPreview() { ReceitasTheme(darkTheme = true) { PrescriptionsScreenContent(designPreviewState(), {}, {}) } }
+private fun PrescriptionsDarkPreview() { AppTheme(darkTheme = true) { PrescriptionsScreenContent(designPreviewState(cc.rhuan.receitas.text.AndroidTextResolver(androidx.compose.ui.platform.LocalContext.current)), {}, {}) } }
 
 @Preview(showBackground = true, widthDp = 320, heightDp = 640, fontScale = 2f)
 @Composable
-private fun PrescriptionsSmallPreview() { ReceitasTheme { PrescriptionsScreenContent(designPreviewState(), {}, {}) } }
+private fun PrescriptionsSmallPreview() { AppTheme { PrescriptionsScreenContent(designPreviewState(cc.rhuan.receitas.text.AndroidTextResolver(androidx.compose.ui.platform.LocalContext.current)), {}, {}) } }

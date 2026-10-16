@@ -6,7 +6,7 @@ data class MedicationsUiState(
     val medications: List<MedicationItem> = emptyList(),
     val filteredMedications: List<MedicationItem> = emptyList(),
     val searchQuery: String = "",
-    val selectedSourceFilter: String = "TODOS",
+    val selectedSourceFilter: String = "ALL",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val snackbarMessage: String? = null,

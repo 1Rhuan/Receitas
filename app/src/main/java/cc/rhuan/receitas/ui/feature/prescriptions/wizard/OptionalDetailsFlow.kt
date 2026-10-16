@@ -12,9 +12,9 @@ import cc.rhuan.receitas.ui.components.wizard.WizardQuestionScreen
 import cc.rhuan.receitas.ui.theme.DesignTokens as T
 import java.io.Serializable
 
-internal enum class OptionalDetailKind { PROFESSIONAL, NOTES, FORM, INGREDIENT, QUANTITY, INSTRUCTIONS }
+internal enum class OptionalDetailKind { PROFESSIONAL, NOTES, DOSAGE, FORM, INGREDIENT, QUANTITY, INSTRUCTIONS }
 
-/** A separate, restorable transaction: only Concluído applies these values to registration. */
+/** A separate, restorable transaction: only confirmation applies these values to registration. */
 internal data class OptionalDetailDraft(
     val kind: OptionalDetailKind,
     val medicationIndex: Int? = null,
@@ -32,6 +32,7 @@ internal data class OptionalDetailDraft(
         OptionalDetailKind.NOTES -> state.copy(notes = value)
         else -> {
             fun update(item: MedicationDraft) = when (kind) {
+                OptionalDetailKind.DOSAGE -> item.copy(dosageOverride = value)
                 OptionalDetailKind.FORM -> item.copy(form = form)
                 OptionalDetailKind.INGREDIENT -> item.copy(activeIngredient = value)
                 OptionalDetailKind.QUANTITY -> item.copy(prescribedQuantity = value)
@@ -46,12 +47,13 @@ internal data class OptionalDetailDraft(
 
 @Composable
 private fun detailLabel(kind: OptionalDetailKind): String = stringResource(when (kind) {
-    OptionalDetailKind.PROFESSIONAL -> R.string.ui_profissional_responsavel
+    OptionalDetailKind.PROFESSIONAL -> R.string.responsible_professional
     OptionalDetailKind.NOTES -> R.string.recipe_notes_group
-    OptionalDetailKind.FORM -> R.string.ui_forma_farmaceutica
-    OptionalDetailKind.INGREDIENT -> R.string.ui_principio_ativo
-    OptionalDetailKind.QUANTITY -> R.string.ui_quantidade_prescrita_opcional
-    OptionalDetailKind.INSTRUCTIONS -> R.string.ui_orientacao_escrita_na_receita
+    OptionalDetailKind.DOSAGE -> R.string.optional_concentration
+    OptionalDetailKind.FORM -> R.string.pharmaceutical_form
+    OptionalDetailKind.INGREDIENT -> R.string.active_ingredient
+    OptionalDetailKind.QUANTITY -> R.string.optional_prescribed_quantity
+    OptionalDetailKind.INSTRUCTIONS -> R.string.prescribed_instructions
 })
 
 @Composable
@@ -68,16 +70,21 @@ internal fun OptionalDetailsSection(state: PrescriptionWizardUiState, onOpen: (O
             onOpen(OptionalDetailDraft(OptionalDetailKind.NOTES, value = state.notes))
         }
     }
+    if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION) return
     state.allMedications.forEachIndexed { index, item ->
         GroupedSection(item.title) {
-            OptionalDetailRow(detailLabel(OptionalDetailKind.FORM), item.form.label) {
+            OptionalDetailRow(detailLabel(OptionalDetailKind.DOSAGE), item.dosage) {
+                onOpen(OptionalDetailDraft(OptionalDetailKind.DOSAGE, index, value = item.dosage))
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            OptionalDetailRow(detailLabel(OptionalDetailKind.FORM), stringResource(item.form.labelRes)) {
                 onOpen(OptionalDetailDraft(OptionalDetailKind.FORM, index, form = item.form))
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             OptionalDetailRow(detailLabel(OptionalDetailKind.INGREDIENT), item.activeIngredient) {
                 onOpen(OptionalDetailDraft(OptionalDetailKind.INGREDIENT, index, value = item.activeIngredient))
             }
-            if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION || state.addToPrescriptionId != null) {
+            if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION || state.medicationBelongsToPrescription || state.addToPrescriptionId != null) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 OptionalDetailRow(detailLabel(OptionalDetailKind.QUANTITY), item.prescribedQuantity) {
                     onOpen(OptionalDetailDraft(OptionalDetailKind.QUANTITY, index, value = item.prescribedQuantity))
@@ -101,16 +108,16 @@ internal fun OptionalDetailEditor(state: PrescriptionWizardUiState, draft: Optio
         draft.medicationIndex?.let { index -> state.allMedications.getOrNull(index)?.let { Text(it.title, style = MaterialTheme.typography.titleMedium) } }
         when (draft.kind) {
             OptionalDetailKind.PROFESSIONAL -> {
-                FormField(draft.value, { onChange(draft.copy(value = it, selectedDoctorId = null)) }, stringResource(R.string.ui_nome_do_profissional))
+                FormField(draft.value, { onChange(draft.copy(value = it, selectedDoctorId = null)) }, stringResource(R.string.professional_name_label))
                 state.availableDoctors.filter { draft.value.isNotBlank() && it.name.contains(draft.value, true) }.take(3).forEach { doctor ->
                     SecondaryActionButton(doctor.name, { onChange(draft.copy(value = doctor.name,
                         registration = doctor.registration.orEmpty(), specialty = doctor.specialty.orEmpty(),
                         selectedDoctorId = doctor.id, healthFacility = doctor.healthFacility.orEmpty(), phone = doctor.phone.orEmpty())) })
                 }
-                FormField(draft.registration, { onChange(draft.copy(registration = it, selectedDoctorId = null)) }, stringResource(R.string.ui_crm_ou_registro_profissional_opcional))
-                FormField(draft.specialty, { onChange(draft.copy(specialty = it)) }, stringResource(R.string.ui_especialidade_opcional))
+                FormField(draft.registration, { onChange(draft.copy(registration = it, selectedDoctorId = null)) }, stringResource(R.string.optional_professional_registration))
+                FormField(draft.specialty, { onChange(draft.copy(specialty = it)) }, stringResource(R.string.optional_specialty))
             }
-            OptionalDetailKind.FORM -> RadioChoiceList(PharmaceuticalForm.entries.map { it.label },
+            OptionalDetailKind.FORM -> RadioChoiceList(PharmaceuticalForm.entries.map { stringResource(it.labelRes) },
                 PharmaceuticalForm.entries.indexOf(draft.form), { onChange(draft.copy(form = PharmaceuticalForm.entries[it])) })
             else -> FormField(draft.value, { onChange(draft.copy(value = it)) }, detailLabel(draft.kind),
                 singleLine = draft.kind != OptionalDetailKind.NOTES && draft.kind != OptionalDetailKind.INSTRUCTIONS)

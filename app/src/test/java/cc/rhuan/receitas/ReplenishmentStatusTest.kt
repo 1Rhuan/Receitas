@@ -28,7 +28,7 @@ class ReplenishmentStatusTest {
   assertEquals(RefillStatus.OK, check(med, listOf(recipe)))
   assertNull(med.nextAvailableRefillDate)
   assertFalse(med.needsRefill)
-  assertTrue(cc.rhuan.receitas.ui.feature.home.HomeUiState(medicamentos = listOf(med)).mainTrackingItems.isEmpty())
+  assertTrue(cc.rhuan.receitas.ui.feature.home.HomeUiState(texts = TestTexts, medications = listOf(med)).mainTrackingItems.isEmpty())
  }
  @Test fun validityStartsAtIssueDateAndIncludesExpiry() {
   assertFalse(recipe.isValidOn(today.minusDays(1)))

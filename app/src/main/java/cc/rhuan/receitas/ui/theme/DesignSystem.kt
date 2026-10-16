@@ -84,5 +84,5 @@ internal val DesignDark = darkColorScheme(
 @Composable
 fun DesignTheme(content: @Composable () -> Unit) {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    ReceitasTheme(darkTheme = dark, content = content)
+    AppTheme(darkTheme = dark, content = content)
 }

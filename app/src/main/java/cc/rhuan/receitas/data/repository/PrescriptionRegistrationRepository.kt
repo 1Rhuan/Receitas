@@ -1,5 +1,11 @@
 package cc.rhuan.receitas.data.repository
 
+import cc.rhuan.receitas.text.TextMessage
+
+import cc.rhuan.receitas.text.TextResolver
+
+import cc.rhuan.receitas.R
+
 import androidx.room.withTransaction
 import cc.rhuan.receitas.data.local.AppDatabase
 import cc.rhuan.receitas.data.local.entity.*
@@ -12,6 +18,7 @@ interface PrescriptionRegistrationRepository {
     suspend fun addToPrescription(prescriptionId: String, medications: List<MedicationItem>)
 }
 class RoomPrescriptionRegistrationRepository @Inject constructor(
+    private val texts: TextResolver,
     private val database: AppDatabase, private val prescriptions: PrescriptionRepository,
     private val medications: MedicationRepository, private val doctors: DoctorRepository,
 ) : PrescriptionRegistrationRepository {
@@ -19,11 +26,11 @@ class RoomPrescriptionRegistrationRepository @Inject constructor(
         requireBusiness((prescription != null || medications.isNotEmpty()) && medications.all { it.title.isNotBlank() })
         requireBusiness(medications.map { it.id }.distinct().size == medications.size)
         database.withTransaction {
-            prescription?.let { requireBusiness(it.medicationIds.toSet() == medications.map { med -> med.id }.toSet()) { "Os medicamentos não correspondem aos itens da receita" } }
+            prescription?.let { requireBusiness(it.medicationIds.toSet() == medications.map { med -> med.id }.toSet()) { TextMessage(R.string.prescription_items_mismatch) } }
             val tracking = database.trackingDao()
             val existingRecipe = prescription?.let { database.prescriptionDao().getPrescriptionById(it.id) }
-            val previous = if (existingRecipe == null) prescription?.previousPrescriptionId?.let { database.prescriptionDao().getPrescriptionById(it) ?: throw BusinessRuleViolation("Receita anterior não encontrada") } else null
-            requireBusiness(previous == null || previous.state == "ACTIVE") { "A receita anterior já foi encerrada" }
+            val previous = if (existingRecipe == null) prescription?.previousPrescriptionId?.let { database.prescriptionDao().getPrescriptionById(it) ?: throw BusinessRuleViolation(TextMessage(R.string.previous_prescription_not_found)) } else null
+            requireBusiness(previous == null || previous.state == "ACTIVE") { TextMessage(R.string.previous_prescription_closed) }
             newDoctor?.let { if (doctors.getDoctorById(it.id) == null) doctors.addDoctor(it) else doctors.updateDoctor(it) }
             // Insert products first; tracking is saved only after the recipe and its items exist.
             medications.forEach { med ->
@@ -41,7 +48,7 @@ class RoomPrescriptionRegistrationRepository @Inject constructor(
             medications.forEach { this@RoomPrescriptionRegistrationRepository.medications.updateMedication(it) }
             if (previous != null) {
                 database.prescriptionDao().updatePrescription(previous.copy(state = "REPLACED"))
-                database.resolveReminders(previous.id, "PRESCRIPTION", "RENEWED", "Nova receita registrada")
+                database.resolveReminders(previous.id, "PRESCRIPTION", "RENEWED", texts.get(R.string.new_prescription_recorded))
                 // Remaining tracks not explicitly continued are archived; their events stay intact.
                 tracking.archiveForPrescription(previous.id, true)
             }
@@ -53,12 +60,12 @@ class RoomPrescriptionRegistrationRepository @Inject constructor(
         requireBusiness(medications.map { it.id }.distinct().size == medications.size)
         database.withTransaction {
             val recipe = database.prescriptionDao().getPrescriptionById(prescriptionId)
-                ?: throw BusinessRuleViolation("Receita não encontrada")
-            requireBusiness(recipe.state == "ACTIVE") { "Reative a receita antes de adicionar medicamentos" }
+                ?: throw BusinessRuleViolation(TextMessage(R.string.prescription_not_found))
+            requireBusiness(recipe.state == "ACTIVE") { TextMessage(R.string.reactivate_prescription_before_adding) }
             val tracking = database.trackingDao()
             val existingItems = tracking.items(prescriptionId)
             requireBusiness(medications.none { med -> existingItems.any { it.medicationId == med.id } }) {
-                "Esse medicamento já está na receita. Edite o item existente."
+                TextMessage(R.string.medication_already_in_prescription)
             }
             medications.forEach { med ->
                 val old = database.medicationDao().getMedicationById(med.id)

@@ -27,17 +27,17 @@ fun PickupHistory(events: List<PickupEvent>, onCorrect: (String, LocalDate) -> U
     var deleting by remember { mutableStateOf<PickupEvent?>(null) }
     var correcting by remember { mutableStateOf<Pair<PickupEvent, LocalDate>?>(null) }
     deleting?.let { event -> ConfirmationSheet(
-        title = stringResource(R.string.ui_excluir_retirada),
-        message = stringResource(R.string.ui_a_proxima_previsao_sera_recalculada_a_partir_dos_registros_restantes),
+        title = stringResource(R.string.delete_pickup),
+        message = stringResource(R.string.remaining_pickups_recalculation_message),
         confirmLabel = stringResource(R.string.action_delete), onConfirm = { onDelete(event.id); deleting = null },
         onDismiss = { deleting = null }, destructive = true) }
     correcting?.let { (event, date) -> ConfirmationSheet(
-        title = stringResource(R.string.ui_corrigir_data_da_retirada),
+        title = stringResource(R.string.correct_pickup_date_title),
         message = stringResource(R.string.correct_pickup_date, date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))),
         confirmLabel = stringResource(R.string.action_confirm), onConfirm = { onCorrect(event.id, date); correcting = null },
         onDismiss = { correcting = null }) }
-    if (showHeading) SectionHeading(stringResource(R.string.ui_historico_de_retiradas))
-    if (events.isEmpty()) Text(stringResource(R.string.ui_nenhuma_retirada_registrada))
+    if (showHeading) SectionHeading(stringResource(R.string.pickup_history))
+    if (events.isEmpty()) Text(stringResource(R.string.no_pickups_recorded))
     events.forEach { event ->
         FlowRow(Modifier.fillMaxWidth().padding(T.padding), maxItemsInEachRow = if (LocalDensity.current.fontScale >= T.compactFontScale) 1 else 2,
             horizontalArrangement = Arrangement.spacedBy(T.small), verticalArrangement = Arrangement.spacedBy(T.small)) {
@@ -47,7 +47,7 @@ fun PickupHistory(events: List<PickupEvent>, onCorrect: (String, LocalDate) -> U
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (event.recordedAt > 0) Text(stringResource(R.string.design_pickup_recorded) + ": " +
                 Instant.ofEpochMilli(event.recordedAt).atZone(ZoneId.systemDefault())
-                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm")),
+                    .format(DateTimeFormatter.ofPattern(stringResource(R.string.pickup_recorded_timestamp_format))),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (showActions) ContextActionsButton(listOf(ContextAction(stringResource(R.string.action_correct), onClick = {

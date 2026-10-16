@@ -13,7 +13,7 @@ class ReminderWorker(context: Context, parameters: WorkerParameters) : Coroutine
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
-        Log.e("ReminderWorker", "Não foi possível verificar os lembretes", e)
+        Log.e("ReminderWorker", "Failed to evaluate reminders", e)
         Result.retry()
     }
 }

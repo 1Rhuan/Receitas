@@ -23,7 +23,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import cc.rhuan.receitas.ui.navigation.MainScreen
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             try { notificationRepository.markAsRead(id) }
             catch (e: CancellationException) { throw e }
-            catch (e: Exception) { Log.e("MainActivity", "Não foi possível marcar o alerta como lido", e) }
+            catch (e: Exception) { Log.e("MainActivity", "Failed to mark notification as read", e) }
         }
     }
 
@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
         setContent {
-            ReceitasTheme {
+            AppTheme {
                 MainScreen(openedNotification.value) { openedNotification.value = null }
             }
         }
@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
-    ReceitasTheme {
-        cc.rhuan.receitas.ui.feature.home.HomeScreenContent(cc.rhuan.receitas.ui.feature.home.HomeUiState())
+    AppTheme {
+        cc.rhuan.receitas.ui.feature.home.HomeScreenContent(cc.rhuan.receitas.ui.feature.home.HomeUiState(texts = cc.rhuan.receitas.text.AndroidTextResolver(androidx.compose.ui.platform.LocalContext.current)))
     }
 }

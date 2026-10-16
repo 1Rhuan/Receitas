@@ -1,15 +1,13 @@
 package cc.rhuan.receitas.domain.model
 
-enum class MedicationSource(val label: String) {
-    COMPRA_PROPRIA("Compra própria"),
-    CONVENIO("Convênio ou plano de saúde"),
-    FARMACIA_POPULAR("Farmácia Popular"),
-    FARMACIA_BASICA("Farmácia Básica (SUS)"),
-    OUTRO("Outro");
+import cc.rhuan.receitas.R
 
-    companion object {
-        fun fromLabel(label: String): MedicationSource {
-            return entries.find { it.label.equals(label, ignoreCase = true) } ?: COMPRA_PROPRIA
-        }
-    }
+enum class MedicationSource(val labelRes: Int) {
+    SELF_PURCHASE(R.string.source_self_purchase),
+    HEALTH_INSURANCE(R.string.source_health_insurance),
+    POPULAR_PHARMACY(R.string.source_popular_pharmacy),
+    PUBLIC_PHARMACY(R.string.source_public_pharmacy),
+    OTHER(R.string.source_other);
+
+
 }

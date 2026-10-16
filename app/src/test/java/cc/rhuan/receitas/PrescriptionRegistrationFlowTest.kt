@@ -22,14 +22,14 @@ class PrescriptionRegistrationFlowTest {
     private lateinit var registration: Registration
     @Before fun setup() { Dispatchers.setMain(dispatcher); meds = Medications(); recipes = Recipes(); registration = Registration() }
     @After fun tearDown() { models.forEach { it.viewModelScope.cancel() }; Dispatchers.resetMain() }
-    private fun model(handle: SavedStateHandle = SavedStateHandle()) = PrescriptionWizardViewModel(handle, recipes, meds, Doctors(), registration).also { vm -> models.add(vm); vm.updateForm { if (it.prescriptionTitle.isBlank()) it.copy(prescriptionTitle = "Receita de teste") else it } }
+    private fun model(handle: SavedStateHandle = SavedStateHandle()) = PrescriptionWizardViewModel(TestTexts, handle, recipes, meds, Doctors(), registration).also { vm -> models.add(vm); vm.updateForm { if (it.prescriptionTitle.isBlank()) it.copy(prescriptionTitle = "Receita de teste") else it } }
     private fun add(vm: PrescriptionWizardViewModel, name: String) { vm.updateForm { it.copy(currentMedicationDraft = it.currentMedicationDraft.copy(title = name)) }; assertTrue(vm.commitMedicationDraft()) }
 
     @Test fun validityActionsKeepSuggestedAndEnteredDeadlinesDistinct() = runTest {
         val vm = model(); runCurrent()
         vm.updateForm { it.copy(renewalReminderDaysBefore = 90, issueDate = LocalDate.of(2026, 10, 1)) }
-        vm.selectPrescriptionType(PrescriptionType.ANTIBIOTICO)
-        assertEquals(PrescriptionType.ANTIBIOTICO.defaultValidityDays, vm.uiState.value.validityDays)
+        vm.selectPrescriptionType(PrescriptionType.ANTIBIOTIC)
+        assertEquals(PrescriptionType.ANTIBIOTIC.defaultValidityDays, vm.uiState.value.validityDays)
         assertEquals("SUGGESTED", vm.uiState.value.validityOrigin)
         assertTrue(vm.uiState.value.renewalReminderDaysBefore <= vm.uiState.value.validityDays!!)
         vm.updateExpirationDate(LocalDate.of(2026, 10, 16))
@@ -46,32 +46,32 @@ class PrescriptionRegistrationFlowTest {
 
     @Test fun customTypeRequiresEnteredValidityAndKeepsItWhenSelectedAgain() = runTest {
         val vm = model(); runCurrent()
-        vm.selectPrescriptionType(PrescriptionType.PERSONALIZADO)
+        vm.selectPrescriptionType(PrescriptionType.CUSTOM)
         assertNull(vm.uiState.value.validityDays)
         assertEquals("", vm.uiState.value.validityDaysInput)
         assertEquals("USER_ENTERED", vm.uiState.value.validityOrigin)
         vm.goToStep(requireNotNull(vm.uiState.value.renewalOptionsStep)); vm.nextStep()
         assertEquals(vm.uiState.value.renewalOptionsStep, vm.uiState.value.currentStep)
         vm.updateValidityDays("45"); vm.nextStep()
-        assertEquals(vm.uiState.value.medicationStep, vm.uiState.value.currentStep)
-        vm.selectPrescriptionType(PrescriptionType.PERSONALIZADO)
+        assertEquals(vm.uiState.value.optionalDetailsStep, vm.uiState.value.currentStep)
+        vm.selectPrescriptionType(PrescriptionType.CUSTOM)
         assertEquals(45, vm.uiState.value.validityDays)
         vm.updateExpirationDate(vm.uiState.value.issueDate.plusDays(60))
         assertEquals(60, vm.uiState.value.validityDays)
         add(vm, "Losartana")
         vm.savePrescription(); runCurrent()
-        assertEquals(PrescriptionType.PERSONALIZADO, registration.recipe!!.type)
+        assertEquals(PrescriptionType.CUSTOM, registration.recipe!!.type)
         assertEquals(60, registration.recipe!!.validityDurationDays)
         val converters = cc.rhuan.receitas.data.local.Converters()
-        assertEquals(PrescriptionType.PERSONALIZADO, converters.toPrescriptionType(converters.fromPrescriptionType(PrescriptionType.PERSONALIZADO)))
+        assertEquals(PrescriptionType.CUSTOM, converters.toPrescriptionType(converters.fromPrescriptionType(PrescriptionType.CUSTOM)))
         val presetVm = model(); runCurrent()
-        presetVm.selectPrescriptionType(PrescriptionType.PERSONALIZADO)
+        presetVm.selectPrescriptionType(PrescriptionType.CUSTOM)
         presetVm.updateValidityDays("60")
-        presetVm.selectPrescriptionType(PrescriptionType.ANTIBIOTICO)
+        presetVm.selectPrescriptionType(PrescriptionType.ANTIBIOTIC)
         assertEquals(10, presetVm.uiState.value.validityDays)
         assertEquals("SUGGESTED", presetVm.uiState.value.validityOrigin)
         presetVm.updateValidityDays("75")
-        presetVm.selectPrescriptionType(PrescriptionType.PERSONALIZADO)
+        presetVm.selectPrescriptionType(PrescriptionType.CUSTOM)
         assertEquals(75, presetVm.uiState.value.validityDays)
         assertEquals("USER_ENTERED", presetVm.uiState.value.validityOrigin)
     }
@@ -108,20 +108,20 @@ class PrescriptionRegistrationFlowTest {
         assertTrue(vm.uiState.value.hasUnsavedChanges)
     }
 
-    @Test fun fullFlowReachesReviewWithSeveralMedicationsAndReturnsFromEdits() = runTest {
+    @Test fun recipeFlowReachesReviewWithoutMedicationSteps() = runTest {
         val vm = model(); runCurrent()
-        repeat(3) { vm.nextStep() }; assertEquals(vm.uiState.value.medicationStep, vm.uiState.value.currentStep)
-        add(vm, "Losartana"); vm.startNewMedication(); add(vm, "Metformina")
-        vm.nextStep(); assertEquals(vm.uiState.value.pickupStep, vm.uiState.value.currentStep)
-        vm.nextStep(); assertEquals(vm.uiState.value.optionalDetailsStep, vm.uiState.value.currentStep)
-        vm.nextStep(); assertEquals(vm.uiState.value.maxSteps, vm.uiState.value.currentStep)
-        vm.editMedication(0); vm.updateForm { it.copy(currentMedicationDraft = it.currentMedicationDraft.copy(dosageOverride = "50 mg")) }
+        repeat(3) { vm.nextStep() }
+        assertEquals(vm.uiState.value.optionalDetailsStep, vm.uiState.value.currentStep)
         vm.nextStep()
+        assertEquals(5, vm.uiState.value.maxSteps)
         assertEquals(vm.uiState.value.maxSteps, vm.uiState.value.currentStep)
-        assertEquals(listOf("Losartana", "Metformina"), vm.uiState.value.allMedications.map { it.title })
-        assertEquals("50 mg", vm.uiState.value.allMedications.first().dosage)
-        vm.goToStep(1); vm.previousStep(); assertEquals(vm.uiState.value.maxSteps, vm.uiState.value.currentStep)
+        vm.goToStep(1); vm.updateForm { it.copy(prescriptionTitle = "Receita revisada") }; vm.nextStep()
+        assertEquals(vm.uiState.value.maxSteps, vm.uiState.value.currentStep)
+        vm.savePrescription(); runCurrent()
+        assertEquals("Receita revisada", registration.recipe!!.title)
+        assertTrue(registration.medications.isEmpty())
     }
+
     @Test fun backKeepsAnUnfinishedMedicationEditVisibleInReview() = runTest {
         val vm = model(); runCurrent(); repeat(3) { vm.nextStep() }; add(vm, "Losartana"); vm.nextStep(); vm.nextStep(); vm.nextStep()
         vm.editMedication(0); vm.updateForm { it.copy(currentMedicationDraft = it.currentMedicationDraft.copy(title = "")) }
@@ -133,7 +133,7 @@ class PrescriptionRegistrationFlowTest {
         assertEquals(vm.uiState.value.medicationStep, vm.uiState.value.currentStep)
     }
     @Test fun pickupRequiresRealDateAndPositiveIntervalButNotDoseOrStock() = runTest {
-        val vm = model(); runCurrent(); repeat(3) { vm.nextStep() }; add(vm, "Losartana"); vm.nextStep()
+        val vm = model(SavedStateHandle(mapOf("entryMode" to "STANDALONE_MEDICATION"))); runCurrent(); add(vm, "Losartana"); vm.nextStep()
         vm.updateMedicationPickup(0) { it.copy(hasRecurringPickup = true) }; vm.nextStep()
         assertEquals(vm.uiState.value.pickupStep, vm.uiState.value.currentStep)
         vm.updateMedicationPickup(0) { it.copy(lastPickupDate = LocalDate.now(), pickupIntervalDays = 0) }; vm.nextStep()
@@ -209,8 +209,8 @@ class PrescriptionRegistrationFlowTest {
         assertNotNull(vm.uiState.value.errorMessage)
         assertEquals(vm.uiState.value.recipeIdentityStep, vm.uiState.value.currentStep)
         vm.openTypeEditor(); vm.updateValidityDays("180"); vm.confirmTypeEditor(); vm.nextStep()
-        assertEquals(vm.uiState.value.medicationStep, vm.uiState.value.currentStep)
-        vm.updateForm { it.copy(currentMedicationDraft = MedicationDraft(title = "Losartana")) }
+        assertEquals(vm.uiState.value.optionalDetailsStep, vm.uiState.value.currentStep)
+
         vm.nextStep(); vm.nextStep(); vm.nextStep()
         assertEquals(vm.uiState.value.maxSteps, vm.uiState.value.currentStep)
         vm.goToStep(requireNotNull(vm.uiState.value.recipeDetailsStep))
@@ -218,40 +218,40 @@ class PrescriptionRegistrationFlowTest {
         vm.nextStep()
         assertEquals(vm.uiState.value.maxSteps, vm.uiState.value.currentStep)
         assertEquals("Observação preservada", vm.uiState.value.notes)
-        assertFalse(vm.uiState.value.medications.single().linkToCurrentRecipe)
-        assertNull(vm.uiState.value.medications.single().linkedPrescriptionId)
+        assertTrue(vm.uiState.value.medications.isEmpty())
+
     }
 
     @Test fun customTypePageCancelsAtomicallyAndKeepsEnteredValue() = runTest {
         val vm = model(); runCurrent()
         vm.goToStep(2); vm.updateValidityDays("75")
-        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.PERSONALIZADO)
+        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.CUSTOM)
         assertEquals("75", vm.uiState.value.typeEditor!!.validityDaysInput)
         vm.updateExpirationDate(vm.uiState.value.issueDate.plusDays(45))
         vm.previousStep()
         assertNull(vm.uiState.value.typeEditor)
         assertEquals(2, vm.uiState.value.currentStep)
         assertEquals(75, vm.uiState.value.validityDays)
-        assertEquals(PrescriptionType.CONTINUO, vm.uiState.value.type)
-        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.PERSONALIZADO)
+        assertEquals(PrescriptionType.CONTINUOUS_USE, vm.uiState.value.type)
+        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.CUSTOM)
         vm.updateValidityDays("90"); vm.confirmTypeEditor()
         assertEquals(vm.uiState.value.renewalOptionsStep, vm.uiState.value.currentStep)
         assertEquals(90, vm.uiState.value.validityDays)
-        assertEquals(PrescriptionType.PERSONALIZADO, vm.uiState.value.type)
+        assertEquals(PrescriptionType.CUSTOM, vm.uiState.value.type)
     }
 
     @Test fun presetTypeAppliesSuggestedDaysAndAdvancesOrReturnsToReview() = runTest {
         val vm = model(); runCurrent(); vm.goToStep(2); vm.updateValidityDays("75")
-        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.ANTIBIOTICO)
+        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.ANTIBIOTIC); vm.confirmTypeEditor()
         assertNull(vm.uiState.value.typeEditor)
         assertEquals(10, vm.uiState.value.validityDays)
         assertEquals("SUGGESTED", vm.uiState.value.validityOrigin)
         assertEquals(vm.uiState.value.renewalOptionsStep, vm.uiState.value.currentStep)
         add(vm, "Losartana"); vm.goToStep(vm.uiState.value.maxSteps)
-        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.CONTROLADO)
+        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.CONTROLLED); vm.confirmTypeEditor()
         assertEquals(vm.uiState.value.maxSteps, vm.uiState.value.currentStep)
         assertEquals(30, vm.uiState.value.validityDays)
-        vm.goToStep(2); vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.CONTINUO)
+        vm.goToStep(2); vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.CONTINUOUS_USE); vm.confirmTypeEditor()
         assertEquals(vm.uiState.value.maxSteps, vm.uiState.value.currentStep)
         assertNull(vm.uiState.value.reviewEditStep)
         assertEquals(180, vm.uiState.value.validityDays)
@@ -259,7 +259,7 @@ class PrescriptionRegistrationFlowTest {
 
     @Test fun invalidTypePageStaysOpenAndReviewReturnsWithoutExtraStep() = runTest {
         val vm = model(); runCurrent(); add(vm, "Losartana"); vm.goToStep(vm.uiState.value.maxSteps)
-        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.PERSONALIZADO); vm.confirmTypeEditor()
+        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.CUSTOM); vm.confirmTypeEditor()
         assertNotNull(vm.uiState.value.typeEditor)
         assertNotNull(vm.uiState.value.errorMessage)
         assertEquals(180, vm.uiState.value.validityDays)
@@ -280,7 +280,7 @@ class PrescriptionRegistrationFlowTest {
         val vm = model(); runCurrent()
         val issue = LocalDate.now().minusDays(20)
         vm.updateIssueDate(issue)
-        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.PERSONALIZADO)
+        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.CUSTOM)
         val expiry = issue.plusDays(60)
         vm.updateExpirationDate(expiry); vm.confirmTypeEditor()
         vm.updateIssueDate(issue.plusDays(10))
@@ -298,7 +298,7 @@ class PrescriptionRegistrationFlowTest {
     @Test fun pendingTypePageRestoresWithoutChangingCommittedValues() = runTest {
         val handle = SavedStateHandle()
         val vm = model(handle); runCurrent(); vm.goToStep(2); vm.openTypeEditor()
-        vm.selectPrescriptionType(PrescriptionType.PERSONALIZADO); vm.updateValidityDays("45"); vm.setValidityDateMode(true); runCurrent()
+        vm.selectPrescriptionType(PrescriptionType.CUSTOM); vm.updateValidityDays("45"); vm.setValidityDateMode(true); runCurrent()
         val snapshot = handle.get<PrescriptionWizardUiState>("registration_draft")!!
         val bytes = ByteArrayOutputStream().also { ObjectOutputStream(it).use { out -> out.writeObject(snapshot) } }.toByteArray()
         val restored = ObjectInputStream(ByteArrayInputStream(bytes)).use { it.readObject() as PrescriptionWizardUiState }
@@ -307,8 +307,25 @@ class PrescriptionRegistrationFlowTest {
         assertTrue(recreated.uiState.value.typeEditor!!.useExpirationDate)
         assertEquals(180, recreated.uiState.value.validityDays)
         recreated.cancelTypeEditor()
-        assertEquals(PrescriptionType.CONTINUO, recreated.uiState.value.type)
+        assertEquals(PrescriptionType.CONTINUOUS_USE, recreated.uiState.value.type)
         assertEquals(180, recreated.uiState.value.validityDays)
+    }
+
+    @Test fun validitySelectionOnlyAppliesAfterConfirmation() = runTest {
+        val vm = model(); runCurrent()
+        vm.goToStep(requireNotNull(vm.uiState.value.recipeIdentityStep))
+        val original = vm.uiState.value.type
+        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.ANTIBIOTIC)
+        assertEquals(original, vm.uiState.value.type)
+        assertEquals(PrescriptionType.ANTIBIOTIC, vm.uiState.value.typeEditor!!.type)
+        assertEquals(vm.uiState.value.recipeIdentityStep, vm.uiState.value.currentStep)
+        vm.cancelTypeEditor()
+        assertEquals(original, vm.uiState.value.type)
+        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.ANTIBIOTIC)
+        vm.confirmTypeEditor()
+        assertEquals(PrescriptionType.ANTIBIOTIC, vm.uiState.value.type)
+        assertEquals(10, vm.uiState.value.validityDays)
+        assertEquals(vm.uiState.value.renewalOptionsStep, vm.uiState.value.currentStep)
     }
 
     @Test fun recipeNameIsRequiredBeforeAdvancingAndSaving() = runTest {
@@ -328,7 +345,7 @@ class PrescriptionRegistrationFlowTest {
 
     @Test fun customDateStartsWithAValidDateWithoutReplacingAnExistingDeadline() = runTest {
         val vm = model(); runCurrent()
-        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.PERSONALIZADO)
+        vm.openTypeEditor(); vm.selectPrescriptionType(PrescriptionType.CUSTOM)
         vm.setValidityDateMode(true)
         val initial = requireNotNull(vm.uiState.value.typeEditor)
         assertTrue(requireNotNull(initial.validityDays) in 1..3650)
@@ -346,7 +363,7 @@ class PrescriptionRegistrationFlowTest {
         vm.skipStep(); assertEquals(4, vm.uiState.value.currentStep)
         vm.skipStep(); assertEquals(5, vm.uiState.value.currentStep)
         vm.skipStep(); assertEquals(vm.uiState.value.maxSteps, vm.uiState.value.currentStep)
-        vm.previousStep(); assertEquals(5, vm.uiState.value.currentStep)
+        vm.previousStep(); assertEquals(4, vm.uiState.value.currentStep)
         add(vm, "Losartana"); vm.nextStep()
         vm.updateMedicationPickup(0) { it.copy(replenishmentQuantity = "2 caixas") }
         vm.skipStep()
@@ -383,7 +400,7 @@ class PrescriptionRegistrationFlowTest {
 
     @Test fun skipNeverBypassesCustomValidityOrInvalidEnabledAlerts() = runTest {
         val vm = model(); runCurrent(); vm.goToStep(2); vm.openTypeEditor()
-        vm.selectPrescriptionType(PrescriptionType.PERSONALIZADO)
+        vm.selectPrescriptionType(PrescriptionType.CUSTOM)
         assertFalse(vm.uiState.value.canSkipCurrentStep)
         vm.skipStep(); assertNotNull(vm.uiState.value.typeEditor)
         vm.confirmTypeEditor(); assertNotNull(vm.uiState.value.typeEditor)
@@ -451,54 +468,43 @@ class PrescriptionRegistrationFlowTest {
         assertEquals("old", registration.recipe!!.previousPrescriptionId)
         assertEquals(registration.recipe!!.id, registration.medications.single().linkedPrescriptionId)
     }
-    @Test fun emptyRecipeSkipsPickupAndSavesWithAutomaticName() = runTest {
+    @Test fun emptyRecipeSavesBeforeAnyMedicationIsRegistered() = runTest {
         val vm = model(); runCurrent()
         repeat(3) { vm.nextStep() }
-        assertTrue(vm.uiState.value.canSkipCurrentStep)
-        vm.skipStep()
-        assertEquals(vm.uiState.value.optionalDetailsStep, vm.uiState.value.currentStep)
-        vm.skipStep()
-        assertEquals(6, vm.uiState.value.maxSteps)
-        assertEquals(vm.uiState.value.maxSteps, vm.uiState.value.currentStep)
-        assertTrue(vm.uiState.value.canSave)
-        vm.previousStep(); assertEquals(5, vm.uiState.value.currentStep)
+        assertEquals(4, vm.uiState.value.currentStep)
+        vm.skipStep(); assertEquals(5, vm.uiState.value.currentStep)
+        vm.previousStep(); assertEquals(4, vm.uiState.value.currentStep)
         vm.nextStep(); vm.savePrescription(); runCurrent()
         assertTrue(vm.uiState.value.isSaved)
-        assertTrue(registration.recipe!!.title == "Receita de teste")
+        assertEquals("Receita de teste", registration.recipe!!.title)
         assertTrue(registration.recipe!!.medicationIds.isEmpty())
         assertTrue(registration.medications.isEmpty())
     }
 
-    @Test fun skipMedicationPreservesCompleteDraftAndRejectsPartialDraft() = runTest {
-        val vm = model(); runCurrent(); vm.goToStep(vm.uiState.value.medicationStep)
+    @Test fun standaloneMedicationRequiresNameAndSavesIndependently() = runTest {
+        val vm = model(SavedStateHandle(mapOf("entryMode" to "STANDALONE_MEDICATION"))); runCurrent()
         vm.updateForm { it.copy(currentMedicationDraft = MedicationDraft(dosageOverride = "50 mg")) }
-        assertFalse(vm.uiState.value.canSkipCurrentStep)
-        vm.skipStep(); vm.nextStep()
-        assertEquals(vm.uiState.value.medicationStep, vm.uiState.value.currentStep)
-        assertEquals("50 mg", vm.uiState.value.currentMedicationDraft.dosage)
-        vm.cancelMedicationEditor()
-        assertEquals(MedicationDraft(), vm.uiState.value.currentMedicationDraft)
-        assertTrue(vm.uiState.value.canSkipCurrentStep)
-        vm.updateForm { it.copy(currentMedicationDraft = MedicationDraft(title = "Losartana", dosageOverride = "50 mg")) }
-        vm.skipStep()
-        assertEquals(vm.uiState.value.pickupStep, vm.uiState.value.currentStep)
-        assertEquals("Losartana", vm.uiState.value.medications.single().title)
-        assertEquals("50 mg", vm.uiState.value.medications.single().dosage)
-        vm.skipStep(); vm.savePrescription(); runCurrent()
-        assertEquals(1, registration.recipe!!.medicationIds.size)
+        vm.nextStep(); assertEquals(1, vm.uiState.value.currentStep)
+        vm.updateForm { it.copy(currentMedicationDraft = it.currentMedicationDraft.copy(title = "Losartana")) }
+        vm.nextStep(); assertEquals(vm.uiState.value.pickupStep, vm.uiState.value.currentStep)
+        vm.skipStep(); vm.skipStep(); vm.savePrescription(); runCurrent()
+        assertNull(registration.recipe)
+        assertEquals("Losartana", registration.medications.single().title)
+        assertEquals("50 mg", registration.medications.single().dosage)
     }
 
-    @Test fun editingRecipeCanRemoveLastMedicationWithoutErasingItsName() = runTest {
+    @Test fun editingRecipePreservesPreviouslyLinkedMedications() = runTest {
         meds.items.value = listOf(MedicationItem("m", "Losartana"))
         recipes.items.value = listOf(PrescriptionItem("p", "Minha receita", "", medicationIds = listOf("m")))
         val vm = model(SavedStateHandle(mapOf("prescriptionId" to "p"))); runCurrent()
-        vm.goToStep(5); vm.removeMedication(0); vm.skipStep()
-        assertEquals(6, vm.uiState.value.currentStep)
-        assertTrue(vm.uiState.value.canSave)
+        vm.updateForm { it.copy(notes = "Atualizada") }
+        repeat(4) { vm.nextStep() }
+        assertEquals(5, vm.uiState.value.currentStep)
         vm.savePrescription(); runCurrent()
         assertEquals("p", registration.recipe!!.id)
         assertEquals("Minha receita", registration.recipe!!.title)
-        assertTrue(registration.medications.isEmpty())
+        assertEquals(listOf("m"), registration.recipe!!.medicationIds)
+        assertEquals("Losartana", registration.medications.single().title)
     }
 
     @Test fun legacyIntervalsShowEquivalentDaysWithoutChangingSavedCalendarSchedule() = runTest {

@@ -51,7 +51,7 @@ import cc.rhuan.receitas.ui.feature.home.components.NextEventCard
 import cc.rhuan.receitas.ui.feature.home.components.NextEventHeader
 import cc.rhuan.receitas.ui.feature.home.components.TrackingItem
 import cc.rhuan.receitas.ui.feature.home.components.TrackingList
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -90,7 +90,7 @@ fun HomePresentation(
         onDateSelected = onDateSelected,
         onQuickAction = { item -> when (item) {
             is TrackingItem.Prescription -> onRenewPrescription(item.targetId)
-            is TrackingItem.Medication -> uiState.medicamentos.find { it.id == item.targetId }?.let { pendingPickup = it to LocalDate.now() }
+            is TrackingItem.Medication -> uiState.medications.find { it.id == item.targetId }?.let { pendingPickup = it to LocalDate.now() }
         } },
         onDismissSnackbar = dismissSnackbar,
         onRefresh = refreshData,
@@ -182,7 +182,7 @@ fun HomeScreenContent(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Cabeçalho da Home
+            // Home header
             HomeHeader(
                 title = headerTitle,
                 notificationCount = notificationCount,
@@ -199,7 +199,7 @@ fun HomeScreenContent(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Conteúdo principal
+            // Main content
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -255,7 +255,7 @@ fun HomeScreenContent(
                                                         if (p != null) onPrescriptionClick(p) else onNavigateToPrescriptions()
                                                     }
                                                     is TrackingItem.Medication -> {
-                                                        val m = uiState.medicamentos.find { it.id == item.targetId }
+                                                        val m = uiState.medications.find { it.id == item.targetId }
                                                         if (m != null) onMedicationClick(m) else onNavigateToMedications()
                                                     }
                                                 }
@@ -265,7 +265,7 @@ fun HomeScreenContent(
                                     }
                                 }
 
-                                // 2. Próximos eventos (Contexto futuro)
+                                // Upcoming events
                                 if (uiState.futureTrackingItems.isNotEmpty()) {
                                     item(key = "future_header") {
                                         NextEventHeader()
@@ -284,7 +284,7 @@ fun HomeScreenContent(
                                                         if (p != null) onPrescriptionClick(p) else onNavigateToPrescriptions()
                                                     }
                                                     is TrackingItem.Medication -> {
-                                                        val m = uiState.medicamentos.find { it.id == futureItem.targetId }
+                                                        val m = uiState.medications.find { it.id == futureItem.targetId }
                                                         if (m != null) onMedicationClick(m) else onNavigateToMedications()
                                                     }
                                                 }
@@ -311,27 +311,27 @@ fun HomeScreenContent(
 @Preview(showBackground = true)
 @Composable
 private fun HomeScreenPreview() {
-    ReceitasTheme {
+    AppTheme {
         HomeScreenContent(
-            uiState = HomeUiState(
+            uiState = HomeUiState(texts = cc.rhuan.receitas.text.AndroidTextResolver(LocalContext.current),
                 prescriptions = listOf(
                     PrescriptionItem(
                         id = "1",
-                        title = "Metformina 850 mg",
-                        specialty = "Endocrinologia",
-                        doctorName = "Carlos Eduardo",
-                        notes = "Uso contínuo."
+                        title = stringResource(R.string.preview_metformin_title),
+                        specialty = stringResource(R.string.preview_endocrinology),
+                        doctorName = stringResource(R.string.preview_patient_name),
+                        notes = stringResource(R.string.preview_continuous_note)
                     ),
                 ),
-                medicamentos = listOf(
+                medications = listOf(
                     MedicationItem(
                         id = "1",
-                        title = "Metformina",
+                        title = stringResource(R.string.preview_metformin_name),
                         dosage = "850 mg",
-                        quantity = "2 cx",
-                        prescribedPosology = "1 comprimido ao dia",
+                        quantity = stringResource(R.string.preview_two_boxes),
+                        prescribedPosology = stringResource(R.string.preview_posology),
                         lastRefillDate = LocalDate.now().minusDays(30),
-                        instructions = "Tomar após o almoço."
+                        instructions = stringResource(R.string.preview_meal_instruction)
                     ),
                 ),
             )

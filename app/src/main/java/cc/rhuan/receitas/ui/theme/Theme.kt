@@ -7,7 +7,7 @@ import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
 
 @Composable
-fun ReceitasTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun AppTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = if (darkTheme) DesignDark else DesignLight,
         typography = DesignTypography,

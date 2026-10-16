@@ -25,7 +25,7 @@ class FailureHandlingTest {
     @Test fun medicationLoadFailureCanBeRetriedWithoutDuplicateCollectors() = runTest {
         val repository = Medications()
         repository.failure = true
-        val vm = track(MedicationsViewModel(repository)); runCurrent()
+        val vm = track(MedicationsViewModel(TestTexts, repository)); runCurrent()
         assertFalse(vm.uiState.value.isLoading)
         assertNotNull(vm.uiState.value.errorMessage)
         repository.failure = false
@@ -38,26 +38,26 @@ class FailureHandlingTest {
     @Test fun prescriptionReloadKeepsOnlyOneSubscription() = runTest {
         val repository = Recipes()
         val medications = Medications()
-        val vm = track(PrescriptionsViewModel(repository, medications)); runCurrent()
+        val vm = track(PrescriptionsViewModel(TestTexts, repository, medications)); runCurrent()
         vm.loadPrescriptions(); vm.loadPrescriptions(); runCurrent()
         assertEquals(1, repository.activeCollectors)
         assertEquals(1, medications.activeCollectors)
         assertFalse(vm.uiState.value.isLoading)
     }
     @Test fun missingMedicationIdEndsLoadingWithoutCrashing() = runTest {
-        val vm = track(MedicationDetailViewModel(SavedStateHandle(), Medications(), Recipes())); runCurrent()
+        val vm = track(MedicationDetailViewModel(TestTexts, SavedStateHandle(), Medications(), Recipes())); runCurrent()
         assertFalse(vm.uiState.value.isLoading)
         assertNotNull(vm.uiState.value.errorMessage)
     }
     @Test fun missingMedicationIsNotAnInfiniteSpinner() = runTest {
-        val vm = track(MedicationDetailViewModel(SavedStateHandle(mapOf("medicationId" to "missing")), Medications(), Recipes())); runCurrent()
+        val vm = track(MedicationDetailViewModel(TestTexts, SavedStateHandle(mapOf("medicationId" to "missing")), Medications(), Recipes())); runCurrent()
         assertFalse(vm.uiState.value.isLoading)
         assertNull(vm.uiState.value.medication)
         assertNotNull(vm.uiState.value.errorMessage)
     }
     @Test fun medicationDetailFailureCanRecover() = runTest {
         val repository = Medications().apply { failure = true }
-        val vm = track(MedicationDetailViewModel(SavedStateHandle(mapOf("medicationId" to "m")), repository, Recipes())); runCurrent()
+        val vm = track(MedicationDetailViewModel(TestTexts, SavedStateHandle(mapOf("medicationId" to "m")), repository, Recipes())); runCurrent()
         assertFalse(vm.uiState.value.isLoading)
         assertNotNull(vm.uiState.value.errorMessage)
         repository.failure = false
@@ -71,7 +71,7 @@ class FailureHandlingTest {
         val updates = MutableStateFlow(listOf(member, pickup))
         val recipes = Recipes().apply { this.updates = updates }
         val meds = Medications().apply { item = MedicationItem("m", "Medicamento", linkedPrescriptionId = "pickup") }
-        val vm = track(MedicationDetailViewModel(SavedStateHandle(mapOf("medicationId" to "m")), meds, recipes))
+        val vm = track(MedicationDetailViewModel(TestTexts, SavedStateHandle(mapOf("medicationId" to "m")), meds, recipes))
         runCurrent()
         assertEquals(listOf(member), vm.uiState.value.prescriptions)
         assertEquals(pickup, vm.uiState.value.pickupPrescription)
@@ -87,14 +87,14 @@ class FailureHandlingTest {
         val recipe = PrescriptionItem("member", "Receita de origem", "",
             items = listOf(PrescriptionMedication(medicationId = "m")))
         val recipes = Recipes().apply { updates = MutableStateFlow(listOf(recipe)) }
-        val vm = track(MedicationDetailViewModel(SavedStateHandle(mapOf("medicationId" to "m")), Medications(), recipes))
+        val vm = track(MedicationDetailViewModel(TestTexts, SavedStateHandle(mapOf("medicationId" to "m")), Medications(), recipes))
         runCurrent()
         assertNull(vm.uiState.value.medication!!.linkedPrescriptionId)
         assertEquals(listOf(recipe), vm.uiState.value.prescriptions)
     }
     @Test fun prescriptionDetailFailureCanRecover() = runTest {
         val recipes = Recipes().apply { failure = true }
-        val vm = track(PrescriptionDetailViewModel(SavedStateHandle(mapOf("prescriptionId" to "p")), recipes, Medications())); runCurrent()
+        val vm = track(PrescriptionDetailViewModel(TestTexts, SavedStateHandle(mapOf("prescriptionId" to "p")), recipes, Medications())); runCurrent()
         assertFalse(vm.uiState.value.isLoading)
         assertNotNull(vm.uiState.value.errorMessage)
         recipes.failure = false
@@ -107,7 +107,7 @@ class FailureHandlingTest {
         notifications.items = listOf(NotificationItem("bad", "Alerta", "Texto", "Hoje", NotificationType.MEDICATION_PICKUP,
             targetId = "m", phase = ReminderPhase.PICKUP_DUE, targetType = "PICKUP", cycleKey = "invalid-date"))
         val medications = Medications()
-        val vm = track(NotificationsViewModel(notifications, Recipes(), medications)); runCurrent()
+        val vm = track(NotificationsViewModel(TestTexts, notifications, Recipes(), medications)); runCurrent()
         var opened = false
         vm.preparePickup("bad") { opened = true }; runCurrent()
         assertFalse(opened)
@@ -116,7 +116,7 @@ class FailureHandlingTest {
     }
     @Test fun notificationLoadFailureCanBeRetried() = runTest {
         val notices = Notices().apply { failure = true }
-        val vm = track(NotificationsViewModel(notices, Recipes(), Medications())); runCurrent()
+        val vm = track(NotificationsViewModel(TestTexts, notices, Recipes(), Medications())); runCurrent()
         assertFalse(vm.uiState.value.isLoading)
         assertNotNull(vm.uiState.value.errorMessage)
         notices.failure = false
@@ -127,7 +127,7 @@ class FailureHandlingTest {
     @Test fun replacedRecipeCannotOpenRenewalFromAnOldAlert() = runTest {
         val notices = Notices().apply { items = listOf(NotificationItem("alert", "Receita", "Texto", "Hoje", NotificationType.PRESCRIPTION_EXPIRING, targetId = "p", phase = ReminderPhase.EXPIRED, targetType = "PRESCRIPTION")) }
         val recipes = Recipes().apply { state = RecordState.REPLACED }
-        val vm = track(NotificationsViewModel(notices, recipes, Medications())); runCurrent()
+        val vm = track(NotificationsViewModel(TestTexts, notices, recipes, Medications())); runCurrent()
         var opened = false
         vm.openRenewal("alert") { opened = true }; runCurrent()
         assertFalse(opened)

@@ -1,5 +1,11 @@
 package cc.rhuan.receitas.data.repository
 
+import cc.rhuan.receitas.text.TextMessage
+
+import cc.rhuan.receitas.text.TextResolver
+
+import cc.rhuan.receitas.R
+
 import androidx.room.withTransaction
 import cc.rhuan.receitas.data.local.AppDatabase
 import cc.rhuan.receitas.data.local.entity.PrescriptionEntity
@@ -15,7 +21,8 @@ interface PrescriptionRepository {
     suspend fun deletePrescription(id: String)
     suspend fun archivePrescription(id: String, archived: Boolean)
 }
-class RoomPrescriptionRepository @Inject constructor(private val database: AppDatabase) : PrescriptionRepository {
+class RoomPrescriptionRepository @Inject constructor(
+    private val texts: TextResolver,private val database: AppDatabase) : PrescriptionRepository {
     private val dao get() = database.prescriptionDao()
     override fun getPrescriptions(): Flow<List<PrescriptionItem>> = combine(dao.getAllPrescriptions(), database.trackingDao().observeItems()) { recipes, items ->
         recipes.map { it.toDomain(items.filter { item -> item.prescriptionId == it.id }.map { item -> PrescriptionMedication(item.medicationId, item.posology, item.quantity, item.titleSnapshot, item.dosageSnapshot, PharmaceuticalForm.valueOf(item.formSnapshot)) }) }
@@ -26,30 +33,30 @@ class RoomPrescriptionRepository @Inject constructor(private val database: AppDa
     override suspend fun addPrescription(prescription: PrescriptionItem) { validate(prescription); dao.insertPrescription(prescription.toEntity()) }
     override suspend fun updatePrescription(prescription: PrescriptionItem) {
         validate(prescription)
-        val old = dao.getPrescriptionById(prescription.id) ?: throw BusinessRuleViolation("Receita não encontrada")
-        requireBusiness(old.state != "REPLACED") { "Uma receita substituída pertence ao histórico" }
+        val old = dao.getPrescriptionById(prescription.id) ?: throw BusinessRuleViolation(TextMessage(R.string.prescription_not_found))
+        requireBusiness(old.state != "REPLACED") { TextMessage(R.string.replaced_prescription_readonly) }
         dao.updatePrescription(prescription.toEntity(old))
     }
     override suspend fun archivePrescription(id: String, archived: Boolean) = database.withTransaction {
-        val p = dao.getPrescriptionById(id) ?: throw BusinessRuleViolation("Receita não encontrada")
-        requireBusiness(p.state != "REPLACED") { "Esta receita já foi substituída" }
+        val p = dao.getPrescriptionById(id) ?: throw BusinessRuleViolation(TextMessage(R.string.prescription_not_found))
+        requireBusiness(p.state != "REPLACED") { TextMessage(R.string.prescription_already_replaced) }
         dao.updatePrescription(p.copy(state = if (archived) "ARCHIVED" else "ACTIVE"))
         database.trackingDao().archiveForPrescription(id, archived)
         if (archived) {
-            database.resolveReminders(id, "PRESCRIPTION", "OBSOLETE", "Receita arquivada")
-            database.trackingDao().observeTracking().first().filter { it.prescriptionId == id }.forEach { database.resolveReminders(it.medicationId, "PICKUP", "OBSOLETE", "Acompanhamento arquivado") }
+            database.resolveReminders(id, "PRESCRIPTION", "OBSOLETE", texts.get(R.string.prescription_archived_message))
+            database.trackingDao().observeTracking().first().filter { it.prescriptionId == id }.forEach { database.resolveReminders(it.medicationId, "PICKUP", "OBSOLETE", texts.get(R.string.tracking_archived_message)) }
         }
     }
     override suspend fun deletePrescription(id: String) = database.withTransaction {
-        requireBusiness(dao.getPrescriptionById(id) != null) { "Receita não encontrada" }
-        database.resolveReminders(id, "PRESCRIPTION", "OBSOLETE", "Receita excluída")
+        requireBusiness(dao.getPrescriptionById(id) != null) { TextMessage(R.string.prescription_not_found) }
+        database.resolveReminders(id, "PRESCRIPTION", "OBSOLETE", texts.get(R.string.prescription_deleted_message))
         database.trackingDao().unlink(id)
         dao.deletePrescription(id)
     }
     private fun validate(p: PrescriptionItem) {
         requireBusiness(p.title.isNotBlank())
-        requireBusiness(!p.issueDate.isAfter(java.time.LocalDate.now())) { "A emissão não pode estar no futuro" }
-        requireBusiness(!p.expirationDate.isBefore(p.issueDate)) { "Vencimento anterior à emissão" }
+        requireBusiness(!p.issueDate.isAfter(java.time.LocalDate.now())) { TextMessage(R.string.issue_date_future_error) }
+        requireBusiness(!p.expirationDate.isBefore(p.issueDate)) { TextMessage(R.string.expiration_before_issue_error) }
         requireBusiness(p.validityDurationDays in 1..3650)
         requireBusiness(!p.renewalReminderEnabled || p.renewalReminderDaysBefore in 0..p.validityDurationDays)
     }

@@ -108,7 +108,7 @@ private fun NavigationTabs(selectedRoute: String?, onSelectDestination: (String)
             Column(Modifier.weight(1f).heightIn(min = T.control)
                 .clip(CircleShape).background(selectionColor)
                 .selectable(selected, role = Role.Tab, onClick = { if (!selected) onSelectDestination(destination.route) })
-                .semantics { contentDescription = destination.title }
+                .semantics { contentDescription = label }
                 .padding(vertical = T.tight), horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center) {
                 val icon = if (selected) destination.selectedIconRes else destination.iconRes

@@ -35,14 +35,14 @@ class DatabaseMigrationTest {
         oldDatabase(version)
         val db = Room.databaseBuilder(context, AppDatabase::class.java, name).addMigrations(DatabaseMigrations.FROM_2_TO_3, DatabaseMigrations.FROM_3_TO_4).build()
         try {
-            val p = RoomPrescriptionRepository(db).getPrescriptionById("p")!!
+            val p = RoomPrescriptionRepository(TestTexts, db).getPrescriptionById("p")!!
             assertEquals("Profissional", p.doctorName)
             assertEquals("d", p.doctorId)
             assertEquals("Observação original", p.notes)
             assertEquals(LocalDate.of(2026, 2, 15), p.expirationDate)
             assertEquals(listOf("m"), p.medicationIds)
             assertEquals("content://legacy-photo", db.prescriptionDao().getPrescriptionById("p")!!.photoUri)
-            val m = RoomMedicationRepository(db).getMedicationById("m")!!
+            val m = RoomMedicationRepository(TestTexts, db).getMedicationById("m")!!
             assertEquals(LocalDate.of(2026, 1, 10), m.lastRefillDate)
             assertEquals(1, m.pickupHistory.size)
             assertNull(m.linkedPrescriptionId)

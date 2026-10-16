@@ -1,5 +1,9 @@
 package cc.rhuan.receitas.ui.feature.prescriptions
 
+import cc.rhuan.receitas.text.TextResolver
+
+import cc.rhuan.receitas.R
+
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,6 +26,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class PrescriptionDetailViewModel @Inject constructor(
+    private val texts: TextResolver,
     savedStateHandle: SavedStateHandle,
     private val prescriptionRepository: PrescriptionRepository,
     private val medicationRepository: MedicationRepository,
@@ -39,7 +44,7 @@ class PrescriptionDetailViewModel @Inject constructor(
         if (prescriptionId.isNotBlank()) {
             loadDetail()
         } else {
-            _uiState.update { it.copy(isLoading = false, errorMessage = "Receita não encontrada. Volte à lista e tente novamente.") }
+            _uiState.update { it.copy(isLoading = false, errorMessage = texts.get(R.string.prescription_not_found_retry)) }
         }
     }
 
@@ -70,12 +75,12 @@ class PrescriptionDetailViewModel @Inject constructor(
                 } else {
                     PrescriptionDetailUiState(
                         isLoading = false,
-                        errorMessage = "Receita não encontrada",
+                        errorMessage = texts.get(R.string.prescription_not_found),
                     )
                 }
             }.catch { error ->
                 if (error is CancellationException) throw error
-                _uiState.update { it.copy(isLoading = false, errorMessage = "Não foi possível carregar a receita.") }
+                _uiState.update { it.copy(isLoading = false, errorMessage = texts.get(R.string.prescription_load_error)) }
             }.collect { newState ->
                 _uiState.update { newState.copy(actionMessage = it.actionMessage, isDeleted = it.isDeleted) }
             }
@@ -86,28 +91,28 @@ class PrescriptionDetailViewModel @Inject constructor(
         viewModelScope.launch {
             try { val message = action(); _uiState.update { it.copy(actionMessage = message) } }
             catch (e: CancellationException) { throw e }
-            catch (_: Exception) { _uiState.update { it.copy(actionMessage = "Não foi possível concluir esta ação. Tente novamente.") } }
+            catch (_: Exception) { _uiState.update { it.copy(actionMessage = texts.get(R.string.action_retry_error)) } }
         }
     }
     fun registerPickup(id: String, date: LocalDate, early: Boolean, cycle: LocalDate?) = execute {
-        medicationRepository.registerPickup(id, date, early, cycle).message()
+        texts.resolve(medicationRepository.registerPickup(id, date, early, cycle).message())
     }
     fun correctPickup(id: String, date: LocalDate) = execute {
         val result = medicationRepository.correctPickup(id, date)
-        if (result == OperationResult.Success) "Data corrigida." else result.message()
+        if (result == OperationResult.Success) texts.get(R.string.pickup_date_corrected) else texts.resolve(result.message())
     }
     fun deletePickup(id: String) = execute {
         val result = medicationRepository.deletePickup(id)
-        if (result == OperationResult.Success) "Retirada excluída. A próxima previsão foi recalculada." else result.message()
+        if (result == OperationResult.Success) texts.get(R.string.pickup_deleted_feedback) else texts.resolve(result.message())
     }
     fun archive(archived: Boolean) = execute {
         prescriptionRepository.archivePrescription(prescriptionId, archived)
-        if (archived) "Receita arquivada." else "Receita reativada."
+        if (archived) texts.get(R.string.prescription_archived_feedback) else texts.get(R.string.prescription_reactivated_feedback)
     }
     fun deleteRecipe() = execute {
         prescriptionRepository.deletePrescription(prescriptionId)
         _uiState.update { it.copy(isDeleted = true) }
-        "Receita excluída."
+        texts.get(R.string.prescription_deleted_feedback)
     }
 
     fun clearActionMessage() {

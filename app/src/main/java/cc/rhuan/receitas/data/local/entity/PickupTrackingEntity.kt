@@ -9,5 +9,5 @@ import cc.rhuan.receitas.domain.model.MedicationSource
 data class PickupTrackingEntity(@PrimaryKey val id: String, val medicationId: String,
     val prescriptionId: String? = null, val enabled: Boolean = false, val archived: Boolean = false,
     val intervalAmount: Int = 30, val intervalUnit: String = "DAYS", val reminderDaysBefore: Int = 3,
-    val source: MedicationSource = MedicationSource.COMPRA_PROPRIA, val sourceName: String? = null,
+    val source: MedicationSource = MedicationSource.SELF_PURCHASE, val sourceName: String? = null,
     val quantity: String = "", val note: String? = null)

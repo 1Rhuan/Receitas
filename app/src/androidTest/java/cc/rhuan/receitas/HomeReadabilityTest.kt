@@ -14,7 +14,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import cc.rhuan.receitas.domain.model.*
 import cc.rhuan.receitas.ui.feature.home.*
 import cc.rhuan.receitas.ui.feature.home.components.DateSlider
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -26,7 +26,7 @@ class HomeReadabilityTest {
     private val today = LocalDate.now()
     private val name = "Losartana potássica para acompanhamento de uso contínuo"
     private fun show(dark: Boolean, scale: Float, content: @Composable () -> Unit) {
-        compose.setContent { ReceitasTheme(darkTheme = dark) {
+        compose.setContent { AppTheme(darkTheme = dark) {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 Box(Modifier.requiredSize(320.dp, 640.dp)) { content() }
@@ -46,7 +46,7 @@ class HomeReadabilityTest {
     private fun home(dark: Boolean, scale: Float, captureName: String) {
         var actions = 0
         show(dark, scale) {
-            HomeScreenContent(HomeUiState(medicamentos = listOf(MedicationItem("m", name, dosage = "50 mg", lastRefillDate = today.minusDays(30)))),
+            HomeScreenContent(HomeUiState(texts = TestTexts, medications = listOf(MedicationItem("m", name, dosage = "50 mg", lastRefillDate = today.minusDays(30)))),
                 onQuickAction = { actions++ })
         }
         compose.onAllNodesWithText("Registrar retirada").assertCountEquals(1)
@@ -61,7 +61,9 @@ class HomeReadabilityTest {
     @Test fun homeDarkDoubleFontKeepsActionAndLongNameReachable() { home(true, 2f, "home-readable-dark-200") }
 
     @Test fun smallCalendarKeepsDaysSeparateAndSupportsSelectionAndPaging() {
-        val today = LocalDate.of(2026, 10, 18)
+        // Keep Sunday centered in a three-day page regardless of the execution date.
+        val today = generateSequence(LocalDate.now()) { it.plusDays(3) }
+            .first { it.dayOfWeek == java.time.DayOfWeek.SUNDAY }
         var selected by mutableStateOf(today)
         show(false, 2f) { DateSlider(selected, { selected = it }, { null }) }
         val nodes = (-1L..1L).map { offset ->

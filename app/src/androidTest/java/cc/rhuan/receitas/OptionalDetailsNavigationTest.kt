@@ -12,7 +12,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import cc.rhuan.receitas.ui.feature.prescriptions.wizard.*
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -24,7 +24,7 @@ class OptionalDetailsNavigationTest {
 
     private fun show(base: PrescriptionWizardUiState, scale: Float = 1f, startAtOptional: Boolean = true) {
         compose.setContent {
-            ReceitasTheme(darkTheme = scale > 1f) {
+            AppTheme(darkTheme = scale > 1f) {
                 val density = LocalDensity.current
                 CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                     var state by remember { mutableStateOf(if (startAtOptional) base.copy(currentStep = base.optionalDetailsStep) else base) }
@@ -43,6 +43,10 @@ class OptionalDetailsNavigationTest {
             requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot())
         }
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        listOf("mkdir -p /sdcard/Download/centered-registration", "cp ${file.absolutePath} /sdcard/Download/centered-registration/$name.png").forEach { command ->
+            android.os.ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command)).use { it.readBytes() }
+        }
     }
 
     private fun click(description: String) {
@@ -94,12 +98,32 @@ class OptionalDetailsNavigationTest {
     }
 
     @Test fun pageTitleReplacesRegistrationTitleAndCloseIcon() {
-        show(PrescriptionWizardUiState(currentStep = 2), startAtOptional = false)
+        show(PrescriptionWizardUiState(currentStep = 2, prescriptionTitle = "Receita cardiologista"), startAtOptional = false)
         compose.onNodeWithText("Nova receita").assertDoesNotExist()
         compose.onNodeWithContentDescription("Sair do cadastro").assertDoesNotExist()
         compose.onNodeWithText("Etapa 2 de 6").assertDoesNotExist()
-        val title = compose.onNodeWithText("Emissão e tipo").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        val title = compose.onNodeWithText("Quando a receita foi emitida?").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
         assertTrue(title.bottom < compose.onNodeWithTag("wizard-content").fetchSemanticsNode().boundsInRoot.top)
         capture("registration-header-title-light")
+    }
+
+    @Test fun firstRecipeScreenDisablesAdvanceUntilNameIsEntered() {
+        show(PrescriptionWizardUiState(), startAtOptional = false)
+        compose.onNodeWithText("Como você quer chamar esta receita?").assertIsDisplayed()
+        compose.onNodeWithText("Pular").assertDoesNotExist()
+        compose.onNodeWithText("Avançar").assertIsNotEnabled()
+        capture("registration-name-light")
+        compose.onNodeWithContentDescription("Nome da receita").performScrollTo().performTextInput("Receita cardiologista")
+        compose.onNodeWithText("Avançar").assertIsEnabled()
+    }
+
+    @Test fun firstMedicationScreenUsesTheSamePatternWithLargeFont() {
+        show(PrescriptionWizardUiState(entryMode = WizardEntryMode.STANDALONE_MEDICATION), scale = 2f, startAtOptional = false)
+        compose.onNodeWithText("Qual é o nome do medicamento?").assertIsDisplayed()
+        compose.onNodeWithText("Avançar").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Concentração").assertDoesNotExist()
+        capture("registration-name-medication-dark-200")
+        compose.onNodeWithContentDescription("Nome do medicamento").performScrollTo().performTextInput("Medicamento com nome extenso")
+        compose.onNodeWithText("Avançar").assertIsEnabled()
     }
 }

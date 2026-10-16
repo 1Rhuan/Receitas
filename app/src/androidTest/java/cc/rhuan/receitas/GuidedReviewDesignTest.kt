@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import cc.rhuan.receitas.domain.model.*
 import cc.rhuan.receitas.ui.feature.prescriptions.wizard.*
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import java.io.File
 import java.time.LocalDate
 import org.junit.Assert.*
@@ -36,7 +36,7 @@ class GuidedReviewDesignTest {
                 replenishmentQuantity = "1 frasco", sourceName = "Farmácia do bairro")))
 
     private fun show(dark: Boolean = false, scale: Float = 1f, content: @Composable () -> Unit) {
-        compose.setContent { ReceitasTheme(darkTheme = dark) {
+        compose.setContent { AppTheme(darkTheme = dark) {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 Box(Modifier.requiredSize(320.dp, 640.dp)) { content() }
@@ -143,8 +143,8 @@ class GuidedReviewDesignTest {
             .assert(!hasAnyDescendant(hasText("UBS Central")))
         val source = compose.onNode(hasText("Farmácia Popular") and hasAnyAncestor(hasTestTag("pickup-context-0")))
         reveal(source); source.performClick(); source.assertIsSelected()
-        assertEquals(MedicationSource.FARMACIA_POPULAR, latest.medications[0].source)
-        assertEquals(MedicationSource.COMPRA_PROPRIA, latest.medications[1].source)
+        assertEquals(MedicationSource.POPULAR_PHARMACY, latest.medications[0].source)
+        assertEquals(MedicationSource.SELF_PURCHASE, latest.medications[1].source)
         capture("source-radio-dark-200")
         val firstPlace = compose.onNode(hasText("UBS Central") and hasAnyAncestor(hasTestTag("pickup-context-0")))
         reveal(firstPlace); firstPlace.performTextReplacement("UBS Nova")

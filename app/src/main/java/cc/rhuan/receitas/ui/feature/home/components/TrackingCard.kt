@@ -84,7 +84,7 @@ fun TrackingCard(
                 )
             }
 
-            // Divisória superior
+            // Top divider
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -92,7 +92,7 @@ fun TrackingCard(
                     .background(MaterialTheme.colorScheme.surfaceContainer)
             )
 
-            // 2. Conteúdo: Área do Ícone + Título e Conteúdo Variável (Slot)
+            // Icon, title, and content slot
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
@@ -118,7 +118,7 @@ fun TrackingCard(
                 }
             }
 
-            // 3. Anotação Opcional do Usuário
+            // Optional user note
             if (!userNote.isNullOrBlank()) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
@@ -148,7 +148,7 @@ fun TrackingCard(
                 }
             }
 
-            // Divisória inferior
+            // Bottom divider
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -156,7 +156,7 @@ fun TrackingCard(
                     .background(MaterialTheme.colorScheme.surfaceContainer)
             )
 
-            // 4. Ações
+            // Actions
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(T.small)) { actions() }
         }
     }
@@ -212,7 +212,7 @@ fun MedicationTrackingCard(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_box),
-                        contentDescription = stringResource(R.string.ui_quantidade_por_retirada),
+                        contentDescription = stringResource(R.string.pickup_quantity_label),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
@@ -269,7 +269,7 @@ fun PrescriptionTrackingCard(
                     verticalArrangement = Arrangement.spacedBy(1.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_prescritor),
+                        text = stringResource(R.string.prescriber),
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant

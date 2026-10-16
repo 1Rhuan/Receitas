@@ -6,7 +6,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import cc.rhuan.receitas.domain.model.IntervalUnit
 import cc.rhuan.receitas.ui.feature.prescriptions.wizard.*
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import java.time.LocalDate
 import org.junit.Rule
 import org.junit.Test
@@ -26,7 +26,7 @@ class RegistrationCopyTest {
                 pickupReminderDaysBefore = 1,
             )),
         )
-        compose.setContent { ReceitasTheme { PrescriptionWizardContent(state, WizardCallbacks()) } }
+        compose.setContent { AppTheme { PrescriptionWizardContent(state, WizardCallbacks()) } }
         compose.onNodeWithText("Próxima retirada prevista: 28/02/2026").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Lembrete: 1 dia antes").performScrollTo().assertIsDisplayed()
     }
@@ -37,7 +37,7 @@ class RegistrationCopyTest {
             editingMedicationId = "existing", isSaved = true,
             showMedicationEditor = false,
         )
-        compose.setContent { ReceitasTheme { PrescriptionWizardContent(state, WizardCallbacks()) } }
+        compose.setContent { AppTheme { PrescriptionWizardContent(state, WizardCallbacks()) } }
         compose.onNodeWithText("Medicamento atualizado").assertIsDisplayed()
     }
 }

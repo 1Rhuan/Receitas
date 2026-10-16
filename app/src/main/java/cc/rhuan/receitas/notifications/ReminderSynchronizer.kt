@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.notifications
 
+import cc.rhuan.receitas.text.AndroidTextResolver
+
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -31,12 +33,13 @@ object ReminderSynchronizer {
 
     @SuppressLint("MissingPermission", "ApplySharedPref", "UseKtx")
     suspend fun sync(context: Context) = withContext(Dispatchers.IO) {
+        val texts = AndroidTextResolver(context)
         mutex.withLock {
             val db = AppDatabase.getDatabase(context)
             db.withTransaction {
-                val reminders = EvaluateRemindersUseCase()(RoomPrescriptionRepository(db).getPrescriptions().first(), RoomMedicationRepository(db).getMedications().first(), LocalDate.now())
+                val reminders = EvaluateRemindersUseCase(texts)(RoomPrescriptionRepository(texts, db).getPrescriptions().first(), RoomMedicationRepository(texts, db).getMedications().first(), LocalDate.now())
                 val manager = context.getSystemService(NotificationManager::class.java)
-                manager.createNotificationChannel(NotificationChannel(CHANNEL, "Validade, renovação e retirada", NotificationManager.IMPORTANCE_DEFAULT))
+                manager.createNotificationChannel(NotificationChannel(CHANNEL, texts.get(R.string.notification_channel_name), NotificationManager.IMPORTANCE_DEFAULT))
                 val delivered = context.getSharedPreferences("delivered_reminders", Context.MODE_PRIVATE)
                 val activeIds = reminders.map { it.id }.toSet()
                 // Cancel obsolete system alerts after renewal, pickup, deletion or a phase change.
@@ -44,7 +47,7 @@ object ReminderSynchronizer {
                     .forEach { manager.cancel(it.tag, it.id) }
                 val existing = db.notificationDao().getAllNotifications().first()
                 existing.filter { it.phase != null && it.id !in activeIds && it.resolvedAt == null }
-                    .forEach { db.notificationDao().updateNotification(it.copy(isRead = true, actionTaken = "Lembrete encerrado", resolvedAt = System.currentTimeMillis(), resolutionReason = "OBSOLETE")) }
+                    .forEach { db.notificationDao().updateNotification(it.copy(isRead = true, actionTaken = texts.get(R.string.reminder_closed), resolvedAt = System.currentTimeMillis(), resolutionReason = "OBSOLETE")) }
                 for (reminder in reminders) {
                     if (delivered.getBoolean("dismissed:" + reminder.id, false)) continue
                     db.notificationDao().getNotificationById(reminder.id)?.let { stored ->
@@ -69,7 +72,7 @@ object ReminderSynchronizer {
                         .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).build()
                     try {
                         manager.notify("reminder:" + reminder.id, 0, notification)
-                        check(delivered.edit().putBoolean(reminder.id, true).commit()) { "Não foi possível preservar o histórico de entrega" }
+                        check(delivered.edit().putBoolean(reminder.id, true).commit()) { "Failed to persist delivery history" }
                     } catch (_: SecurityException) {
                         // Permission may be revoked between checking and posting. Retry on the next check.
                     }

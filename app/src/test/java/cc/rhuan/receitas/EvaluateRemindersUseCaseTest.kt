@@ -6,7 +6,7 @@ import org.junit.Assert.*
 import org.junit.Test
 class EvaluateRemindersUseCaseTest {
     private val today = LocalDate.of(2026, 10, 13)
-    private val evaluate = EvaluateRemindersUseCase()
+    private val evaluate = EvaluateRemindersUseCase(TestTexts)
     private fun prescription(days: Long) = PrescriptionItem("p", "Receita", "", customValidityDays = 30, issueDate = today.plusDays(days).minusDays(30))
     private fun medication(days: Long) = MedicationItem("m", "Medicamento", hasRecurringPickup = true, lastRefillDate = today.plusDays(days).minusDays(30))
     @Test fun conflictIsReportedBeforeReminderWindowsAndHasStableIdentity() {
@@ -45,7 +45,7 @@ class EvaluateRemindersUseCaseTest {
     }
     @Test fun annualSuggestionUses365DaysAndAllowsManualOverride() {
         val issue = LocalDate.of(2024, 2, 29)
-        val p = PrescriptionItem("annual", "Anual", "", issueDate = issue, type = PrescriptionType.ANUAL)
+        val p = PrescriptionItem("annual", "Anual", "", issueDate = issue, type = PrescriptionType.ANNUAL_USE)
         assertEquals(LocalDate.of(2025, 2, 28), p.expirationDate)
         assertEquals(issue.plusDays(400), p.copy(customValidityDays = 400).expirationDate)
         assertEquals(issue.plusDays(200), p.copy(expiresOn = issue.plusDays(200)).expirationDate)

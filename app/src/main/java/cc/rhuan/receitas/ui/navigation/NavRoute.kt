@@ -5,42 +5,42 @@ import cc.rhuan.receitas.R
 
 sealed class NavRoute(
     val route: String,
-    val title: String,
+    val titleRes: Int,
     @param:DrawableRes val iconRes: Int,
     @param:DrawableRes val selectedIconRes: Int,
     val badgeCount: Int? = null,
 ) {
     data object Home : NavRoute(
         route = "home",
-        title = "Início",
+        titleRes = R.string.nav_home,
         iconRes = R.drawable.ic_nav_home,
         selectedIconRes = R.drawable.ic_bold_home,
     )
 
     data object Prescriptions : NavRoute(
         route = "prescriptions",
-        title = "Receitas",
+        titleRes = R.string.nav_prescriptions,
         iconRes = R.drawable.ic_nav_prescriptions,
         selectedIconRes = R.drawable.ic_bold_document_medicine,
     )
 
     data object Medications : NavRoute(
         route = "medications",
-        title = "Medicamentos",
+        titleRes = R.string.nav_medications,
         iconRes = R.drawable.ic_nav_medications,
         selectedIconRes = R.drawable.ic_bold_pills,
     )
 
     data object Menu : NavRoute(
         route = "menu",
-        title = "Menu",
+        titleRes = R.string.nav_menu,
         iconRes = R.drawable.ic_hamburger_menu,
         selectedIconRes = R.drawable.ic_hamburger_menu,
     )
 
     data object Notifications : NavRoute(
         route = "notifications",
-        title = "Notificações",
+        titleRes = R.string.nav_notifications,
         iconRes = R.drawable.ic_bell_bing,
         selectedIconRes = R.drawable.ic_bold_bell_bing,
         badgeCount = 0,
@@ -48,7 +48,7 @@ sealed class NavRoute(
 
     data object PrescriptionWizard : NavRoute(
         route = "prescription_wizard?prescriptionId={prescriptionId}&entryMode={entryMode}&renewalOf={renewalOf}&medicationId={medicationId}&addToPrescriptionId={addToPrescriptionId}",
-        title = "Nova receita",
+        titleRes = R.string.nav_new_prescription,
         iconRes = R.drawable.ic_document_medicine,
         selectedIconRes = R.drawable.ic_bold_document_medicine,
     )

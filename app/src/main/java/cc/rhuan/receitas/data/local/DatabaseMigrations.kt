@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.data.local
 
+import cc.rhuan.receitas.R
+
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
@@ -83,6 +85,7 @@ object DatabaseMigrations {
                     if (parts.size < 4 || parts.first() !in listOf("prescription", "pickup")) continue
                     val phase = when (parts.last()) { "renewal" -> "RENEWAL"; "today" -> "EXPIRES_TODAY"; "expired" -> "EXPIRED"; "upcoming" -> "PICKUP_UPCOMING"; "due" -> "PICKUP_DUE"; else -> null }
                     db.execSQL("UPDATE notifications SET phase = ?, targetType = ?, cycleKey = ?, resolutionReason = ? WHERE id = ?",
+                        // This is a legacy stored value, not a display string.
                         arrayOf(phase, parts.first().uppercase(), parts.dropLast(1).joinToString(":"), if (cursor.getString(1) == "Lembrete encerrado") "OBSOLETE" else null, id))
                 }
             }

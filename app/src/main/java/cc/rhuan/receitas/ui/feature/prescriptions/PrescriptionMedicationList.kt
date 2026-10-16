@@ -24,18 +24,18 @@ internal fun PrescriptionMedicationList(state: PrescriptionDetailUiState, onBack
         title = stringResource(R.string.design_recipe_medications),
         subtitle = "", listTag = "recipe-medication-list", modifier = modifier,
         onBack = onBack, snackbarHost = snackbarHost,
-        createLabel = if (canAdd && !empty) stringResource(R.string.ui_adicionar_medicamento) else null,
+        createLabel = if (canAdd && !empty) stringResource(R.string.add_medication) else null,
         onCreate = onAddMedication,
     ) {
         if (empty) item("empty") {
             CenteredListGuidance {
-                EmptyListGuidance(stringResource(R.string.ui_nenhum_medicamento_vinculado_a_esta_receita),
+                EmptyListGuidance(stringResource(R.string.no_medications_linked_to_prescription),
                     stringResource(when (prescription?.state) {
                         RecordState.ARCHIVED -> R.string.recipe_empty_medications_archived
                         RecordState.REPLACED -> R.string.recipe_empty_medications_readonly
                         else -> R.string.recipe_empty_medications_guidance
                     }, prescription?.title.orEmpty()),
-                    if (canAdd) stringResource(R.string.ui_adicionar_medicamento) else null,
+                    if (canAdd) stringResource(R.string.add_medication) else null,
                     onAddMedication, iconRes = R.drawable.ic_bold_pills)
             }
         } else {

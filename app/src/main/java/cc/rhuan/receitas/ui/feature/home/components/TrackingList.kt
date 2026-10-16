@@ -54,7 +54,7 @@ fun TrackingList(
 
 @Composable
 fun NextEventHeader() {
-    cc.rhuan.receitas.ui.components.SectionHeading(stringResource(R.string.ui_proximos_eventos))
+    cc.rhuan.receitas.ui.components.SectionHeading(stringResource(R.string.upcoming_events))
 }
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -63,7 +63,7 @@ fun NextEventCard(item: TrackingItem, onClick: () -> Unit, onNavigateToDate: (Lo
     modifier: Modifier = Modifier) {
     val iconRes = if (item is TrackingItem.Prescription) R.drawable.ic_bold_document_medicine else R.drawable.ic_bold_pills
     val typeLabel = if (item is TrackingItem.Prescription) stringResource(R.string.label_prescription) else stringResource(R.string.label_medication)
-    val eventLabel = if (item is TrackingItem.Prescription) stringResource(R.string.ui_vencimento_da_receita) else stringResource(R.string.ui_retirada_de_medicamento)
+    val eventLabel = if (item is TrackingItem.Prescription) stringResource(R.string.prescription_expiration) else stringResource(R.string.medication_pickup)
     Card(modifier.fillMaxWidth().clickable(onClick = onClick), shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.fillMaxWidth().padding(T.padding), verticalArrangement = Arrangement.spacedBy(T.small)) {

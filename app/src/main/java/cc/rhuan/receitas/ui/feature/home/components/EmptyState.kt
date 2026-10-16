@@ -81,7 +81,7 @@ fun EmptyDayState(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = stringResource(R.string.ui_nada_programado_para_este_dia),
+                    text = stringResource(R.string.nothing_scheduled_today),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
@@ -89,7 +89,7 @@ fun EmptyDayState(
                     )
                 )
                 Text(
-                    text = stringResource(R.string.ui_nao_ha_retiradas_ou_vencimentos_para_a_data_selecionada),
+                    text = stringResource(R.string.no_events_on_selected_date),
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -111,8 +111,8 @@ fun EmptyHomeState(
         contentAlignment = Alignment.Center
     ) {
         EmptyState(
-            title = stringResource(R.string.ui_nenhum_acompanhamento_cadastrado),
-            description = stringResource(R.string.ui_adicione_um_medicamento_ou_uma_receita_para_comecar_a_gerenciar_seus_lembre),
+            title = stringResource(R.string.no_tracking_registered),
+            description = stringResource(R.string.tracking_empty_guidance),
             icon = {
                 Icon(Icons.Rounded.MedicalServices, null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -120,10 +120,10 @@ fun EmptyHomeState(
             },
             actions = {
                 cc.rhuan.receitas.ui.components.GuidanceActionButton(
-                    stringResource(R.string.ui_adicionar_receita), onNavigateToPrescriptions,
+                    stringResource(R.string.add_prescription), onNavigateToPrescriptions,
                     Modifier.fillMaxWidth())
                 cc.rhuan.receitas.ui.components.GuidanceActionButton(
-                    stringResource(R.string.ui_adicionar_medicamento), onNavigateToMedications,
+                    stringResource(R.string.add_medication), onNavigateToMedications,
                     Modifier.fillMaxWidth(), outlined = true)
             }
         )

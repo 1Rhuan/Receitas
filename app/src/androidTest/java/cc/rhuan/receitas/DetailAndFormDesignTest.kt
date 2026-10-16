@@ -16,7 +16,7 @@ import cc.rhuan.receitas.domain.model.*
 import cc.rhuan.receitas.ui.feature.prescriptions.*
 import cc.rhuan.receitas.ui.feature.prescriptions.wizard.*
 import cc.rhuan.receitas.ui.feature.medications.*
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import java.io.File
 import java.time.LocalDate
 import org.junit.Rule
@@ -38,7 +38,7 @@ class DetailAndFormDesignTest {
         node.performClick()
     }
     private fun show(dark: Boolean = false, scale: Float = 1f, content: @Composable () -> Unit) {
-        compose.setContent { ReceitasTheme(darkTheme = dark) {
+        compose.setContent { AppTheme(darkTheme = dark) {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 Box(Modifier.requiredSize(320.dp, 640.dp)) { content() }

@@ -23,7 +23,7 @@ import org.junit.Assert.*
 import java.io.File
 import java.time.LocalDate
 
-class MedicamentosPreviewTest {
+class MedicationsPreviewTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private fun capture(name: String) {
         compose.waitForIdle()
@@ -37,8 +37,8 @@ class MedicamentosPreviewTest {
         }
     }
     private fun show(dark: Boolean = false, small: Boolean = false, scale: Float = 1f,
-        data: MedicationsUiState = medicationPreviewState()) {
-        compose.setContent { ReceitasTheme(darkTheme = dark) {
+        data: MedicationsUiState = medicationPreviewState(TestTexts)) {
+        compose.setContent { AppTheme(darkTheme = dark) {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 DesignTheme {
@@ -64,12 +64,12 @@ class MedicamentosPreviewTest {
     @Test fun noResultsDoubleFontKeepsFiltersAndClearActionReachable() = noResults(2f)
     private fun noResults(scale: Float) {
         var query = "sem resultado"
-        var source = MedicationSource.OUTRO.label
-        compose.setContent { ReceitasTheme(darkTheme = scale > 1f) {
+        var source = MedicationSource.OTHER.name
+        compose.setContent { AppTheme(darkTheme = scale > 1f) {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 Box(Modifier.requiredSize(320.dp, 640.dp)) {
-                    MedicationsScreenContent(medicationPreviewState().copy(searchQuery = query, selectedSourceFilter = source,
+                    MedicationsScreenContent(medicationPreviewState(TestTexts).copy(searchQuery = query, selectedSourceFilter = source,
                         filteredMedications = emptyList()), { query = it }, { source = it }, {}, {}, {}, remember { SnackbarHostState() })
                 }
             }
@@ -82,7 +82,7 @@ class MedicamentosPreviewTest {
         capture("medicamentos-no-results-$scale")
         compose.onNodeWithText("Limpar busca e filtros").performClick()
         assertEquals("", query)
-        assertEquals("TODOS", source)
+        assertEquals("ALL", source)
     }
     @Test fun smallAndLongText() {
         show(small = true, scale = 2f)
@@ -106,9 +106,9 @@ class MedicamentosPreviewTest {
         var source = ""
         var opened = ""
         var created = 0
-        compose.setContent { ReceitasTheme {
+        compose.setContent { AppTheme {
             DesignTheme { Scaffold(bottomBar = { TextNavigationBar("medications", {}, { created++ }) }) { padding ->
-            MedicationsScreenContent(medicationPreviewState().copy(searchQuery = query), { query = it }, { source = it }, {},
+            MedicationsScreenContent(medicationPreviewState(TestTexts).copy(searchQuery = query), { query = it }, { source = it }, {},
                 { opened = it.id }, { created++ }, remember { SnackbarHostState() }, Modifier.padding(padding))
             } }
         } }
@@ -122,7 +122,7 @@ class MedicamentosPreviewTest {
         compose.onNode(hasText("Compra própria") and hasAnyAncestor(hasTestTag("list-options-scroll"))).performScrollTo().performClick()
         assertEquals("", source)
         compose.onNodeWithText("Concluir").performClick()
-        assertEquals(MedicationSource.COMPRA_PROPRIA.label, source)
+        assertEquals(MedicationSource.SELF_PURCHASE.name, source)
         compose.onNodeWithTag("medication-list").performScrollToNode(hasText("Losartana potássica"))
         compose.onNodeWithText("Losartana potássica").performClick()
         assertEquals("med-preview-1", opened)
@@ -131,8 +131,8 @@ class MedicamentosPreviewTest {
         var registeredId = ""
         var registeredCycle: LocalDate? = null
         var confirmedEarly = false
-        compose.setContent { ReceitasTheme {
-            MedicationsPresentation(uiState = medicationPreviewState(),
+        compose.setContent { AppTheme {
+            MedicationsPresentation(uiState = medicationPreviewState(TestTexts),
                 registerPickup = { id, _, early, cycle -> registeredId = id; confirmedEarly = early; registeredCycle = cycle },
                 dismissSnackbar = {}, onSearchQueryChanged = {}, onSourceFilterSelected = {}, loadMedications = {})
         } }

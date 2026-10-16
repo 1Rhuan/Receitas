@@ -25,7 +25,7 @@ import org.junit.Test
 import org.junit.Assert.assertEquals
 import java.io.File
 
-class ReceitasPreviewTest {
+class PrescriptionsPreviewTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private fun capture(name: String) {
         compose.waitForIdle()
@@ -40,9 +40,9 @@ class ReceitasPreviewTest {
         }
     }
     private fun show(dark: Boolean = false, small: Boolean = false, scale: Float = 1f,
-        data: PrescriptionsUiState = designPreviewState(), onCreate: () -> Unit = {}) {
+        data: PrescriptionsUiState = designPreviewState(TestTexts), onCreate: () -> Unit = {}) {
         compose.setContent {
-            ReceitasTheme(darkTheme = dark) {
+            AppTheme(darkTheme = dark) {
                 val density = LocalDensity.current
                 CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 DesignTheme {
@@ -58,7 +58,7 @@ class ReceitasPreviewTest {
         compose.waitForIdle()
     }
     @Test fun lightPreviewAndLongRecipe() {
-        val sample = designPreviewState()
+        val sample = designPreviewState(TestTexts)
         show(data = sample.copy(prescriptions = sample.prescriptions + List(4) { index ->
             sample.prescriptions.last().copy(id = "scroll-extra-$index", title = "Receita adicional $index")
         }))
@@ -94,9 +94,9 @@ class ReceitasPreviewTest {
         var created = 0
         var purchased = ""
         var opened = ""
-        compose.setContent { ReceitasTheme {
+        compose.setContent { AppTheme {
             DesignTheme { Scaffold(bottomBar = { TextNavigationBar("prescriptions", {}, { created++ }) }) { padding ->
-            PrescriptionsScreenContent(designPreviewState(), {}, {}, Modifier.padding(padding),
+            PrescriptionsScreenContent(designPreviewState(TestTexts), {}, {}, Modifier.padding(padding),
                 onCreatePrescriptionClick = { created++ }, onPurchaseClick = { purchased = it.id },
                 onPrescriptionClick = { opened = it.id })
             } }
@@ -110,8 +110,8 @@ class ReceitasPreviewTest {
         assertEquals("preview-1", opened)
     }
     @Test fun searchAndClearRecoverTheList() {
-        compose.setContent { ReceitasTheme {
-            var state by remember { mutableStateOf(designPreviewState()) }
+        compose.setContent { AppTheme {
+            var state by remember { mutableStateOf(designPreviewState(TestTexts)) }
             PrescriptionsScreenContent(state, { state = state.copy(searchQuery = it) },
                 { state = state.copy(selectedFilter = it) })
         } }

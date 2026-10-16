@@ -20,7 +20,7 @@ fun PickupHistoryScreen(medication: MedicationItem, onBack: () -> Unit,
     onCorrect: (String, LocalDate) -> Unit, onDelete: (String) -> Unit,
     modifier: Modifier = Modifier, snackbarHost: @Composable () -> Unit = {}) {
     Scaffold(modifier.fillMaxSize(), containerColor = MaterialTheme.colorScheme.background,
-        topBar = { DetailHeader(stringResource(R.string.ui_historico_de_retiradas), onBack) },
+        topBar = { DetailHeader(stringResource(R.string.pickup_history), onBack) },
         snackbarHost = snackbarHost) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding).testTag("pickup-history-list"),
             contentPadding = PaddingValues(horizontal = T.margin, vertical = T.padding),
@@ -33,7 +33,7 @@ fun PickupHistoryScreen(medication: MedicationItem, onBack: () -> Unit,
                 }
             }
             if (medication.pickupHistory.isEmpty()) item("empty") {
-                ContentCard { Text(stringResource(R.string.ui_nenhuma_retirada_registrada)) }
+                ContentCard { Text(stringResource(R.string.no_pickups_recorded)) }
             }
             val sortedEvents = medication.pickupHistory.sortedWith(compareByDescending<cc.rhuan.receitas.domain.model.PickupEvent> { it.occurredOn }.thenByDescending { it.recordedAt })
             items(sortedEvents, key = { it.id }) { event ->

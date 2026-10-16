@@ -49,7 +49,16 @@ class Converters {
 
     @TypeConverter
     fun toMedicationSource(value: String?): MedicationSource? {
-        return value?.let { runCatching { MedicationSource.valueOf(it) }.getOrNull() }
+        // Older database versions used these storage codes. New writes use enum names.
+        val code = when (value) {
+            "COMPRA_PROPRIA" -> "SELF_PURCHASE"
+            "CONVENIO" -> "HEALTH_INSURANCE"
+            "FARMACIA_POPULAR" -> "POPULAR_PHARMACY"
+            "FARMACIA_BASICA" -> "PUBLIC_PHARMACY"
+            "OUTRO" -> "OTHER"
+            else -> value
+        }
+        return code?.let { runCatching { MedicationSource.valueOf(it) }.getOrNull() }
     }
 
     @TypeConverter
@@ -59,7 +68,16 @@ class Converters {
 
     @TypeConverter
     fun toPrescriptionType(value: String?): PrescriptionType? {
-        return value?.let { runCatching { PrescriptionType.valueOf(it) }.getOrNull() }
+        val code = when (value) {
+            "CONTINUO" -> "CONTINUOUS_USE"
+            "ANTIBIOTICO" -> "ANTIBIOTIC"
+            "CONTROLADO" -> "CONTROLLED"
+            "FARMACIA_POPULAR" -> "POPULAR_PHARMACY"
+            "ANUAL" -> "ANNUAL_USE"
+            "PERSONALIZADO" -> "CUSTOM"
+            else -> value
+        }
+        return code?.let { runCatching { PrescriptionType.valueOf(it) }.getOrNull() }
     }
 
     @TypeConverter

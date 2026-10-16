@@ -24,13 +24,13 @@ class ExploratoryUseTest {
     private val title = "Teste de uso $id"
     private val today = LocalDate.now()
     private val db get() = AppDatabase.getDatabase(compose.activity)
-    private val medications get() = RoomMedicationRepository(db)
-    private val prescriptions get() = RoomPrescriptionRepository(db)
+    private val medications get() = RoomMedicationRepository(TestTexts, db)
+    private val prescriptions get() = RoomPrescriptionRepository(TestTexts, db)
 
     @Before fun setup() = runBlocking {
         if (Build.VERSION.SDK_INT >= 33) InstrumentationRegistry.getInstrumentation().uiAutomation
             .grantRuntimePermission("cc.rhuan.receitas", Manifest.permission.POST_NOTIFICATIONS)
-        RoomPrescriptionRegistrationRepository(db, prescriptions, medications, RoomDoctorRepository(db.doctorDao())).save(
+        RoomPrescriptionRegistrationRepository(TestTexts, db, prescriptions, medications, RoomDoctorRepository(db.doctorDao())).save(
             PrescriptionItem(id, "Receita $title", "", issueDate = today.minusDays(20), customValidityDays = 30, medicationIds = listOf(id)),
             listOf(MedicationItem(id, title, lastRefillDate = today.minusDays(15), refillCycleDays = 30, linkedPrescriptionId = id)), null)
     }

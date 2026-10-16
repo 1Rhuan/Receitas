@@ -1,5 +1,9 @@
 package cc.rhuan.receitas.ui.feature.home
 
+import cc.rhuan.receitas.text.TextResolver
+
+import cc.rhuan.receitas.R
+
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,13 +28,14 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    private val texts: TextResolver,
     application: Application,
     private val prescriptionRepository: PrescriptionRepository,
     private val medicationRepository: MedicationRepository,
     private val notificationRepository: NotificationRepository,
 ) : AndroidViewModel(application) {
 
-    private val _uiState = MutableStateFlow(HomeUiState())
+    private val _uiState = MutableStateFlow(HomeUiState(texts = texts))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private var loadDataJob: Job? = null
@@ -48,15 +53,15 @@ class HomeViewModel @Inject constructor(
                     prescriptionRepository.getPrescriptions(),
                     medicationRepository.getMedications(),
                     notificationRepository.getNotifications(),
-                ) { prescriptions, medicamentos, notifications ->
-                    HomeData(prescriptions, medicamentos, notifications)
+                ) { prescriptions, medications, notifications ->
+                    HomeData(prescriptions, medications, notifications)
                 }.collect { data ->
 
                     val unreadCount = data.notifications.count { !it.isRead }
                     _uiState.update { currentState ->
                         currentState.copy(
                             prescriptions = data.prescriptions,
-                            medicamentos = data.medicamentos,
+                            medications = data.medications,
                             notifications = data.notifications,
                             unreadNotificationsCount = unreadCount,
                             isLoading = false,
@@ -71,7 +76,7 @@ class HomeViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        errorMessage = "Não foi possível carregar os acompanhamentos.",
+                        errorMessage = texts.get(R.string.tracking_load_error),
                     )
                 }
             }
@@ -89,9 +94,9 @@ class HomeViewModel @Inject constructor(
     fun registerPickup(id: String, date: LocalDate, confirmedEarly: Boolean, expectedCycle: LocalDate?) {
         viewModelScope.launch {
             try { val result = medicationRepository.registerPickup(id, date, confirmedEarly, expectedCycle)
-                _uiState.update { it.copy(snackbarMessage = result.message()) }
+                _uiState.update { it.copy(snackbarMessage = texts.resolve(result.message())) }
             } catch (e: CancellationException) { throw e }
-            catch (_: Exception) { _uiState.update { it.copy(snackbarMessage = "Não foi possível registrar a retirada.") } }
+            catch (_: Exception) { _uiState.update { it.copy(snackbarMessage = texts.get(R.string.pickup_record_error)) } }
         }
     }
 
@@ -107,6 +112,6 @@ class HomeViewModel @Inject constructor(
 
 private data class HomeData(
     val prescriptions: List<PrescriptionItem>,
-    val medicamentos: List<MedicationItem>,
+    val medications: List<MedicationItem>,
     val notifications: List<NotificationItem>,
 )

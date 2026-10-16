@@ -6,6 +6,7 @@ import cc.rhuan.receitas.domain.model.PrescriptionType
 import java.time.LocalDate
 
 internal data class WizardCallbacks(
+    val addSavedMedication: () -> Unit = {},
     val skip: () -> Unit = {},
     val updateIssueDate: (LocalDate) -> Unit = {},
     val openTypeEditor: () -> Unit = {},

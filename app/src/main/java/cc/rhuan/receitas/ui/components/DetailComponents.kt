@@ -57,7 +57,7 @@ fun FormSection(title: String, modifier: Modifier = Modifier, prominent: Boolean
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(T.padding)) {
         if (prominent) Text(title, modifier = Modifier.padding(top = T.section, bottom = T.gap).semantics { heading() },
             style = MaterialTheme.typography.headlineSmall)
-        else SectionHeading(title)
+        else if (title.isNotBlank()) SectionHeading(title)
         content()
     }
 }

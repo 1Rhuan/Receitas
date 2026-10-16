@@ -57,13 +57,13 @@ fun MedicationDetailContent(
     }
     med?.let { m ->
         if (choosingRemoval) RemovalChoiceDialog(stringResource(R.string.design_remove_medication), !m.trackingArchived,
-            stringResource(R.string.ui_o_historico_sera_preservado_e_os_lembretes_serao_encerrados),
-            stringResource(R.string.ui_o_acompanhamento_e_suas_retiradas_tambem_serao_excluidos_esta_acao_nao_pode),
+            stringResource(R.string.archive_tracking_confirmation),
+            stringResource(R.string.delete_medication_confirmation),
             onArchive = { choosingRemoval = false; archiving = true },
             onDelete = { choosingRemoval = false; deleting = true }, onDismiss = { choosingRemoval = false })
         if (pickup) PickupDialog(m, onDismiss = { pickup = false }, onConfirm = onPickup)
-        if (deleting) ConfirmationSheet(title = stringResource(R.string.ui_excluir_medicamento_definitivamente), message = stringResource(R.string.ui_o_acompanhamento_e_suas_retiradas_tambem_serao_excluidos_esta_acao_nao_pode), confirmLabel = stringResource(R.string.action_delete), onConfirm = { deleting = false; onDelete() }, onDismiss = { deleting = false }, destructive = true)
-        if (archiving) ConfirmationSheet(title = stringResource(R.string.ui_arquivar_acompanhamento), message = stringResource(R.string.ui_o_historico_sera_preservado_e_os_lembretes_serao_encerrados), confirmLabel = stringResource(R.string.action_archive), onConfirm = { archiving = false; onArchive(true) }, onDismiss = { archiving = false }, destructive = false)
+        if (deleting) ConfirmationSheet(title = stringResource(R.string.delete_medication_permanently), message = stringResource(R.string.delete_medication_confirmation), confirmLabel = stringResource(R.string.action_delete), onConfirm = { deleting = false; onDelete() }, onDismiss = { deleting = false }, destructive = true)
+        if (archiving) ConfirmationSheet(title = stringResource(R.string.archive_tracking), message = stringResource(R.string.archive_tracking_confirmation), confirmLabel = stringResource(R.string.action_archive), onConfirm = { archiving = false; onArchive(true) }, onDismiss = { archiving = false }, destructive = false)
     }
     Scaffold(topBar = { DetailHeader(stringResource(R.string.design_medication_details), onBack) }, snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(detailScrollState).padding(horizontal = T.margin, vertical = T.padding), verticalArrangement = Arrangement.spacedBy(T.gap)) {
@@ -86,7 +86,7 @@ fun MedicationDetailContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 m.trackingError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 GroupedSection(stringResource(R.string.design_medication_data)) {
-                    GroupedValueRow(stringResource(R.string.design_medication_form), m.form.label, divider = false)
+                    GroupedValueRow(stringResource(R.string.design_medication_form), stringResource(m.form.labelRes), divider = false)
                     m.activeIngredient?.takeIf { it.isNotBlank() }?.let {
                         GroupedValueRow(stringResource(R.string.design_active_ingredient), it)
                     }
@@ -101,16 +101,16 @@ fun MedicationDetailContent(
                 }
                 GroupedSection(stringResource(R.string.design_pickup_tracking)) {
                     GroupedValueRow(stringResource(R.string.design_record_state), stringResource(when {
-                        m.trackingArchived -> R.string.ui_arquivada
-                        m.hasRecurringPickup -> R.string.ui_ativa
-                        else -> R.string.ui_sem_retirada_recorrente
+                        m.trackingArchived -> R.string.state_archived
+                        m.hasRecurringPickup -> R.string.state_active
+                        else -> R.string.no_recurring_pickup
                     }), divider = false)
                     m.lastRefillDate?.let { GroupedValueRow(stringResource(R.string.design_last_pickup), it.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) }
                     if (m.hasRecurringPickup) GroupedValueRow(stringResource(R.string.design_pickup_interval),
                         intervalText(m.refillCycleDays, m.intervalUnit))
                     m.nextAvailableRefillDate?.let { GroupedValueRow(stringResource(R.string.design_next_pickup), it.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) }
                     if (m.quantity.isNotBlank()) GroupedValueRow(stringResource(R.string.design_pickup_amount), m.quantity)
-                    GroupedValueRow(stringResource(R.string.design_pickup_location), m.sourceName?.takeIf { it.isNotBlank() } ?: m.source.label)
+                    GroupedValueRow(stringResource(R.string.design_pickup_location), m.sourceName?.takeIf { it.isNotBlank() } ?: stringResource(m.source.labelRes))
                     if (m.linkedPrescriptionId != null) GroupedValueRow(stringResource(R.string.design_tracking_recipe),
                         state.pickupPrescription?.title ?: stringResource(R.string.design_tracking_recipe_unavailable), stacked = true)
                     val validityStatus = cc.rhuan.receitas.domain.usecase.CheckRefillStatusUseCase()(m, listOfNotNull(state.pickupPrescription))
@@ -129,7 +129,7 @@ fun MedicationDetailContent(
                 if (m.hasRecurringPickup && !m.trackingArchived) ActionButton(stringResource(R.string.action_register_pickup), { pickup = true }, Modifier.fillMaxWidth())
                 SectionHeading(stringResource(R.string.design_recent_pickups))
                 val recent = m.pickupHistory.sortedWith(compareByDescending<PickupEvent> { it.occurredOn }.thenByDescending { it.recordedAt }).take(3)
-                if (recent.isEmpty()) Text(stringResource(R.string.ui_nenhuma_retirada_registrada),
+                if (recent.isEmpty()) Text(stringResource(R.string.no_pickups_recorded),
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 else Column {
                     recent.forEachIndexed { index, event ->

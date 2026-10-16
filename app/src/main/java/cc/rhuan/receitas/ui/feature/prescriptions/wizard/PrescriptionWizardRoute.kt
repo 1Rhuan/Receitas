@@ -12,6 +12,7 @@ fun PrescriptionWizardScreen(
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
     onViewSaved: (String?) -> Unit = { onNavigateUp() },
+    onAddSavedMedication: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.isSaved) {
@@ -21,6 +22,7 @@ fun PrescriptionWizardScreen(
         state = state,
         onNavigateUp = onNavigateUp,
         actions = WizardCallbacks(
+            addSavedMedication = { state.savedPrescriptionId?.let(onAddSavedMedication) },
             skip = viewModel::skipStep,
             updateIssueDate = viewModel::updateIssueDate,
             openTypeEditor = viewModel::openTypeEditor,

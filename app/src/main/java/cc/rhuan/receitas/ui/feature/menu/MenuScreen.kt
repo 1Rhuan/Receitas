@@ -42,7 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 
 @Composable
 fun MenuScreen(
@@ -65,7 +65,7 @@ fun MenuScreen(
                     .padding(horizontal = 16.dp, vertical = 16.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.ui_menu),
+                    text = stringResource(R.string.menu),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
@@ -74,7 +74,7 @@ fun MenuScreen(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = stringResource(R.string.ui_lembretes_e_informacoes_do_aplicativo),
+                    text = stringResource(R.string.app_reminders_and_information),
                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -85,11 +85,11 @@ fun MenuScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                // Seção Conta
+                // Account section
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = stringResource(R.string.ui_opcoes),
+                            text = stringResource(R.string.options),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
@@ -104,22 +104,22 @@ fun MenuScreen(
                             Column {
                                 MenuItemRow(
                                     icon = Icons.Default.Person,
-                                    title = stringResource(R.string.ui_meu_perfil),
-                                    subtitle = stringResource(R.string.ui_dados_pessoais_em_breve),
+                                    title = stringResource(R.string.my_profile),
+                                    subtitle = stringResource(R.string.personal_details_coming_soon),
                                     onClick = null,
                                 )
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                                 MenuItemRow(
                                     icon = Icons.Default.Notifications,
                                     title = stringResource(R.string.notifications_title),
-                                    subtitle = stringResource(R.string.ui_ver_central_de_avisos_e_lembretes),
+                                    subtitle = stringResource(R.string.open_notification_center),
                                     onClick = onNavigateToNotifications,
                                 )
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                                 MenuItemRow(
                                     icon = Icons.Default.Settings,
-                                    title = stringResource(R.string.ui_configuracoes),
-                                    subtitle = stringResource(R.string.ui_preferencias_em_breve),
+                                    title = stringResource(R.string.settings),
+                                    subtitle = stringResource(R.string.preferences_coming_soon),
                                     onClick = {},
                                 )
                             }
@@ -127,11 +127,11 @@ fun MenuScreen(
                     }
                 }
 
-                // Seção Suporte & Sobre
+                // Support and about section
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = stringResource(R.string.ui_geral),
+                            text = stringResource(R.string.general),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
@@ -146,15 +146,15 @@ fun MenuScreen(
                             Column {
                                 MenuItemRow(
                                     icon = Icons.AutoMirrored.Filled.Help,
-                                    title = stringResource(R.string.ui_ajuda_e_suporte),
-                                    subtitle = stringResource(R.string.ui_ajuda_em_breve),
+                                    title = stringResource(R.string.help_and_support),
+                                    subtitle = stringResource(R.string.help_coming_soon),
                                     onClick = {},
                                 )
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                                 MenuItemRow(
                                     icon = R.drawable.ic_info_circle,
-                                    title = stringResource(R.string.ui_sobre_o_receitas),
-                                    subtitle = version?.let { stringResource(R.string.app_version, it) } ?: stringResource(R.string.ui_organize_receitas_e_acompanhe_retiradas),
+                                    title = stringResource(R.string.about_app),
+                                    subtitle = version?.let { stringResource(R.string.app_version, it) } ?: stringResource(R.string.app_description),
                                     onClick = {},
                                 )
                             }
@@ -236,7 +236,7 @@ private fun MenuItemRow(
 @Preview(showBackground = true)
 @Composable
 private fun MenuScreenPreview() {
-    ReceitasTheme {
+    AppTheme {
         MenuScreen()
     }
 }

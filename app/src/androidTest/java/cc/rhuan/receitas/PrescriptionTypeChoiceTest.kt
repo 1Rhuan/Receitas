@@ -14,7 +14,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import cc.rhuan.receitas.domain.model.PrescriptionType
 import cc.rhuan.receitas.ui.feature.prescriptions.wizard.*
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -28,7 +28,7 @@ class PrescriptionTypeChoiceTest {
 
     private fun show(dark: Boolean = false, scale: Float = 1f, onSelect: (PrescriptionType) -> Unit) {
         compose.setContent {
-            ReceitasTheme(darkTheme = dark) {
+            AppTheme(darkTheme = dark) {
                 val density = LocalDensity.current
                 CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                     var state by remember { mutableStateOf(PrescriptionWizardUiState(currentStep = 2, issueDate = issueDate)) }
@@ -37,10 +37,8 @@ class PrescriptionTypeChoiceTest {
                             openTypeEditor = { state = state.copy(typeEditor = PrescriptionTypeDraft(state.type, state.validityDays, state.validityDaysInput, state.validityOrigin, state.validityDateMode)) },
                             cancelTypeEditor = { state = state.copy(typeEditor = null) },
                             selectType = { type ->
-                                if (type.defaultValidityDays != null) {
-                                    onSelect(type)
-                                    state = state.copy(type = type, validityDays = type.defaultValidityDays, validityDaysInput = type.defaultValidityDays.toString(), typeEditor = null, currentStep = 3)
-                                } else state = state.copy(typeEditor = state.typeEditor!!.copy(type = type, validityDays = null, validityDaysInput = ""))
+                                state = state.copy(typeEditor = state.typeEditor!!.copy(type = type,
+                                    validityDays = type.defaultValidityDays, validityDaysInput = type.defaultValidityDays?.toString().orEmpty()))
                             },
                             update = { state = it(state) },
                             updateValidityDays = { value -> state = state.copy(typeEditor = state.typeEditor!!.copy(validityDaysInput = value, validityDays = value.toIntOrNull(), validityOrigin = "USER_ENTERED")) },
@@ -69,7 +67,7 @@ class PrescriptionTypeChoiceTest {
         }
     }
 
-    private fun openChoices() = clickFormOption("Tipo de receita")
+    private fun openChoices() = clickFormOption("Validade")
 
     private fun scrollToEnd() {
         compose.onNodeWithTag("wizard-content").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.ScrollBy) { it(0f, 10000f) }
@@ -101,17 +99,20 @@ class PrescriptionTypeChoiceTest {
         node.performClick()
     }
 
-    @Test fun presetTypesAdvanceWithSuggestedDaysAndOpenAlerts() {
+    @Test fun presetTypesRequireAdvanceToApplyValidity() {
         var selected: PrescriptionType? = null
         show { selected = it }
         openChoices()
-        compose.onNodeWithText("Tipo e validade da receita").assertIsDisplayed()
+        compose.onNodeWithText("Qual é a validade da receita?").assertIsDisplayed()
         compose.onNodeWithTag("form-choice-option-0").assertIsSelected()
-        compose.onNodeWithText("Para medicamentos usados de forma contínua." + "\n" + "Validade sugerida: 180 dias.").assertIsDisplayed()
+        compose.onNodeWithText("Para medicamentos usados de forma contínua." + "\n" + "Validade: 180 dias.").assertIsDisplayed()
         compose.onNodeWithText("Validade em dias").assertDoesNotExist()
         capture("type-page-light")
         chooseType(1)
-        assertEquals(PrescriptionType.ANTIBIOTICO, selected)
+        assertNull(selected)
+        compose.onNodeWithTag("form-choice-option-1").assertIsSelected()
+        compose.onNodeWithText("Avançar").performClick()
+        assertEquals(PrescriptionType.ANTIBIOTIC, selected)
         compose.onNodeWithTag("form-choice-option-1").assertDoesNotExist()
         compose.onNodeWithText("Alertas de vencimento").assertIsDisplayed()
         compose.onNodeWithText("Receber alertas de validade e renovação").performScrollTo().assertIsDisplayed()
@@ -124,8 +125,10 @@ class PrescriptionTypeChoiceTest {
         var selected: PrescriptionType? = null
         show { selected = it }
         openChoices()
-        chooseType(PrescriptionType.ANUAL.ordinal)
-        assertEquals(PrescriptionType.ANUAL, selected)
+        chooseType(PrescriptionType.ANNUAL_USE.ordinal)
+        assertNull(selected)
+        compose.onNodeWithText("Avançar").performClick()
+        assertEquals(PrescriptionType.ANNUAL_USE, selected)
         compose.onNodeWithText("Alertas de vencimento").assertIsDisplayed()
         capture("annual-type-alerts")
     }
@@ -134,17 +137,19 @@ class PrescriptionTypeChoiceTest {
         var selected: PrescriptionType? = null
         show { selected = it }
         openChoices()
-        chooseType(PrescriptionType.PERSONALIZADO.ordinal)
+        chooseType(PrescriptionType.CUSTOM.ordinal)
+        compose.onNodeWithContentDescription("Validade em dias").assertDoesNotExist()
+        compose.onNodeWithText("Avançar").performClick()
         compose.onNodeWithContentDescription("Validade em dias").performScrollTo().performTextReplacement("45")
         compose.onNodeWithContentDescription("Voltar").performClick()
         assertNull(selected)
-        compose.onNodeWithTag("form-choice-option-${PrescriptionType.PERSONALIZADO.ordinal}").assertIsSelected()
+        compose.onNodeWithTag("form-choice-option-${PrescriptionType.CUSTOM.ordinal}").assertIsSelected()
         compose.onNodeWithContentDescription("Validade em dias").assertDoesNotExist()
         compose.onNodeWithText("Avançar").performClick()
         compose.onNodeWithContentDescription("Validade em dias").performScrollTo().assertTextContains("45")
         compose.onNodeWithContentDescription("Voltar").performClick()
         compose.onNodeWithContentDescription("Voltar").performClick()
-        compose.onNodeWithText("Uso contínuo").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("180 dias").performScrollTo().assertIsDisplayed()
         openChoices()
         compose.onNodeWithTag("form-choice-option-0").assertIsSelected()
         compose.onNodeWithText("Validade em dias").assertDoesNotExist()
@@ -153,19 +158,21 @@ class PrescriptionTypeChoiceTest {
         var selected: PrescriptionType? = null
         show(dark = true, scale = 2f) { selected = it }
         openChoices()
-        chooseType(PrescriptionType.PERSONALIZADO.ordinal)
-        compose.onNodeWithTag("form-choice-option-${PrescriptionType.PERSONALIZADO.ordinal}").assertDoesNotExist()
-        compose.onNodeWithText("Validade da receita").assertIsDisplayed()
+        chooseType(PrescriptionType.CUSTOM.ordinal)
+        compose.onNodeWithContentDescription("Validade em dias").assertDoesNotExist()
+        compose.onNodeWithText("Avançar").performClick()
+        compose.onNodeWithTag("form-choice-option-${PrescriptionType.CUSTOM.ordinal}").assertDoesNotExist()
+        compose.onNodeWithText("Como definir a validade?").assertIsDisplayed()
         compose.onNodeWithText("Usar validade personalizada").assertIsDisplayed()
         compose.onNodeWithContentDescription("Validade em dias").performScrollTo().performTextReplacement("45")
         compose.runOnIdle { (compose.activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(compose.activity.window.decorView.windowToken, 0) }
-        clickFormOption("Escolher a data de vencimento")
+        clickFormOption("Data de vencimento")
         compose.onNodeWithText("Vencimento personalizado").performScrollTo().assertIsDisplayed()
         scrollToEnd()
         assertAboveAction(issueDate.plusDays(45).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
         capture("type-page-dark-200")
         compose.onNodeWithText("Usar validade personalizada").performClick()
-        assertEquals(PrescriptionType.PERSONALIZADO, selected)
+        assertEquals(PrescriptionType.CUSTOM, selected)
         compose.onNodeWithText("Alertas de vencimento").assertIsDisplayed()
         compose.onNodeWithText("Receber alertas de validade e renovação").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("5 dias antes").performScrollTo().assertIsDisplayed()

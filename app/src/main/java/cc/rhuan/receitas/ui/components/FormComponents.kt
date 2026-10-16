@@ -49,12 +49,13 @@ fun FormRecordSection(title: String, modifier: Modifier = Modifier, subtitle: St
 @Composable
 fun FormField(value: String, onChange: (String) -> Unit, label: String, placeholder: String = "",
     singleLine: Boolean = true, error: String? = null, keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    required: Boolean = false) {
+    required: Boolean = false, showLabel: Boolean = true) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(T.tight)) {
-        FormFieldLabel(label, required)
+        if (showLabel) FormFieldLabel(label, required)
         TextField(value, onChange, modifier = Modifier.fillMaxWidth().semantics { contentDescription = label },
             placeholder = { Text(placeholder) }, singleLine = singleLine, minLines = if (singleLine) 1 else 2,
-            shape = MaterialTheme.shapes.medium, keyboardOptions = keyboardOptions, isError = error != null,
+            shape = RoundedCornerShape(T.buttonRadius),
+            keyboardOptions = keyboardOptions, isError = error != null,
             colors = TextFieldDefaults.colors(focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                 focusedIndicatorColor = Color.Transparent,
@@ -67,7 +68,7 @@ fun FormField(value: String, onChange: (String) -> Unit, label: String, placehol
 private fun FormFieldLabel(label: String, required: Boolean, modifier: Modifier = Modifier) {
     val requiredDescription = stringResource(R.string.form_required)
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(T.tight)) {
-        Text(label, Modifier.weight(1f, fill = false), style = if (required) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyLarge,
+        Text(label, Modifier.weight(1f, fill = false), style = if (required) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyMedium,
             color = if (required) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
         if (required) Icon(Icons.Rounded.Info, requiredDescription, Modifier.size(T.icon),
             tint = MaterialTheme.colorScheme.primary)
@@ -85,6 +86,34 @@ fun FormToggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
 }
 
 data class FormChoiceOption(val title: String, val description: String)
+
+/** Compact record identity inside a grouped registration list. */
+@Composable
+fun FormRecordRow(title: String, subtitle: String, onEdit: () -> Unit, actions: List<ContextAction>) {
+    val identity: @Composable () -> Unit = {
+        Column(verticalArrangement = Arrangement.spacedBy(T.tight)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+    val controls: @Composable () -> Unit = {
+        Row(horizontalArrangement = Arrangement.spacedBy(T.small)) {
+            ReviewEditButton(title, onEdit)
+            OverflowActionsButton(title, actions)
+        }
+    }
+    if (LocalDensity.current.fontScale >= T.compactFontScale) {
+        Column(Modifier.fillMaxWidth().padding(T.padding), verticalArrangement = Arrangement.spacedBy(T.small)) {
+            identity()
+            controls()
+        }
+    } else Row(Modifier.fillMaxWidth().padding(T.padding), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(T.gap)) {
+        Box(Modifier.weight(1f)) { identity() }
+        controls()
+    }
+}
 
 /** Optional information opens a separate flow; the row only displays its summary. */
 @Composable
@@ -123,7 +152,7 @@ fun RadioChoiceList(options: List<String>, selectedIndex: Int, onSelect: (Int) -
                     .padding(horizontal = T.padding, vertical = T.small), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(T.gap)) {
                     Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    RadioButton(selectedIndex == index, onClick = null)
+                    RadioButton(selectedIndex == index, onClick = null, modifier = Modifier.size(T.icon))
                 }
             }
         }
@@ -140,11 +169,11 @@ fun FormChoiceField(label: String, selected: String, onClick: () -> Unit, suppor
                 horizontalArrangement = Arrangement.spacedBy(T.gap)) {
                 if (stacked) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(T.tight)) {
-                        FormFieldLabel(label, false)
+                        Text(label, style = MaterialTheme.typography.bodyMedium)
                         Text(selected, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
                     }
                 } else {
-                    FormFieldLabel(label, false, Modifier.weight(1.4f))
+                    Text(label, Modifier.weight(1.4f), style = MaterialTheme.typography.bodyMedium)
                     Text(selected, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.primary, textAlign = androidx.compose.ui.text.style.TextAlign.End)
                 }
@@ -160,10 +189,9 @@ fun FormChoiceCards(options: List<FormChoiceOption>, selectedIndex: Int, onSelec
     Column(Modifier.fillMaxWidth().selectableGroup(), verticalArrangement = Arrangement.spacedBy(T.small)) {
         options.forEachIndexed { index, option ->
             val isSelected = selectedIndex == index
-            Surface(shape = MaterialTheme.shapes.medium,
-                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                border = BorderStroke(T.hairline, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+            Surface(shape = RoundedCornerShape(T.buttonRadius),
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                contentColor = MaterialTheme.colorScheme.onSurface) {
                 Row(Modifier.fillMaxWidth().heightIn(min = T.control)
                     .testTag("form-choice-option-$index")
                     .selectable(isSelected, role = Role.RadioButton, onClick = { onSelect(index) })
@@ -171,11 +199,11 @@ fun FormChoiceCards(options: List<FormChoiceOption>, selectedIndex: Int, onSelec
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(T.tight)) {
                         Text(option.title, style = MaterialTheme.typography.titleSmall)
                         Text(option.description, style = MaterialTheme.typography.bodyMedium,
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Spacer(Modifier.width(T.small))
-                    RadioButton(selected = isSelected, onClick = null,
-                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.onPrimaryContainer))
+                    RadioButton(selected = isSelected, onClick = null, modifier = Modifier.size(T.icon),
+                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
                 }
             }
         }

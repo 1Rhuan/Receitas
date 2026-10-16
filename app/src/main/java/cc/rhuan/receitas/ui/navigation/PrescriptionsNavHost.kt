@@ -19,7 +19,7 @@ import cc.rhuan.receitas.ui.feature.prescriptions.wizard.PrescriptionWizardScree
 import androidx.navigation.NavHostController
 
 @Composable
-fun ReceitasNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
+fun PrescriptionsNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
         startDestination = NavRoute.Home.route,
@@ -107,6 +107,13 @@ fun ReceitasNavHost(navController: NavHostController, modifier: Modifier = Modif
                         popUpTo(NavRoute.PrescriptionWizard.route) { inclusive = true }
                         launchSingleTop = true
                     } else navController.popBackStack()
+                },
+                onAddSavedMedication = { id ->
+                    navController.navigate("prescription_detail/" + android.net.Uri.encode(id)) {
+                        popUpTo(NavRoute.PrescriptionWizard.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                    navController.navigate("prescription_wizard?entryMode=STANDALONE_MEDICATION&addToPrescriptionId=" + android.net.Uri.encode(id))
                 },
             )
         }

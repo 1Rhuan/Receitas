@@ -1,17 +1,15 @@
 package cc.rhuan.receitas.domain.model
 
-enum class PharmaceuticalForm(val label: String) {
-    TABLET("Comprimido"),
-    CAPSULE("Cápsula"),
-    LIQUID("Xarope ou solução"),
-    DROPS("Gotas"),
-    OINTMENT("Pomada ou creme"),
-    INJECTION("Injetável"),
-    OTHER("Outro");
+import cc.rhuan.receitas.R
 
-    companion object {
-        fun fromLabel(label: String): PharmaceuticalForm {
-            return entries.find { it.label.equals(label, ignoreCase = true) } ?: OTHER
-        }
-    }
+enum class PharmaceuticalForm(val labelRes: Int) {
+    TABLET(R.string.form_tablet),
+    CAPSULE(R.string.form_capsule),
+    LIQUID(R.string.form_liquid),
+    DROPS(R.string.form_drops),
+    OINTMENT(R.string.form_ointment),
+    INJECTION(R.string.form_injection),
+    OTHER(R.string.source_other);
+
+
 }

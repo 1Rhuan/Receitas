@@ -1,5 +1,9 @@
 package cc.rhuan.receitas.ui.feature.notifications
 
+import cc.rhuan.receitas.text.TextResolver
+
+import cc.rhuan.receitas.R
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.rhuan.receitas.data.repository.*
@@ -14,6 +18,7 @@ import java.time.LocalDate
 
 @HiltViewModel
 class NotificationsViewModel @Inject constructor(
+    private val texts: TextResolver,
     private val repository: NotificationRepository,
     private val prescriptionRepository: PrescriptionRepository,
     private val medicationRepository: MedicationRepository,
@@ -28,22 +33,22 @@ class NotificationsViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = it.notifications.isEmpty(), errorMessage = null) }
             repository.getNotifications().catch { error ->
                 if (error is CancellationException) throw error
-                _uiState.update { it.copy(isLoading = false, errorMessage = "Não foi possível carregar os alertas.") }
+                _uiState.update { it.copy(isLoading = false, errorMessage = texts.get(R.string.notifications_load_error)) }
             }.collect { items -> _uiState.update { it.copy(notifications = items, isLoading = false, errorMessage = null) } }
         }
     }
     private fun execute(action: suspend () -> Unit) {
         viewModelScope.launch {
             try { action() } catch (e: CancellationException) { throw e }
-            catch (_: Exception) { _uiState.update { it.copy(snackbarMessage = "Não foi possível atualizar os alertas. Tente novamente.") } }
+            catch (_: Exception) { _uiState.update { it.copy(snackbarMessage = texts.get(R.string.notifications_update_error)) } }
         }
     }
-    private fun obsolete() { _uiState.update { it.copy(snackbarMessage = "Este lembrete não está mais disponível. Atualize a lista.") } }
+    private fun obsolete() { _uiState.update { it.copy(snackbarMessage = texts.get(R.string.reminder_unavailable)) } }
     fun onFilterSelected(filter: NotificationFilter) { _uiState.update { it.copy(selectedFilter = filter) } }
     fun markAsRead(id: String) = execute { repository.markAsRead(id) }
-    fun markAllAsRead() = execute { repository.markAllAsRead(); _uiState.update { it.copy(snackbarMessage = "Todos os alertas foram marcados como lidos") } }
-    fun deleteNotification(id: String) = execute { repository.deleteNotification(id); _uiState.update { it.copy(snackbarMessage = "Alerta removido") } }
-    fun clearAll() = execute { repository.clearAll(); _uiState.update { it.copy(snackbarMessage = "Todos os alertas foram removidos") } }
+    fun markAllAsRead() = execute { repository.markAllAsRead(); _uiState.update { it.copy(snackbarMessage = texts.get(R.string.notifications_marked_read)) } }
+    fun deleteNotification(id: String) = execute { repository.deleteNotification(id); _uiState.update { it.copy(snackbarMessage = texts.get(R.string.notification_removed)) } }
+    fun clearAll() = execute { repository.clearAll(); _uiState.update { it.copy(snackbarMessage = texts.get(R.string.notifications_removed)) } }
     fun openRenewal(id: String, onReady: (String) -> Unit) = execute {
         repository.refresh()
         val alert = repository.getNotifications().first().find { it.id == id }
@@ -69,7 +74,7 @@ class NotificationsViewModel @Inject constructor(
         if (active == null) { obsolete(); return@execute }
         val result = medicationRepository.registerPickup(active.first.id, date, early, active.second)
         repository.refresh()
-        _uiState.update { it.copy(snackbarMessage = result.message()) }
+        _uiState.update { it.copy(snackbarMessage = texts.resolve(result.message())) }
     }
     fun dismissSnackbar() { _uiState.update { it.copy(snackbarMessage = null) } }
     fun refresh() {

@@ -1,5 +1,9 @@
 package cc.rhuan.receitas.ui.feature.medications
 
+import cc.rhuan.receitas.text.TextResolver
+
+import cc.rhuan.receitas.R
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.rhuan.receitas.data.repository.MedicationRepository
@@ -18,6 +22,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class MedicationsViewModel @Inject constructor(
+    private val texts: TextResolver,
     private val medicationRepository: MedicationRepository
 ) : ViewModel() {
 
@@ -36,7 +41,7 @@ class MedicationsViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             medicationRepository.getMedications().catch { error ->
                 if (error is CancellationException) throw error
-                _uiState.update { it.copy(isLoading = false, errorMessage = "Não foi possível carregar os medicamentos.") }
+                _uiState.update { it.copy(isLoading = false, errorMessage = texts.get(R.string.medications_load_error)) }
             }.collect { meds ->
                 _uiState.update { state ->
                     val filtered = applyFilter(meds, state.searchQuery, state.selectedSourceFilter)
@@ -58,19 +63,19 @@ class MedicationsViewModel @Inject constructor(
         }
     }
 
-    fun onSourceFilterSelected(sourceLabel: String) {
+    fun onSourceFilterSelected(sourceCode: String) {
         _uiState.update { state ->
-            val filtered = applyFilter(state.medications, state.searchQuery, sourceLabel)
-            state.copy(selectedSourceFilter = sourceLabel, filteredMedications = filtered)
+            val filtered = applyFilter(state.medications, state.searchQuery, sourceCode)
+            state.copy(selectedSourceFilter = sourceCode, filteredMedications = filtered)
         }
     }
 
     fun registerPickup(medicationId: String, date: LocalDate, early: Boolean, cycle: LocalDate?) {
         viewModelScope.launch {
             try { val result = medicationRepository.registerPickup(medicationId, date, early, cycle)
-                _uiState.update { it.copy(snackbarMessage = result.message()) }
+                _uiState.update { it.copy(snackbarMessage = texts.resolve(result.message())) }
             } catch (e: CancellationException) { throw e }
-            catch (_: Exception) { _uiState.update { it.copy(snackbarMessage = "Não foi possível registrar a retirada.") } }
+            catch (_: Exception) { _uiState.update { it.copy(snackbarMessage = texts.get(R.string.pickup_record_error)) } }
         }
     }
 
@@ -90,8 +95,8 @@ class MedicationsViewModel @Inject constructor(
                 med.dosage.contains(query, ignoreCase = true)
 
             val matchesSource = when (filter) {
-                "TODOS" -> true
-                else -> med.source.label.equals(filter, ignoreCase = true)
+                "ALL" -> true
+                else -> med.source.name.equals(filter, ignoreCase = true)
             }
 
             matchesQuery && matchesSource

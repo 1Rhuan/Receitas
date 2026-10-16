@@ -22,19 +22,19 @@ fun PickupDialog(medication: MedicationItem, initialDate: LocalDate = LocalDate.
     val context = LocalContext.current
     val format = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     val early = medication.nextAvailableRefillDate?.let { date.isBefore(it) } == true && medication.lastRefillDate?.let { date.isAfter(it) } == true
-    ActionSheet(title = stringResource(if (confirmEarly) R.string.ui_confirmar_retirada_antecipada else R.string.action_register_pickup),
+    ActionSheet(title = stringResource(if (confirmEarly) R.string.confirm_early_pickup else R.string.action_register_pickup),
         onDismiss = onDismiss, actions = {
-            SheetActionButton(stringResource(if (confirmEarly) R.string.ui_confirmar_antecipacao else R.string.ui_registrar), {
+            SheetActionButton(stringResource(if (confirmEarly) R.string.confirm_early_pickup_action else R.string.record_action), {
                 if (early && !confirmEarly) confirmEarly = true
                 else { onConfirm(date, early, medication.nextAvailableRefillDate); onDismiss() }
             })
             GuidanceActionButton(stringResource(R.string.action_cancel), onDismiss, Modifier.fillMaxWidth(), outlined = true)
         }) {
-        if (confirmEarly) Text(stringResource(R.string.ui_a_data_escolhida_e_anterior_a_previsao_confirme_que_voce_ja_retirou_o_medic),
+        if (confirmEarly) Text(stringResource(R.string.early_pickup_confirmation_message),
             style = MaterialTheme.typography.bodyLarge)
         else {
             Text(medication.title, style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.ui_informe_a_data_em_que_a_retirada_aconteceu), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.actual_pickup_date_instruction), style = MaterialTheme.typography.bodyLarge)
             SecondaryActionButton(date.format(format), {
                 DatePickerDialog(context, { _, y, m, d -> date = LocalDate.of(y, m + 1, d) },
                     date.year, date.monthValue - 1, date.dayOfMonth).apply {

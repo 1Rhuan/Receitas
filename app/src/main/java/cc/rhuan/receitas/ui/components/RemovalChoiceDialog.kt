@@ -20,7 +20,7 @@ fun RemovalChoiceDialog(title: String, canArchive: Boolean, archiveDescription: 
             Text(archiveDescription, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(T.small))
         }
-        SheetActionButton(stringResource(R.string.ui_excluir_definitivamente), onDelete, destructive = true)
+        SheetActionButton(stringResource(R.string.delete_permanently), onDelete, destructive = true)
         Text(deleteDescription, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

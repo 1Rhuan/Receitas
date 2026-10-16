@@ -18,7 +18,7 @@ data class MedicationEntity(
     val prescribedPosology: String = "",
     val prescribedQuantity: String = "",
     // Origem e Retirada
-    val source: MedicationSource = MedicationSource.COMPRA_PROPRIA,
+    val source: MedicationSource = MedicationSource.SELF_PURCHASE,
     val sourceName: String? = null,
     val hasRecurringPickup: Boolean = false,
     val lastPickupDate: LocalDate? = null,

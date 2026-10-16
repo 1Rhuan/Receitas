@@ -74,8 +74,8 @@ fun PrescriptionDetailPresentation(
     var confirmDelete by remember { mutableStateOf(false) }
     var confirmArchive by remember { mutableStateOf(false) }
     pendingPickup?.let { med -> cc.rhuan.receitas.ui.components.PickupDialog(med, onDismiss = { pendingPickup = null }) { date, early, cycle -> registerPickup(med.id, date, early, cycle) } }
-    if (confirmDelete) ConfirmationSheet(title = stringResource(R.string.ui_excluir_receita_definitivamente), message = stringResource(R.string.ui_o_documento_sera_removido_retiradas_e_acompanhamentos_serao_preservados_sem), confirmLabel = stringResource(R.string.action_delete), onConfirm = { confirmDelete = false; deleteRecipe() }, onDismiss = { confirmDelete = false }, destructive = true)
-    if (confirmArchive) ConfirmationSheet(title = stringResource(R.string.ui_arquivar_receita), message = stringResource(R.string.ui_os_dados_ficam_no_historico_os_lembretes_e_acompanhamentos_vinculados_serao), confirmLabel = stringResource(R.string.action_archive), onConfirm = { confirmArchive = false; archive(true) }, onDismiss = { confirmArchive = false }, destructive = false)
+    if (confirmDelete) ConfirmationSheet(title = stringResource(R.string.delete_prescription_permanently), message = stringResource(R.string.delete_prescription_confirmation), confirmLabel = stringResource(R.string.action_delete), onConfirm = { confirmDelete = false; deleteRecipe() }, onDismiss = { confirmDelete = false }, destructive = true)
+    if (confirmArchive) ConfirmationSheet(title = stringResource(R.string.archive_prescription), message = stringResource(R.string.archive_prescription_confirmation), confirmLabel = stringResource(R.string.action_archive), onConfirm = { confirmArchive = false; archive(true) }, onDismiss = { confirmArchive = false }, destructive = false)
 
     LaunchedEffect(uiState.isDeleted) { if (uiState.isDeleted) onBackClick() }
     LaunchedEffect(uiState.actionMessage) {
@@ -124,8 +124,8 @@ fun PrescriptionDetailContent(
     var choosingRemoval by rememberSaveable(uiState.prescription?.id) { mutableStateOf(false) }
     if (choosingRemoval && uiState.prescription != null) RemovalChoiceDialog(
         stringResource(R.string.design_remove_recipe), uiState.prescription.state == RecordState.ACTIVE,
-        stringResource(R.string.ui_os_dados_ficam_no_historico_os_lembretes_e_acompanhamentos_vinculados_serao),
-        stringResource(R.string.ui_o_documento_sera_removido_retiradas_e_acompanhamentos_serao_preservados_sem),
+        stringResource(R.string.archive_prescription_confirmation),
+        stringResource(R.string.delete_prescription_confirmation),
         onArchive = { choosingRemoval = false; onArchive() },
         onDelete = { choosingRemoval = false; onDelete() }, onDismiss = { choosingRemoval = false })
     BackHandler(enabled = viewingMedications) { viewingMedications = false }
@@ -140,7 +140,7 @@ fun PrescriptionDetailContent(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            DetailHeader(stringResource(R.string.ui_detalhes_da_receita), onBackClick)
+            DetailHeader(stringResource(R.string.prescription_details), onBackClick)
         },
     ) { innerPadding ->
         Box(
@@ -210,7 +210,7 @@ private fun PrescriptionHeaderCard(
         if (prescription.specialty.isNotBlank()) Text(prescription.specialty, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         DetailIdentityHeader(prescription.title) {
             if (prescription.state != RecordState.REPLACED) FilledTonalIconButton(onEditClick, Modifier.size(T.control)) {
-                Icon(Icons.Rounded.Edit, stringResource(R.string.ui_editar_receita))
+                Icon(Icons.Rounded.Edit, stringResource(R.string.edit_prescription))
             }
             if (prescription.state == RecordState.ARCHIVED) FilledTonalIconButton(onReactivateClick, Modifier.size(T.control)) {
                 Icon(Icons.Rounded.Restore, stringResource(R.string.action_reactivate))
@@ -220,21 +220,21 @@ private fun PrescriptionHeaderCard(
             }
         }
         StatusLabel(when {
-            prescription.daysUntilExpiration < 0 -> "Vencida"
-            prescription.daysUntilExpiration == 0 -> stringResource(R.string.ui_vence_hoje_2)
+            prescription.daysUntilExpiration < 0 -> stringResource(R.string.home_expired)
+            prescription.daysUntilExpiration == 0 -> stringResource(R.string.expires_today_alternate)
             prescription.daysUntilExpiration <= 30 -> pluralStringResource(R.plurals.prescription_expires_in_days, prescription.daysUntilExpiration, prescription.daysUntilExpiration)
             else -> stringResource(R.string.valid)
         }, attention = prescription.daysUntilExpiration <= 30)
         GroupedSection(stringResource(R.string.design_recipe_data)) {
             GroupedValueRow(stringResource(R.string.design_issue_date), prescription.issueDate.format(dateFormatter), divider = false)
-            GroupedValueRow(stringResource(R.string.ui_tipo_de_receita), prescription.type?.label ?: stringResource(R.string.label_unknown_prescription_type))
+            GroupedValueRow(stringResource(R.string.prescription_type), prescription.type?.let { stringResource(it.labelRes) } ?: stringResource(R.string.label_unknown_prescription_type))
             GroupedValueRow(stringResource(R.string.design_recipe_expiration), prescription.expirationDate.format(dateFormatter))
             GroupedValueRow(stringResource(R.string.design_record_state), stringResource(when (prescription.state) {
-                RecordState.ACTIVE -> R.string.ui_ativa
-                RecordState.ARCHIVED -> R.string.ui_arquivada
-                RecordState.REPLACED -> R.string.ui_substituida
+                RecordState.ACTIVE -> R.string.state_active
+                RecordState.ARCHIVED -> R.string.state_archived
+                RecordState.REPLACED -> R.string.state_replaced
             }))
-            if (prescription.doctorName.isNotBlank()) GroupedValueRow(stringResource(R.string.ui_profissional_responsavel), prescription.doctorName)
+            if (prescription.doctorName.isNotBlank()) GroupedValueRow(stringResource(R.string.responsible_professional), prescription.doctorName)
             prescription.notes?.takeIf { it.isNotBlank() }?.let { GroupedValueRow(stringResource(R.string.recipe_notes_group), it, stacked = true) }
         }
         ActionButton(stringResource(R.string.action_register_new_prescription), onRenewClick, Modifier.fillMaxWidth(), enabled = prescription.isActive)
@@ -249,7 +249,7 @@ internal fun MedicationDetailCard(
     val openLabel = stringResource(R.string.design_view_medication)
     ContentCard(modifier.clickable(onClickLabel = openLabel, onClick = onMedicationClick)) {
         Text(medication.title, style = MaterialTheme.typography.titleMedium)
-        Text(listOf(medication.form.label, medication.dosage).filter { it.isNotBlank() }.joinToString(" · "), style = MaterialTheme.typography.bodyMedium,
+        Text(listOf(stringResource(medication.form.labelRes), medication.dosage).filter { it.isNotBlank() }.joinToString(" · "), style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (medication.prescribedPosology.isNotBlank()) DetailValue(stringResource(R.string.design_prescribed_instructions), medication.prescribedPosology)
         if (medication.prescribedQuantity.isNotBlank()) DetailValue(stringResource(R.string.design_prescribed_amount), medication.prescribedQuantity)

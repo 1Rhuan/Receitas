@@ -15,7 +15,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import cc.rhuan.receitas.domain.model.*
 import cc.rhuan.receitas.ui.feature.medications.*
 import cc.rhuan.receitas.ui.feature.prescriptions.*
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -34,12 +34,12 @@ class FloatingListToolbarTest {
     }
     private fun exercise(recipes: Boolean, scale: Float) {
         var query by mutableStateOf("")
-        var source by mutableStateOf("TODOS")
+        var source by mutableStateOf("ALL")
         var status by mutableStateOf(PrescriptionFilter.ALL)
         var sort by mutableStateOf(PrescriptionSortOrder.EXPIRATION)
         val medications = List(12) { MedicationItem("m$it", "Medicamento de acompanhamento $it") }
         val prescriptions = List(12) { PrescriptionItem("r$it", "Receita de acompanhamento $it", "") }
-        compose.setContent { ReceitasTheme(darkTheme = scale > 1f) {
+        compose.setContent { AppTheme(darkTheme = scale > 1f) {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 Box(Modifier.requiredSize(320.dp, 640.dp)) {
@@ -71,13 +71,13 @@ class FloatingListToolbarTest {
         compose.onNode(hasContentDescription(filterLabel) and hasAnyAncestor(hasTestTag("floating-list-toolbar"))).performClick()
         compose.onNodeWithTag("list-option-0-1").performScrollTo().performClick()
         compose.onNodeWithText("Cancelar").performClick()
-        assertEquals("TODOS", source)
+        assertEquals("ALL", source)
         assertEquals(PrescriptionSortOrder.EXPIRATION, sort)
         compose.onNode(hasContentDescription(filterLabel) and hasAnyAncestor(hasTestTag("floating-list-toolbar"))).performClick()
         compose.onNodeWithTag("list-option-0-1").performScrollTo().performClick()
         compose.onNodeWithText("Concluir").performClick()
         if (recipes) assertEquals(PrescriptionSortOrder.NAME_ASC, sort)
-        else assertEquals(MedicationSource.COMPRA_PROPRIA.label, source)
+        else assertEquals(MedicationSource.SELF_PURCHASE.name, source)
         compose.onNodeWithTag(list).performScrollToIndex(0)
         compose.onNodeWithTag(headerTag).assertIsDisplayed()
         compose.onNodeWithTag("floating-list-toolbar").assertDoesNotExist()

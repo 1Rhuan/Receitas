@@ -44,7 +44,7 @@ import cc.rhuan.receitas.domain.model.NotificationAction
 import cc.rhuan.receitas.domain.model.NotificationItem
 import cc.rhuan.receitas.domain.model.ReminderPhase
 import cc.rhuan.receitas.domain.model.NotificationType
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 
 @Composable
 fun NotificationsPresentation(
@@ -117,8 +117,8 @@ fun NotificationsScreenContent(
     pendingAction?.let { (id, action) ->
         val renewal = action == NotificationAction.RENEW_PRESCRIPTION
         ConfirmationSheet(
-            title = stringResource(if (renewal) R.string.ui_registrar_nova_receita else R.string.ui_registrar_retirada),
-            message = stringResource(if (renewal) R.string.ui_voce_podera_confirmar_os_dados_da_nova_receita_e_escolher_os_acompanhamento else R.string.ui_confirme_que_o_medicamento_ja_foi_retirado_a_proxima_retirada_sera_calculad),
+            title = stringResource(if (renewal) R.string.register_new_prescription else R.string.register_pickup),
+            message = stringResource(if (renewal) R.string.prescription_renewal_guidance else R.string.pickup_confirmation_guidance),
             confirmLabel = stringResource(R.string.action_confirm),
             onConfirm = { pendingAction = null; onPerformAction(id, action) }, onDismiss = { pendingAction = null })
     }
@@ -209,12 +209,12 @@ private fun NotificationCard(
     modifier: Modifier = Modifier,
 ) {
     val (iconRes, iconColor, categoryLabel) = when (item.phase) {
-        ReminderPhase.EXPIRED -> Triple(R.drawable.ic_bold_document_medicine, MaterialTheme.colorScheme.error, stringResource(R.string.ui_receita_vencida))
-        ReminderPhase.EXPIRES_TODAY -> Triple(R.drawable.ic_bold_document_medicine, AppPalette.warning, stringResource(R.string.ui_vence_hoje))
-        ReminderPhase.RENEWAL -> Triple(R.drawable.ic_bold_document_medicine, AppPalette.warning, stringResource(R.string.ui_renovacao_de_receita))
+        ReminderPhase.EXPIRED -> Triple(R.drawable.ic_bold_document_medicine, MaterialTheme.colorScheme.error, stringResource(R.string.prescription_expired))
+        ReminderPhase.EXPIRES_TODAY -> Triple(R.drawable.ic_bold_document_medicine, AppPalette.warning, stringResource(R.string.expires_today))
+        ReminderPhase.RENEWAL -> Triple(R.drawable.ic_bold_document_medicine, AppPalette.warning, stringResource(R.string.prescription_renewal))
         ReminderPhase.PRESCRIPTION_PICKUP_CONFLICT -> Triple(R.drawable.ic_bold_document_medicine, AppPalette.warning, stringResource(R.string.pickup_validity_warning))
-        ReminderPhase.PICKUP_UPCOMING -> Triple(R.drawable.ic_box, MaterialTheme.colorScheme.primary, stringResource(R.string.ui_retirada_proxima))
-        ReminderPhase.PICKUP_DUE -> Triple(R.drawable.ic_box, MaterialTheme.colorScheme.tertiary, stringResource(R.string.ui_data_de_retirada))
+        ReminderPhase.PICKUP_UPCOMING -> Triple(R.drawable.ic_box, MaterialTheme.colorScheme.primary, stringResource(R.string.upcoming_pickup))
+        ReminderPhase.PICKUP_DUE -> Triple(R.drawable.ic_box, MaterialTheme.colorScheme.tertiary, stringResource(R.string.pickup_date))
         null -> Triple(R.drawable.ic_bold_bell_bing, MaterialTheme.colorScheme.primary, stringResource(R.string.notification_category_general))
     }
 
@@ -246,7 +246,7 @@ private fun NotificationCard(
         }
         if (item.actionTaken == null && item.targetId != null) {
             val prescription = item.targetType == "PRESCRIPTION"
-            SecondaryActionButton(stringResource(if (prescription) R.string.ui_ver_receita else R.string.ui_ver_medicamentos),
+            SecondaryActionButton(stringResource(if (prescription) R.string.view_prescription else R.string.view_medications),
                 { onActionClick(if (prescription) NotificationAction.VIEW_PRESCRIPTION else NotificationAction.VIEW_MEDICATION) },
                 Modifier.fillMaxWidth())
             if (item.phase != ReminderPhase.PRESCRIPTION_PICKUP_CONFLICT)
@@ -273,26 +273,26 @@ private fun EmptyNotificationsState(filter: NotificationFilter, onShowAll: () ->
 @Preview(showBackground = true)
 @Composable
 private fun NotificationsScreenPreview() {
-    ReceitasTheme {
+    AppTheme {
         NotificationsScreenContent(
             uiState = NotificationsUiState(
                 notifications = listOf(
                     NotificationItem(
                         id = "pickup:1:2026-10-16:upcoming",
-                        title = "Lembrete de retirada",
-                        message = "Losartana: retirada prevista para 16/10/2026. Confirme a disponibilidade com a farmácia.",
-                        timestamp = "Há 10 min",
+                        title = stringResource(R.string.reminder_pickup_title),
+                        message = stringResource(R.string.preview_pickup_reminder),
+                        timestamp = stringResource(R.string.preview_ten_minutes_ago),
                         type = NotificationType.MEDICATION_PICKUP,
                         isRead = false,
                     ),
                     NotificationItem(
                         id = "prescription:2:2026-10-15:renewal",
-                        title = "Lembrete de renovação",
-                        message = "Sua receita de Tratamento Dermatológico vence em 2 dias.",
-                        timestamp = "Há 1 hora",
+                        title = stringResource(R.string.reminder_renewal_title),
+                        message = stringResource(R.string.preview_renewal_reminder),
+                        timestamp = stringResource(R.string.preview_one_hour_ago),
                         type = NotificationType.PRESCRIPTION_EXPIRING,
                         isRead = true,
-                        actionTaken = "Renovação solicitada",
+                        actionTaken = stringResource(R.string.preview_renewal_requested),
                     ),
                 ),
             ),

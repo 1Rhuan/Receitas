@@ -14,7 +14,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import cc.rhuan.receitas.domain.model.*
 import cc.rhuan.receitas.ui.feature.notifications.*
 import cc.rhuan.receitas.ui.feature.prescriptions.*
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -23,7 +23,7 @@ import java.io.File
 class ReferenceLayoutTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private fun show(scale: Float, content: @Composable () -> Unit) {
-        compose.setContent { ReceitasTheme(darkTheme = scale > 1f) {
+        compose.setContent { AppTheme(darkTheme = scale > 1f) {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 Box(Modifier.requiredSize(320.dp, 640.dp)) { content() }

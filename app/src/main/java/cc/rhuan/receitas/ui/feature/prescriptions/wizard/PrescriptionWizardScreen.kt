@@ -1,5 +1,7 @@
 package cc.rhuan.receitas.ui.feature.prescriptions.wizard
 
+import cc.rhuan.receitas.text.asString
+
 import androidx.compose.ui.res.pluralStringResource
 
 import cc.rhuan.receitas.R
@@ -7,6 +9,7 @@ import cc.rhuan.receitas.ui.components.FormSection as Section
 import cc.rhuan.receitas.ui.components.RecordSummarySection
 import cc.rhuan.receitas.ui.components.SummaryItemGroup
 import cc.rhuan.receitas.ui.components.FormRecordSection
+import cc.rhuan.receitas.ui.components.ContentCard
 import cc.rhuan.receitas.ui.components.OptionalDetailRow
 import cc.rhuan.receitas.ui.components.GroupedSection
 import cc.rhuan.receitas.ui.components.GroupedValueRow
@@ -42,7 +45,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import cc.rhuan.receitas.domain.model.*
 import cc.rhuan.receitas.ui.components.wizard.WizardQuestionScreen
-import cc.rhuan.receitas.ui.theme.ReceitasTheme
+import cc.rhuan.receitas.ui.theme.AppTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -62,17 +65,18 @@ internal fun PrescriptionWizardPresentation(
     val back = {
         if (!state.isLoading) {
             if (state.typeEditor != null) actions.cancelTypeEditor()
+
             else if (state.isSaved || (state.currentStep == 1 && state.reviewEditStep == null)) close() else actions.back()
         }
     }
     BackHandler { back() }
     if (showExitConfirmation) {
-        ConfirmationSheet(title = stringResource(R.string.ui_sair_sem_salvar),
-            message = stringResource(R.string.ui_os_dados_preenchidos_neste_cadastro_serao_descartados),
-            confirmLabel = stringResource(R.string.ui_descartar_e_sair),
+        ConfirmationSheet(title = stringResource(R.string.exit_without_saving),
+            message = stringResource(R.string.discard_registration_confirmation),
+            confirmLabel = stringResource(R.string.discard_and_exit),
             onConfirm = { showExitConfirmation = false; onNavigateUp() },
             onDismiss = { showExitConfirmation = false }, destructive = true,
-            dismissLabel = stringResource(R.string.ui_continuar_cadastro))
+            dismissLabel = stringResource(R.string.continue_registration))
     }
     PrescriptionWizardContent(
         state, actions.copy(back = back, close = close), modifier,
@@ -96,18 +100,23 @@ internal fun PrescriptionWizardContent(state: PrescriptionWizardUiState, actions
         PrescriptionTypeEditor(state, actions, modifier)
         return
     }
+    if (state.isSaved && state.entryMode == WizardEntryMode.FULL_PRESCRIPTION && state.editingPrescriptionId == null) {
+        RecipeRegistrationSuccess(state, actions, modifier)
+        return
+    }
     val standalone = state.entryMode == WizardEntryMode.STANDALONE_MEDICATION
     val title = when {
-        !state.isSaved && state.currentStep == state.maxSteps -> stringResource(R.string.ui_confira_antes_de_salvar)
-        state.isSaved -> if (standalone) { if (state.editingMedicationId != null) stringResource(R.string.ui_medicamento_atualizado) else stringResource(R.string.ui_medicamento_cadastrado) } else if (state.editingPrescriptionId != null) stringResource(R.string.ui_receita_atualizada) else stringResource(R.string.ui_receita_cadastrada)
-        state.currentStep == state.medicationStep -> stringResource(R.string.ui_quais_medicamentos_estao_na_receita).let { if (standalone) stringResource(R.string.ui_qual_medicamento_deseja_acompanhar) else it }
-        state.currentStep == state.recipeIdentityStep -> stringResource(R.string.design_recipe_identity)
+        !state.isSaved && state.currentStep == state.maxSteps -> stringResource(R.string.review_before_saving)
+        state.isSaved -> if (standalone) { if (state.editingMedicationId != null) stringResource(R.string.medication_updated) else stringResource(R.string.medication_registered) } else if (state.editingPrescriptionId != null) stringResource(R.string.prescription_updated) else stringResource(R.string.prescription_registered)
+        state.currentStep == state.medicationStep -> stringResource(R.string.prescription_medications_question).let { if (standalone) stringResource(R.string.registration_medication_name_question) else it }
+        state.currentStep == state.recipeNameStep -> stringResource(R.string.registration_recipe_name_question)
+        state.currentStep == state.recipeIdentityStep -> stringResource(R.string.registration_issue_date_question)
         state.currentStep == state.renewalOptionsStep -> stringResource(R.string.recipe_renewal_options_title)
         state.currentStep == state.optionalDetailsStep -> stringResource(R.string.optional_details_title)
         state.currentStep == state.pickupContextStep -> stringResource(R.string.guided_pickup_context_title)
         state.currentStep == state.pickupOptionsStep -> stringResource(R.string.design_pickup_options_title)
-        state.currentStep == state.pickupStep -> stringResource(R.string.ui_quando_voce_retira_os_medicamentos)
-        else -> if (state.previousPrescriptionId != null) stringResource(R.string.ui_vamos_registrar_sua_nova_receita) else stringResource(R.string.ui_vamos_cadastrar_sua_receita)
+        state.currentStep == state.pickupStep -> stringResource(R.string.medication_pickup_question)
+        else -> if (state.previousPrescriptionId != null) stringResource(R.string.register_renewal_heading) else stringResource(R.string.register_prescription_heading)
     }
     screenStateHolder.SaveableStateProvider(state.currentStep) {
     key(state.currentStep, state.isSaved) {
@@ -115,13 +124,14 @@ internal fun PrescriptionWizardContent(state: PrescriptionWizardUiState, actions
             question = title,
             onBack = actions.back, progress = if (state.isSaved) 1f else state.progress,
             primaryButtonText = when {
-                state.isSaved -> if (standalone) stringResource(R.string.action_finish) else stringResource(R.string.ui_ver_receita)
-                state.isLoading && state.currentStep == state.maxSteps -> stringResource(R.string.ui_salvando)
-                state.currentStep == state.maxSteps -> if (standalone) { if (state.editingMedicationId != null) stringResource(R.string.ui_salvar_alteracoes) else stringResource(R.string.ui_salvar_medicamento) } else if (state.editingPrescriptionId != null) stringResource(R.string.ui_salvar_alteracoes) else stringResource(R.string.ui_salvar_receita)
-                state.reviewEditStep != null -> stringResource(R.string.ui_voltar_a_revisao)
+                state.isSaved -> if (standalone) stringResource(R.string.action_finish) else stringResource(R.string.view_prescription)
+                state.isLoading && state.currentStep == state.maxSteps -> stringResource(R.string.saving)
+                state.currentStep == state.maxSteps && state.medicationBelongsToPrescription -> stringResource(R.string.action_finish)
+                state.currentStep == state.maxSteps -> if (standalone) { if (state.editingMedicationId != null) stringResource(R.string.save_changes) else stringResource(R.string.save_medication) } else if (state.editingPrescriptionId != null) stringResource(R.string.save_changes) else stringResource(R.string.save_prescription)
+                state.reviewEditStep != null -> stringResource(R.string.return_to_review)
                 else -> stringResource(R.string.action_advance)
             },
-            primaryButtonEnabled = !state.isLoading && !state.initialLoadFailed,
+            primaryButtonEnabled = !state.isLoading && !state.initialLoadFailed && (state.isSaved || state.currentStepError == null),
             onPrimaryClick = when { state.isSaved -> actions.complete; state.currentStep == state.maxSteps -> actions.save; else -> actions.next },
             onSkip = if (state.canSkipCurrentStep) actions.skip else null,
             isBusy = state.isLoading, errorMessage = state.errorMessage, modifier = modifier,
@@ -131,9 +141,9 @@ internal fun PrescriptionWizardContent(state: PrescriptionWizardUiState, actions
             } else if (state.isLoading && state.currentStep != state.maxSteps) {
                 CircularProgressIndicator()
             } else if (state.isSaved) {
-                Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.ui_cadastro_concluido), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(T.control))
+                Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.registration_complete), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(T.control))
                 Summary(state, actions, editable = false)
-                Text(stringResource(R.string.ui_voce_pode_consultar_e_atualizar_estes_dados_pelo_aplicativo), style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.saved_record_guidance), style = MaterialTheme.typography.bodyMedium)
             } else when (state.currentStep) {
                 state.maxSteps -> Summary(state, actions, editable = true)
                 state.recipeNameStep -> RecipeNameSection(state, actions)
@@ -154,61 +164,68 @@ internal fun PrescriptionWizardContent(state: PrescriptionWizardUiState, actions
 private fun PrescriptionTypeEditor(state: PrescriptionWizardUiState, actions: WizardCallbacks, modifier: Modifier) {
     val draft = requireNotNull(state.typeEditor)
     val types = PrescriptionType.entries
-    var showCustomValidity by rememberSaveable { mutableStateOf(draft.type == PrescriptionType.PERSONALIZADO) }
+    var showCustomValidity by rememberSaveable { mutableStateOf(false) }
     val editorPages = rememberSaveableStateHolder()
     val back = { if (showCustomValidity) showCustomValidity = false else actions.cancelTypeEditor() }
     BackHandler(onBack = back)
     editorPages.SaveableStateProvider(showCustomValidity) {
     key(showCustomValidity) {
     WizardQuestionScreen(
-        question = stringResource(if (showCustomValidity) R.string.design_recipe_validity else R.string.recipe_type_and_validity_title),
+        question = stringResource(if (showCustomValidity) R.string.custom_validity_question else R.string.registration_validity_question),
         onBack = back,
         progress = state.progress,
         primaryButtonText = stringResource(when {
             showCustomValidity -> R.string.recipe_apply_custom_validity
-            draft.type == PrescriptionType.PERSONALIZADO -> R.string.action_advance
-            state.currentStep == state.maxSteps || state.reviewEditStep != null -> R.string.ui_voltar_a_revisao
             else -> R.string.action_advance
         }),
-        primaryButtonEnabled = !state.isLoading,
+        primaryButtonEnabled = !state.isLoading && (!showCustomValidity || draft.error == null),
         onPrimaryClick = {
-            if (draft.type == PrescriptionType.PERSONALIZADO && !showCustomValidity) showCustomValidity = true
+            if (draft.type == PrescriptionType.CUSTOM && !showCustomValidity) showCustomValidity = true
             else actions.confirmTypeEditor()
         },
         errorMessage = state.errorMessage.takeIf { showCustomValidity },
         modifier = modifier,
     ) {
-        if (!showCustomValidity) Section(stringResource(R.string.ui_tipo_de_receita)) {
+        if (!showCustomValidity) Column(verticalArrangement = Arrangement.spacedBy(T.padding)) {
             FormChoiceCards(types.map { type ->
-                FormChoiceOption(type.label, stringResource(when (type) {
-                    PrescriptionType.CONTINUO -> R.string.recipe_type_continuous_help
-                    PrescriptionType.ANTIBIOTICO -> R.string.recipe_type_antibiotic_help
-                    PrescriptionType.CONTROLADO -> R.string.recipe_type_controlled_help
-                    PrescriptionType.FARMACIA_POPULAR -> R.string.recipe_type_popular_help
+                FormChoiceOption(stringResource(type.labelRes), stringResource(when (type) {
+                    PrescriptionType.CONTINUOUS_USE -> R.string.recipe_type_continuous_help
+                    PrescriptionType.ANTIBIOTIC -> R.string.recipe_type_antibiotic_help
+                    PrescriptionType.CONTROLLED -> R.string.recipe_type_controlled_help
+                    PrescriptionType.POPULAR_PHARMACY -> R.string.recipe_type_popular_help
                     PrescriptionType.SUS_BASIC -> R.string.recipe_type_basic_help
-                    PrescriptionType.ANUAL -> R.string.recipe_type_annual_help
-                    PrescriptionType.PERSONALIZADO -> R.string.recipe_type_custom_help
+                    PrescriptionType.ANNUAL_USE -> R.string.recipe_type_annual_help
+                    PrescriptionType.CUSTOM -> R.string.recipe_type_custom_help
                 }) + type.defaultValidityDays?.let { days ->
                     "\n" + pluralStringResource(R.plurals.recipe_type_suggested_validity, days, days)
                 }.orEmpty())
             }, types.indexOf(draft.type), {
                 actions.selectType(types[it])
-                if (types[it] == PrescriptionType.PERSONALIZADO) showCustomValidity = true
             })
         }
-        if (showCustomValidity) Column(verticalArrangement = Arrangement.spacedBy(T.padding)) {
-            Text(stringResource(R.string.recipe_custom_validity_help), style = MaterialTheme.typography.bodyMedium)
-            ToggleRow(stringResource(R.string.design_choose_expiration), draft.useExpirationDate, actions.setValidityDateMode)
+        if (showCustomValidity) Column(verticalArrangement = Arrangement.spacedBy(T.section)) {
+            RadioChoiceList(listOf(stringResource(R.string.custom_validity_days_option), stringResource(R.string.custom_validity_date_option)),
+                if (draft.useExpirationDate) 1 else 0, { actions.setValidityDateMode(it == 1) })
             if (draft.useExpirationDate) {
-                DateField(stringResource(R.string.ui_vencimento_personalizado), draft.validityDays?.let { state.issueDate.plusDays(it.toLong()) }, allowFuture = true, onSelect = actions.updateExpirationDate)
+                DateField(stringResource(R.string.custom_expiration), draft.validityDays?.let { state.issueDate.plusDays(it.toLong()) }, allowFuture = true, onSelect = actions.updateExpirationDate)
             } else {
-                NumericField(draft.validityDaysInput, actions.updateValidityDays, stringResource(R.string.ui_validade_em_dias),
-                    draft.validityDays == null || draft.validityDays !in 1..3650)
+                Column(verticalArrangement = Arrangement.spacedBy(T.small)) {
+                    NumericField(draft.validityDaysInput, actions.updateValidityDays, stringResource(R.string.validity_days),
+                        draft.validityDaysInput.isNotEmpty() && (draft.validityDays == null || draft.validityDays !in 1..3650),
+                        placeholder = stringResource(R.string.custom_validity_days_example))
+                    Text(stringResource(R.string.custom_validity_counted_from, dateText(state.issueDate)),
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
-            Text(stringResource(R.string.ui_confira_o_prazo_indicado_na_receita_ou_informado_pela_unidade_de_retirada), style = MaterialTheme.typography.bodySmall)
-            draft.validityDays?.takeIf { it in 1..3650 }?.let { days ->
-                Text(stringResource(R.string.expiration_date, dateText(state.issueDate.plusDays(days.toLong()))), fontWeight = FontWeight.SemiBold)
+            draft.validityDays?.takeIf { it in 1..3650 && !draft.useExpirationDate }?.let { days ->
+                ContentCard {
+                    Text(stringResource(R.string.custom_validity_expiration_label), style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(dateText(state.issueDate.plusDays(days.toLong())), style = MaterialTheme.typography.titleLarge)
+                }
             }
+            Text(stringResource(R.string.validity_confirmation_guidance),
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
     }
@@ -218,35 +235,31 @@ private fun PrescriptionTypeEditor(state: PrescriptionWizardUiState, actions: Wi
 @Composable
 private fun RecipeSection(state: PrescriptionWizardUiState, actions: WizardCallbacks) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(T.padding)) {
-        DateField(stringResource(R.string.ui_data_de_emissao), state.issueDate, onSelect = actions.updateIssueDate)
-        FormChoiceField(stringResource(R.string.ui_tipo_de_receita),
-            state.type?.label ?: stringResource(R.string.label_unknown_prescription_type),
-            actions.openTypeEditor,
+        DateField(stringResource(R.string.issue_date), state.issueDate, onSelect = actions.updateIssueDate)
+        FormChoiceField(stringResource(R.string.registration_validity_label),
             state.validityDays?.takeIf { it in 1..3650 }?.let { days ->
-                pluralStringResource(R.plurals.recipe_type_suggested_validity, days, days)
-                    .takeIf { state.validityOrigin == "SUGGESTED" }
-                    ?: stringResource(R.string.expiration_date, dateText(state.issueDate.plusDays(days.toLong())))
-            }, required = true)
+                if (state.validityDateMode) dateText(state.issueDate.plusDays(days.toLong()))
+                else pluralStringResource(R.plurals.interval_days, days, days)
+            } ?: stringResource(R.string.select_date),
+            actions.openTypeEditor, required = true)
     }
 }
 
 @Composable
 private fun RecipeNameSection(state: PrescriptionWizardUiState, actions: WizardCallbacks) {
-    Section(stringResource(R.string.label_prescription)) {
-        Field(state.prescriptionTitle, { value -> actions.update { it.copy(prescriptionTitle = value, isTitleCustomized = value.isNotBlank()) } }, stringResource(R.string.ui_nome_da_receita_opcional), stringResource(R.string.ui_ex_receita_de_acompanhamento), required = true)
-        Text(stringResource(R.string.form_name_required_help), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-    }
+    FormField(state.prescriptionTitle, { value -> actions.update { it.copy(prescriptionTitle = value, isTitleCustomized = value.isNotBlank()) } },
+        stringResource(R.string.optional_prescription_name), stringResource(R.string.prescription_name_example), required = true, showLabel = false)
 }
 
 @Composable
 private fun RenewalOptionsSection(state: PrescriptionWizardUiState, actions: WizardCallbacks) {
-    Section(stringResource(R.string.ui_lembrete_de_renovacao)) {
-        ToggleRow(stringResource(R.string.ui_receber_alertas_de_validade_e_renovacao), state.renewalReminderEnabled) { enabled -> actions.update { it.copy(renewalReminderEnabled = enabled) } }
+    Section(stringResource(R.string.renewal_reminder_title)) {
+        ToggleRow(stringResource(R.string.enable_expiration_and_renewal_alerts), state.renewalReminderEnabled) { enabled -> actions.update { it.copy(renewalReminderEnabled = enabled) } }
         if (state.renewalReminderEnabled) {
             DayOptions(state.renewalReminderDaysBefore,
                 (listOf(0, 3, 5, 7, 10, 15) + state.renewalReminderDaysBefore).distinct().sorted()
                     .filter { it in 0..(state.validityDays ?: 180) }) { days -> actions.update { it.copy(renewalReminderDaysBefore = days) } }
-        } else Text(stringResource(R.string.ui_os_alertas_desta_receita_estarao_desativados), style = MaterialTheme.typography.bodySmall)
+        } else Text(stringResource(R.string.prescription_alerts_disabled), style = MaterialTheme.typography.bodySmall)
     }
 }
 
@@ -257,7 +270,7 @@ private fun MedicationSection(state: PrescriptionWizardUiState, actions: WizardC
     state.medications.forEachIndexed { index, medication ->
         if (index != state.editingMedicationIndex || !state.showMedicationEditor) {
             RecordSummarySection(medication.title) {
-                Text(medication.dosage.ifBlank { stringResource(R.string.ui_concentracao_nao_informada) }, style = MaterialTheme.typography.bodyMedium)
+                Text(medication.dosage.ifBlank { stringResource(R.string.concentration_not_provided) }, style = MaterialTheme.typography.bodyMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(T.gap)) {
                     TextButton(onClick = { actions.editMedication(index) }) { Text(stringResource(R.string.action_edit)) }
                     TextButton(onClick = { actions.removeMedication(index) }) { Text(stringResource(R.string.action_remove)) }
@@ -267,8 +280,8 @@ private fun MedicationSection(state: PrescriptionWizardUiState, actions: WizardC
     }
     if (state.showMedicationEditor) {
         val draft = state.currentMedicationDraft
-        Section(if (state.editingMedicationIndex != null) stringResource(R.string.ui_editar_medicamento) else stringResource(R.string.ui_adicionar_medicamento), prominent = true) {
-            Field(draft.title, { value -> actions.update { it.copy(currentMedicationDraft = it.currentMedicationDraft.copy(title = value)) } }, stringResource(R.string.ui_nome_do_medicamento), stringResource(R.string.ui_ex_losartana), required = true)
+        Section(if (state.entryMode == WizardEntryMode.STANDALONE_MEDICATION) "" else if (state.editingMedicationIndex != null) stringResource(R.string.edit_medication) else stringResource(R.string.add_medication), prominent = state.entryMode != WizardEntryMode.STANDALONE_MEDICATION) {
+            FormField(draft.title, { value -> actions.update { it.copy(currentMedicationDraft = it.currentMedicationDraft.copy(title = value)) } }, stringResource(R.string.medication_name), stringResource(R.string.medication_name_example), required = true, showLabel = false)
             if (state.editingMedicationIndex == null) {
                 state.availableMedications.filter { draft.title.isNotBlank() && it.title.contains(draft.title, true) && it.id !in state.existingPrescriptionMedicationIds && state.medications.none { existing -> existing.id == it.id } }.take(3).forEach { medication ->
                     OutlinedButton(onClick = {
@@ -276,15 +289,14 @@ private fun MedicationSection(state: PrescriptionWizardUiState, actions: WizardC
                     }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.existing_medication, (medication.title + " " + medication.dosage).trim())) }
                 }
             }
-            Field(draft.dosage, { value -> actions.update { it.copy(currentMedicationDraft = it.currentMedicationDraft.copy(dosageOverride = value)) } }, stringResource(R.string.ui_concentracao_opcional), stringResource(R.string.ui_ex_50_mg))
-            if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION) Text(stringResource(R.string.ui_apenas_para_consulta_o_aplicativo_acompanha_validade_renovacao_e_retirada), style = MaterialTheme.typography.bodySmall)
+            if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION) Text(stringResource(R.string.prescription_instructions_readonly_guidance), style = MaterialTheme.typography.bodySmall)
             if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION && state.editingMedicationIndex == null) {
-                SecondaryActionButton(stringResource(R.string.ui_adicionar_outro_medicamento), actions.addMedication, Modifier.fillMaxWidth())
+                SecondaryActionButton(stringResource(R.string.add_another_medication), actions.addMedication, Modifier.fillMaxWidth())
             }
-            if (state.medications.isNotEmpty() || (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION && draft != MedicationDraft())) TextButton(onClick = actions.cancelMedication) { Text(if (state.editingMedicationIndex != null) stringResource(R.string.ui_cancelar_edicao) else stringResource(R.string.ui_cancelar_inclusao)) }
+            if (state.medications.isNotEmpty() || (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION && draft != MedicationDraft())) TextButton(onClick = actions.cancelMedication) { Text(if (state.editingMedicationIndex != null) stringResource(R.string.cancel_edit) else stringResource(R.string.cancel_add)) }
         }
     } else {
-        SecondaryActionButton(stringResource(if (state.medications.isEmpty()) R.string.ui_adicionar_medicamento else R.string.ui_adicionar_outro_medicamento), actions.addMedication, Modifier.fillMaxWidth())
+        SecondaryActionButton(stringResource(if (state.medications.isEmpty()) R.string.add_medication else R.string.add_another_medication), actions.addMedication, Modifier.fillMaxWidth())
         Text(pluralStringResource(R.plurals.registration_medication_count, state.medications.size, state.medications.size), style = MaterialTheme.typography.bodySmall)
     }
 }
@@ -295,7 +307,7 @@ private fun PickupSection(state: PrescriptionWizardUiState, actions: WizardCallb
     state.medications.forEachIndexed { index, medication ->
         val update: ((MedicationDraft) -> MedicationDraft) -> Unit = { transform -> actions.update { current -> current.copy(medications = current.medications.mapIndexed { i, draft -> if (i == index) transform(draft) else draft }) } }
         Section(medication.title) {
-            ToggleRow(stringResource(R.string.ui_acompanhar_retirada_recorrente), medication.hasRecurringPickup) { enabled -> update {
+            ToggleRow(stringResource(R.string.track_recurring_pickup), medication.hasRecurringPickup) { enabled -> update {
                 val suggestedDate = it.lastPickupDate ?: if (enabled && !it.hasPickupHistory) LocalDate.now() else null
                 it.copy(hasRecurringPickup = enabled, lastPickupDate = suggestedDate,
                     initialPickupDate = it.initialPickupDate ?: suggestedDate.takeIf { _ -> !it.hasPickupHistory })
@@ -303,15 +315,15 @@ private fun PickupSection(state: PrescriptionWizardUiState, actions: WizardCallb
             if (medication.hasRecurringPickup) {
                 if (medication.hasPickupHistory) {
                     Text(stringResource(R.string.last_pickup_date, medication.lastPickupDate?.let(::dateText).orEmpty()))
-                    Text(stringResource(R.string.ui_para_registrar_ou_corrigir_uma_retirada_use_o_historico_nos_detalhes_do_med), style = MaterialTheme.typography.bodySmall)
-                } else DateField(stringResource(R.string.ui_ultima_retirada), medication.lastPickupDate) { date -> update { it.copy(lastPickupDate = date, initialPickupDate = date) } }
-                Text(stringResource(R.string.ui_use_a_data_em_que_voce_realmente_retirou_o_medicamento), style = MaterialTheme.typography.bodySmall)
-                NumericField(medication.pickupIntervalDisplayInput, { value -> actions.updatePickupInterval(index, value) }, stringResource(R.string.ui_intervalo_entre_retiradas), medication.pickupIntervalDays == null || medication.pickupIntervalDays !in 1..3650)
+                    Text(stringResource(R.string.pickup_history_edit_guidance), style = MaterialTheme.typography.bodySmall)
+                } else DateField(stringResource(R.string.last_pickup), medication.lastPickupDate) { date -> update { it.copy(lastPickupDate = date, initialPickupDate = date) } }
+                Text(stringResource(R.string.actual_pickup_date_guidance), style = MaterialTheme.typography.bodySmall)
+                NumericField(medication.pickupIntervalDisplayInput, { value -> actions.updatePickupInterval(index, value) }, stringResource(R.string.pickup_interval), medication.pickupIntervalDays == null || medication.pickupIntervalDays !in 1..3650)
                 medication.lastPickupDate?.let { date -> medication.pickupIntervalDays?.takeIf { it in 1..3650 }?.let { interval -> Text(stringResource(R.string.next_pickup_date, dateText(PickupInterval(interval, medication.intervalUnit).nextAfter(date))), fontWeight = FontWeight.SemiBold) } }
-                medication.copy(pickupReminderDaysBefore = 0).pickupError()?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-            } else Text(stringResource(R.string.ui_sem_lembretes_de_retirada_para_este_medicamento), style = MaterialTheme.typography.bodySmall)
-            Field(medication.replenishmentQuantity, { value -> update { it.copy(replenishmentQuantity = value) } }, stringResource(R.string.ui_quantidade_por_retirada_opcional), stringResource(R.string.ui_ex_2_caixas_ou_60_comprimidos))
-            Text(stringResource(R.string.ui_informe_a_quantidade_que_voce_costuma_retirar_ou_comprar), style = MaterialTheme.typography.bodySmall)
+                medication.copy(pickupReminderDaysBefore = 0).pickupError()?.let { Text(it.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+            } else Text(stringResource(R.string.no_medication_pickup_reminders), style = MaterialTheme.typography.bodySmall)
+            Field(medication.replenishmentQuantity, { value -> update { it.copy(replenishmentQuantity = value) } }, stringResource(R.string.optional_pickup_quantity), stringResource(R.string.pickup_quantity_example))
+            Text(stringResource(R.string.pickup_quantity_guidance), style = MaterialTheme.typography.bodySmall)
 
         }
     }
@@ -325,9 +337,9 @@ private fun PickupOptionsSection(state: PrescriptionWizardUiState, actions: Wiza
             val update: ((MedicationDraft) -> MedicationDraft) -> Unit = { transform -> actions.update { current -> current.copy(medications = current.medications.mapIndexed { i, draft -> if (i == index) transform(draft) else draft }) } }
             FormRecordSection(medication.title, subtitle = medication.dosage,
                 divider = state.medications.take(index).any { it.hasRecurringPickup }, modifier = Modifier.testTag("pickup-options-$index")) {
-                Text(stringResource(R.string.ui_avisar_com_antecedencia), style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.reminder_lead_time), style = MaterialTheme.typography.labelLarge)
                 DayOptions(medication.pickupReminderDaysBefore, listOf(0, 1, 3, 5, 7).filter { it <= medication.intervalDurationDays }) { days -> update { it.copy(pickupReminderDaysBefore = days) } }
-                medication.pickupError()?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                medication.pickupError()?.let { Text(it.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             }
         }
     }
@@ -341,27 +353,39 @@ private fun PickupContextSection(state: PrescriptionWizardUiState, actions: Wiza
             val update: ((MedicationDraft) -> MedicationDraft) -> Unit = { transform -> actions.update { current -> current.copy(medications = current.medications.mapIndexed { i, draft -> if (i == index) transform(draft) else draft }) } }
             FormRecordSection(medication.title, subtitle = medication.dosage,
                 divider = state.medications.take(index).any { it.hasRecurringPickup }, modifier = Modifier.testTag("pickup-context-$index")) {
-                Section(stringResource(R.string.ui_onde_voce_retira)) {
-                RadioChoiceList(MedicationSource.entries.map { it.label }, MedicationSource.entries.indexOf(medication.source),
+                Section(stringResource(R.string.pickup_location)) {
+                RadioChoiceList(MedicationSource.entries.map { stringResource(it.labelRes) }, MedicationSource.entries.indexOf(medication.source),
                     { choice -> update { it.copy(source = MedicationSource.entries[choice]) } })
-                Field(medication.sourceName, { value -> update { it.copy(sourceName = value) } }, stringResource(R.string.ui_nome_do_local_opcional), stringResource(R.string.ui_ex_ubs_central))
+                Field(medication.sourceName, { value -> update { it.copy(sourceName = value) } }, stringResource(R.string.optional_location_name), stringResource(R.string.pickup_location_example))
                 }
-                Section(stringResource(R.string.ui_receita_para_este_acompanhamento)) {
+                Section(stringResource(R.string.tracking_prescription)) {
                 if (state.addToPrescriptionId != null) {
                     Text(state.addToPrescriptionTitle)
                 } else {
-                FilterChip(selected = medication.linkedPrescriptionId == null && !medication.linkToCurrentRecipe, onClick = { update { it.copy(linkedPrescriptionId = null, linkToCurrentRecipe = false) } }, label = { Text(stringResource(R.string.ui_sem_receita_vinculada)) })
-                if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION) {
-                    FilterChip(selected = medication.linkToCurrentRecipe, onClick = { update { it.copy(linkToCurrentRecipe = true, linkedPrescriptionId = null, trackingArchived = false) } }, label = { Text(if (state.previousPrescriptionId != null) stringResource(R.string.ui_continuar_nesta_nova_receita) else stringResource(R.string.ui_usar_esta_receita)) })
+                val offersCurrentRecipe = state.entryMode == WizardEntryMode.FULL_PRESCRIPTION || state.medicationBelongsToPrescription
+                val prescriptions = state.availablePrescriptions.filter { p -> p.id != state.previousPrescriptionId && p.medicationIds.contains(medication.id) }
+                val labels = listOf(stringResource(R.string.no_linked_prescription)) +
+                    (if (offersCurrentRecipe) listOf(stringResource(if (state.previousPrescriptionId != null) R.string.continue_with_new_prescription else R.string.use_this_prescription)) else emptyList()) +
+                    prescriptions.map { it.title }
+                val offset = if (offersCurrentRecipe) 2 else 1
+                val selected = when {
+                    offersCurrentRecipe && medication.linkToCurrentRecipe -> 1
+                    !medication.linkToCurrentRecipe && medication.linkedPrescriptionId == null -> 0
+                    !medication.linkToCurrentRecipe -> prescriptions.indexOfFirst { it.id == medication.linkedPrescriptionId }.let { if (it < 0) -1 else it + offset }
+                    else -> -1
                 }
-                state.availablePrescriptions.filter { p -> p.id != state.previousPrescriptionId && p.medicationIds.contains(medication.id) }.forEach { p ->
-                    FilterChip(selected = !medication.linkToCurrentRecipe && medication.linkedPrescriptionId == p.id, onClick = { update { it.copy(linkedPrescriptionId = p.id, linkToCurrentRecipe = false, trackingArchived = false) } }, label = { Text(p.title) })
-                }
-                if (state.previousPrescriptionId != null && medication.linkedPrescriptionId == state.previousPrescriptionId && !medication.linkToCurrentRecipe) Text(stringResource(R.string.ui_este_acompanhamento_sera_arquivado_ao_substituir_a_receita_anterior_selecio), style = MaterialTheme.typography.bodySmall)
+                RadioChoiceList(labels, selected, { choice -> update {
+                    when {
+                        choice == 0 -> it.copy(linkedPrescriptionId = null, linkToCurrentRecipe = false)
+                        offersCurrentRecipe && choice == 1 -> it.copy(linkToCurrentRecipe = true, linkedPrescriptionId = null, trackingArchived = false)
+                        else -> it.copy(linkedPrescriptionId = prescriptions[choice - offset].id, linkToCurrentRecipe = false, trackingArchived = false)
+                    }
+                } })
+                if (state.previousPrescriptionId != null && medication.linkedPrescriptionId == state.previousPrescriptionId && !medication.linkToCurrentRecipe) Text(stringResource(R.string.renewal_tracking_archive_guidance), style = MaterialTheme.typography.bodySmall)
                 }
                 }
 
-                medication.pickupError()?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                medication.pickupError()?.let { Text(it.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             }
         }
     }
@@ -378,34 +402,43 @@ private fun Summary(state: PrescriptionWizardUiState, actions: WizardCallbacks, 
         GroupedSection(stringResource(R.string.label_prescription)) {
             GroupedValueRow(stringResource(R.string.review_recipe_name), recipeTitle, divider = false,
                 onEdit = if (editable) ({ actions.goToStep(requireNotNull(state.recipeNameStep)) }) else null, stacked = true)
-            GroupedValueRow(stringResource(R.string.ui_data_de_emissao), dateText(state.issueDate),
+            GroupedValueRow(stringResource(R.string.issue_date), dateText(state.issueDate),
                 onEdit = if (editable) ({ actions.goToStep(requireNotNull(state.recipeIdentityStep)) }) else null)
             val expiration = state.validityDays?.takeIf { it > 0 }?.let { state.issueDate.plusDays(it.toLong()) }
             val validity = expiration?.let { stringResource(R.string.expiration_date, dateText(it)) }
             GroupedValueRow(stringResource(R.string.recipe_type_and_validity_title),
-                listOfNotNull(state.type?.label ?: stringResource(R.string.label_unknown_prescription_type), validity).joinToString("\n"),
+                listOfNotNull(state.type?.let { stringResource(it.labelRes) } ?: stringResource(R.string.label_unknown_prescription_type), validity).joinToString("\n"),
                 onEdit = if (editable) actions.openTypeEditor else null, stacked = true)
             GroupedValueRow(stringResource(R.string.recipe_renewal_options_title),
-                if (state.renewalReminderEnabled) stringResource(R.string.renewal_reminder, reminderText(state.renewalReminderDaysBefore)) else stringResource(R.string.ui_alertas_de_validade_e_renovacao_desativados),
+                if (state.renewalReminderEnabled) stringResource(R.string.renewal_reminder, reminderText(state.renewalReminderDaysBefore)) else stringResource(R.string.expiration_and_renewal_alerts_disabled),
                 onEdit = if (editable) ({ actions.goToStep(requireNotNull(state.renewalOptionsStep)) }) else null, stacked = true)
-            GroupedValueRow(stringResource(R.string.ui_profissional_responsavel),
+            GroupedValueRow(stringResource(R.string.responsible_professional),
                 listOf(state.doctorName, state.doctorRegistration, state.doctorSpecialty).filter { it.isNotBlank() }.joinToString("\n").ifBlank { stringResource(R.string.review_not_provided) },
                 onEdit = if (editable) ({ actions.goToStep(requireNotNull(state.recipeDetailsStep)) }) else null, stacked = true)
             GroupedValueRow(stringResource(R.string.recipe_notes_group), state.notes.ifBlank { stringResource(R.string.review_no_notes) },
                 onEdit = if (editable) ({ actions.goToStep(requireNotNull(state.recipeDetailsStep)) }) else null, stacked = true)
         }
     }
+    if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION) {
+        if (state.medications.isNotEmpty()) GroupedSection(stringResource(R.string.medications_count, state.medications.size)) {
+            state.medications.forEachIndexed { index, item ->
+                GroupedValueRow(item.title, item.dosage.ifBlank { stringResource(R.string.concentration_not_provided) }, divider = index > 0)
+            }
+        }
+        if (editable && !state.canSave) Text((state.recipeError ?: state.medicationError ?: state.pickupError)?.asString() ?: stringResource(R.string.review_fields_before_saving), color = MaterialTheme.colorScheme.error)
+        return
+    }
     ReviewSection(stringResource(R.string.medications_count, state.allMedications.size),
         onEdit = if (editable) ({ actions.goToStep(state.medicationStep) }) else null) {
         if (state.allMedications.isEmpty()) Text(stringResource(R.string.recipe_medications_optional_summary))
         state.allMedications.forEachIndexed { index, medication ->
-            ReviewRecordCard(medication.title.ifBlank { stringResource(R.string.ui_nome_nao_informado) }, medication.dosage,
+            ReviewRecordCard(medication.title.ifBlank { stringResource(R.string.name_not_provided) }, medication.dosage,
                 onEdit = if (editable) ({ actions.editMedication(index) }) else null,
                 modifier = Modifier.testTag("review-medication-$index"))
         }
     }
     if (state.allMedications.isNotEmpty()) GroupedSection(stringResource(R.string.review_pickups_title),
-        onEdit = if (editable) ({ actions.goToStep(state.pickupStep) }) else null) {
+        onEdit = if (editable) ({ actions.goToStep(if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION) state.medicationStep else state.pickupStep) }) else null) {
         state.allMedications.forEachIndexed { index, medication ->
             SummaryItemGroup(medication.title, divider = index > 0,
                 modifier = Modifier.padding(T.padding).testTag("review-pickup-$index")) {
@@ -414,7 +447,7 @@ private fun Summary(state: PrescriptionWizardUiState, actions: WizardCallbacks, 
                     val date = medication.lastPickupDate
                     val interval = medication.pickupIntervalDays
                     if (date != null && interval != null && interval > 0) Text(stringResource(R.string.next_pickup_date, dateText(PickupInterval(interval, medication.intervalUnit).nextAfter(date))))
-                    else Text(stringResource(R.string.ui_complete_a_data_e_o_intervalo_da_retirada), color = MaterialTheme.colorScheme.error)
+                    else Text(stringResource(R.string.complete_pickup_schedule), color = MaterialTheme.colorScheme.error)
                     Text(stringResource(R.string.pickup_reminder, reminderText(medication.pickupReminderDaysBefore)))
                     if (medication.sourceName.isNotBlank()) Text(stringResource(R.string.pickup_place, medication.sourceName))
                     val pickupRecipeTitle = when {
@@ -423,17 +456,17 @@ private fun Summary(state: PrescriptionWizardUiState, actions: WizardCallbacks, 
                         else -> state.availablePrescriptions.find { it.id == medication.linkedPrescriptionId }?.title
                     }
                     if (medication.linkToCurrentRecipe || medication.linkedPrescriptionId != null) Text(stringResource(R.string.pickup_recipe_summary, pickupRecipeTitle ?: stringResource(R.string.pickup_selected_recipe)))
-                    else Text(stringResource(R.string.ui_sem_receita_vinculada))
-                } else Text(stringResource(R.string.ui_retirada_recorrente_desativada))
+                    else Text(stringResource(R.string.no_linked_prescription))
+                } else Text(stringResource(R.string.recurring_pickup_disabled))
             }
         }
-        if (editable && state.pickupOptionsStep != null) Column(Modifier.fillMaxWidth().padding(T.padding), verticalArrangement = Arrangement.spacedBy(T.small)) {
+        if (editable && state.pickupOptionsStep != null && state.entryMode != WizardEntryMode.FULL_PRESCRIPTION) Column(Modifier.fillMaxWidth().padding(T.padding), verticalArrangement = Arrangement.spacedBy(T.small)) {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             SecondaryActionButton(stringResource(R.string.design_edit_reminders), { actions.goToStep(requireNotNull(state.pickupOptionsStep)) }, Modifier.fillMaxWidth())
             SecondaryActionButton(stringResource(R.string.guided_edit_context), { actions.goToStep(requireNotNull(state.pickupContextStep)) }, Modifier.fillMaxWidth())
         }
     }
-    if (editable && !state.canSave) Text(state.recipeError ?: state.medicationError ?: state.pickupError ?: stringResource(R.string.ui_confira_os_campos_antes_de_salvar), color = MaterialTheme.colorScheme.error)
+    if (editable && !state.canSave) Text((state.recipeError ?: state.medicationError ?: state.pickupError)?.asString() ?: stringResource(R.string.review_fields_before_saving), color = MaterialTheme.colorScheme.error)
 }
 @Composable
 private fun Field(value: String, onChange: (String) -> Unit, label: String, placeholder: String = "", singleLine: Boolean = true, required: Boolean = false) {
@@ -441,8 +474,8 @@ private fun Field(value: String, onChange: (String) -> Unit, label: String, plac
 }
 
 @Composable
-private fun NumericField(value: String, onChange: (String) -> Unit, label: String, error: Boolean = false) {
-    FormField(value, { onChange(it.filter(Char::isDigit).take(4)) }, label,
+private fun NumericField(value: String, onChange: (String) -> Unit, label: String, error: Boolean = false, placeholder: String = "") {
+    FormField(value, { onChange(it.filter(Char::isDigit).take(4)) }, label, placeholder,
         error = if (error) stringResource(R.string.design_number_error) else null,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
 }
@@ -456,7 +489,7 @@ private fun DayOptions(selected: Int, options: List<Int>, onSelect: (Int) -> Uni
 @Composable
 private fun DateField(label: String, date: LocalDate?, allowFuture: Boolean = false, onSelect: (LocalDate) -> Unit) {
     val context = LocalContext.current
-    FormChoiceField(label, date?.let(::dateText) ?: stringResource(R.string.ui_selecionar_data), onClick = {
+    FormChoiceField(label, date?.let { if (it == LocalDate.now()) stringResource(R.string.today) else dateText(it) } ?: stringResource(R.string.select_date), onClick = {
         val initial = date ?: LocalDate.now()
         DatePickerDialog(context, { _, year, month, day -> onSelect(LocalDate.of(year, month + 1, day)) }, initial.year, initial.monthValue - 1, initial.dayOfMonth).apply { if (!allowFuture) datePicker.maxDate = System.currentTimeMillis() }.show()
     }, required = true)
@@ -468,10 +501,32 @@ private fun reminderText(days: Int): String = if (days == 0) stringResource(R.st
 
 @Preview(showBackground = true)
 @Composable
-private fun RegistrationPreview() { ReceitasTheme { PrescriptionWizardContent(PrescriptionWizardUiState(), WizardCallbacks()) } }
+private fun RegistrationPreview() { AppTheme { PrescriptionWizardContent(PrescriptionWizardUiState(), WizardCallbacks()) } }
 
 @Preview(showBackground = true)
 @Composable
 private fun ReviewPreview() {
-    ReceitasTheme { PrescriptionWizardContent(PrescriptionWizardUiState(currentStep = 9, showMedicationEditor = false, medications = listOf(MedicationDraft(id = "preview", title = "Losartana", dosageOverride = "50 mg", hasRecurringPickup = true, lastPickupDate = LocalDate.now().minusDays(25)))), WizardCallbacks()) }
+    AppTheme { PrescriptionWizardContent(PrescriptionWizardUiState(currentStep = 9, showMedicationEditor = false, medications = listOf(MedicationDraft(id = "preview", title = stringResource(R.string.preview_medication), dosageOverride = "50 mg", hasRecurringPickup = true, lastPickupDate = LocalDate.now().minusDays(25)))), WizardCallbacks()) }
+}
+
+@Composable
+private fun RecipeRegistrationSuccess(state: PrescriptionWizardUiState, actions: WizardCallbacks, modifier: Modifier) {
+    val canAdd = state.recordState == RecordState.ACTIVE
+    WizardQuestionScreen(
+        question = stringResource(R.string.prescription_registered),
+        onBack = actions.complete,
+        progress = 1f,
+        primaryButtonText = stringResource(if (canAdd) R.string.registration_add_medications else R.string.view_prescription),
+        primaryButtonEnabled = true,
+        onPrimaryClick = if (canAdd) actions.addSavedMedication else actions.complete,
+        modifier = modifier,
+    ) {
+        Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.registration_complete),
+            tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(T.control))
+        Text(state.prescriptionTitle, style = MaterialTheme.typography.titleLarge)
+        if (canAdd) {
+            Text(stringResource(R.string.registration_add_medications_prompt), style = MaterialTheme.typography.bodyLarge)
+            SecondaryActionButton(stringResource(R.string.registration_not_now), actions.complete, Modifier.fillMaxWidth())
+        }
+    }
 }
