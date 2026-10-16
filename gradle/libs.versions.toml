@@ -12,7 +12,7 @@ kotlin = "2.4.20"
 composeBom = "2026.09.00"
 navigationCompose = "2.10.1"
 room = "2.8.5"
-ksp = "2.0.21-1.0.28"
+ksp = "2.3.12"
 hilt = "2.60.1"
 hiltNavigationCompose = "1.4.0"
 
