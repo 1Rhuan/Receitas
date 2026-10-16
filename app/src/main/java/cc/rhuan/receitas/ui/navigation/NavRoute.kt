@@ -13,21 +13,21 @@ sealed class NavRoute(
     data object Home : NavRoute(
         route = "home",
         title = "Início",
-        iconRes = R.drawable.ic_home,
+        iconRes = R.drawable.ic_nav_home,
         selectedIconRes = R.drawable.ic_bold_home,
     )
 
     data object Prescriptions : NavRoute(
         route = "prescriptions",
         title = "Receitas",
-        iconRes = R.drawable.ic_document_medicine,
+        iconRes = R.drawable.ic_nav_prescriptions,
         selectedIconRes = R.drawable.ic_bold_document_medicine,
     )
 
     data object Medications : NavRoute(
         route = "medications",
         title = "Medicamentos",
-        iconRes = R.drawable.ic_pills,
+        iconRes = R.drawable.ic_nav_medications,
         selectedIconRes = R.drawable.ic_bold_pills,
     )
 
@@ -47,7 +47,7 @@ sealed class NavRoute(
     )
 
     data object PrescriptionWizard : NavRoute(
-        route = "prescription_wizard?prescriptionId={prescriptionId}&entryMode={entryMode}&renewalOf={renewalOf}&medicationId={medicationId}",
+        route = "prescription_wizard?prescriptionId={prescriptionId}&entryMode={entryMode}&renewalOf={renewalOf}&medicationId={medicationId}&addToPrescriptionId={addToPrescriptionId}",
         title = "Nova receita",
         iconRes = R.drawable.ic_document_medicine,
         selectedIconRes = R.drawable.ic_bold_document_medicine,

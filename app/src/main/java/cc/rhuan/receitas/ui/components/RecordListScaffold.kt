@@ -6,10 +6,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -17,6 +19,7 @@ import cc.rhuan.receitas.ui.theme.DesignTheme
 import cc.rhuan.receitas.ui.theme.DesignTokens as T
 
 val LocalNavigationClearance = compositionLocalOf { 0.dp }
+internal val LocalRecordListHeight = compositionLocalOf { 0.dp }
 
 /** Shared header, page creation action, list and insets. */
 @Composable
@@ -24,9 +27,14 @@ fun RecordListScaffold(title: String, subtitle: String,
     listTag: String, modifier: Modifier = Modifier,
     createLabel: String? = null, onCreate: () -> Unit = {},
     onBack: (() -> Unit)? = null,
-    snackbarHost: @Composable () -> Unit = {}, content: LazyListScope.() -> Unit) {
+    snackbarHost: @Composable () -> Unit = {},
+    floatingTools: RecordListTools? = null, floatingAfterItems: Int = 3,
+    headerActions: @Composable RowScope.() -> Unit = {}, content: LazyListScope.() -> Unit) {
     DesignTheme {
         val navigationClearance = LocalNavigationClearance.current
+        val density = LocalDensity.current
+        var viewportHeight by remember { mutableStateOf(0.dp) }
+        var scrollingHeaderHeight by remember { mutableStateOf(0.dp) }
         val state = rememberLazyListState()
         val threshold = with(LocalDensity.current) { T.small.roundToPx() }
         var collapsed by rememberSaveable { mutableStateOf(false) }
@@ -54,12 +62,25 @@ fun RecordListScaffold(title: String, subtitle: String,
                     Box(Modifier.padding(bottom = navigationClearance)) { snackbarHost() }
                 },
                 topBar = {
-                    if (onBack != null) DetailHeader(title, onBack)
-                    else PageHeader(title, if (expanded) subtitle else "", expanded)
+                    if (floatingTools == null) {
+                        if (onBack != null) DetailHeader(title, onBack, headerActions)
+                        else PageHeader(title, if (expanded) subtitle else "", expanded, headerActions)
+                    }
                 }) { padding ->
-                LazyColumn(state = state, modifier = Modifier.fillMaxSize().padding(padding).nestedScroll(scroll).testTag(listTag),
+                CompositionLocalProvider(LocalRecordListHeight provides
+                    (viewportHeight - T.section - navigationClearance -
+                        if (floatingTools != null) scrollingHeaderHeight + T.gap else 0.dp).coerceAtLeast(0.dp)) {
+                LazyColumn(state = state, modifier = Modifier.fillMaxSize().padding(padding)
+                    .onSizeChanged { viewportHeight = with(density) { it.height.toDp() } }
+                    .nestedScroll(scroll).testTag(listTag),
                     contentPadding = PaddingValues(bottom = T.section + navigationClearance),
                     verticalArrangement = Arrangement.spacedBy(T.gap)) {
+                    if (floatingTools != null) item("scrolling-page-header") {
+                      Box(Modifier.onSizeChanged { scrollingHeaderHeight = with(density) { it.height.toDp() } }) {
+                        if (onBack != null) DetailHeader(title, onBack, headerActions)
+                        else PageHeader(title, if (!compact) subtitle else "", !compact, headerActions)
+                      }
+                    }
                     createLabel?.let { label ->
                         item("create-record") {
                             ActionButton(label, onCreate, Modifier.fillMaxWidth()
@@ -70,6 +91,13 @@ fun RecordListScaffold(title: String, subtitle: String,
                     }
                     content()
                 }
+                }
+            }
+            floatingTools?.let { tools ->
+                val showFloating by remember(state, floatingAfterItems) {
+                    derivedStateOf { state.firstVisibleItemIndex >= floatingAfterItems }
+                }
+                Box(Modifier.align(Alignment.TopEnd)) { FloatingListToolbar(showFloating, tools, onBack) }
             }
         }
     }

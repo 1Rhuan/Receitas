@@ -28,6 +28,12 @@ object DesignTokens {
     val buttonRadius = 18.dp
     val hairline = 1.dp
     val tight = 4.dp
+    val menuRadius = 24.dp
+    val menuMinWidth = 192.dp
+    val menuMaxWidth = 320.dp
+    val optionsMenuMaxHeight = 480.dp
+    val guidanceMaxWidth = 360.dp
+    val guidanceActionMaxWidth = 280.dp
 }
 
 private fun type(size: Int, height: Int, weight: FontWeight = FontWeight.Normal) =
@@ -47,7 +53,7 @@ val DesignTypography = Typography(
 
 internal val DesignLight = lightColorScheme(
     primary = Color(0xFF0072DE), onPrimary = Color.White,
-    primaryContainer = Color(0xFFE8F0FF), onPrimaryContainer = Color(0xFF123E86),
+    primaryContainer = Color(0xFF0072DE), onPrimaryContainer = Color.White,
     background = Color(0xFFF2F2F2), onBackground = Color(0xFF171717),
     surface = Color.White, onSurface = Color(0xFF171717),
     surfaceVariant = Color(0xFFEDEDED), onSurfaceVariant = Color(0xFF595959),

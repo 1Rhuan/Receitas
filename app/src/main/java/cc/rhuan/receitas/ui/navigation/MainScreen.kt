@@ -28,6 +28,11 @@ fun MainScreen(openedNotificationId: String? = null, onNotificationOpened: () ->
     MainScreenContent(
         selectedRoute = selectedRoute,
         showBottomBar = NavRoute.bottomNavItems.any { it.route == currentDestination?.route },
+        onCreateRecord = when (selectedRoute) {
+            NavRoute.Prescriptions.route -> ({ navController.navigate("prescription_wizard") { launchSingleTop = true } })
+            NavRoute.Medications.route -> ({ navController.navigate("prescription_wizard?entryMode=STANDALONE_MEDICATION") { launchSingleTop = true } })
+            else -> null
+        },
         onSelectDestination = { route ->
             navController.navigate(route) {
                 popUpTo(navController.graph.findStartDestination().id) { saveState = true }

@@ -92,6 +92,7 @@ fun ReceitasNavHost(navController: NavHostController, modifier: Modifier = Modif
                 },
                 navArgument("renewalOf") { type = NavType.StringType; nullable = true },
                 navArgument("medicationId") { type = NavType.StringType; nullable = true },
+                navArgument("addToPrescriptionId") { type = NavType.StringType; nullable = true },
                 navArgument("entryMode") {
                     type = NavType.StringType
                     nullable = true
@@ -117,6 +118,7 @@ fun ReceitasNavHost(navController: NavHostController, modifier: Modifier = Modif
                 viewModel = hiltViewModel(),
                 onBackClick = { navController.popBackStack() },
                 onMedicationClick = { id -> navController.navigate("medication_detail/" + android.net.Uri.encode(id)) },
+                onAddMedicationClick = { id -> navController.navigate("prescription_wizard?entryMode=STANDALONE_MEDICATION&addToPrescriptionId=" + android.net.Uri.encode(id)) },
                 onRenewClick = { id -> navController.navigate("prescription_wizard?renewalOf=" + android.net.Uri.encode(id)) },
                 onEditClick = { id ->
                     navController.navigate("prescription_wizard?prescriptionId=$id")

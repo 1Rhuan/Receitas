@@ -4,6 +4,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -13,24 +20,41 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Clear
+import androidx.annotation.DrawableRes
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
 import cc.rhuan.receitas.ui.theme.DesignTokens as T
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun SearchField(value: String, onValueChange: (String) -> Unit, label: String, shortLabel: String,
-    clearLabel: String, modifier: Modifier = Modifier) {
+    clearLabel: String, modifier: Modifier = Modifier, fieldTag: String = "record-search") {
     val visibleLabel = if (LocalDensity.current.fontScale >= T.compactFontScale) shortLabel else label
-    OutlinedTextField(value, onValueChange, modifier.heightIn(min = T.search).testTag("record-search"),
-        label = { Text(visibleLabel, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        leadingIcon = { Icon(Icons.Default.Search, null) },
-        trailingIcon = { if (value.isNotEmpty()) IconButton(onClick = { onValueChange("") }) {
-            Icon(Icons.Default.Clear, clearLabel)
-        } }, shape = RoundedCornerShape(T.fieldRadius), singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant))
+    val interaction = remember { MutableInteractionSource() }
+    val colors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = MaterialTheme.colorScheme.surface,
+        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant)
+    BasicTextField(value, onValueChange, modifier.heightIn(min = T.control).testTag(fieldTag)
+        .semantics { contentDescription = label }, singleLine = true,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), interactionSource = interaction,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        decorationBox = { innerTextField ->
+            OutlinedTextFieldDefaults.DecorationBox(value = value, innerTextField = innerTextField,
+                enabled = true, singleLine = true, visualTransformation = VisualTransformation.None,
+                interactionSource = interaction, colors = colors,
+                contentPadding = PaddingValues(T.small),
+                placeholder = { Text(visibleLabel, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                leadingIcon = { Icon(Icons.Rounded.Search, null) },
+                trailingIcon = if (value.isNotEmpty()) ({ IconButton(onClick = { onValueChange("") }) {
+                    Icon(Icons.Rounded.Clear, clearLabel)
+                } }) else null,
+                container = { OutlinedTextFieldDefaults.Container(true, false, interaction, colors = colors,
+                    shape = RoundedCornerShape(T.fieldRadius)) })
+        })
 }
 
 @Composable
@@ -59,15 +83,18 @@ fun FilterPill(selected: Boolean, label: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun PageHeader(title: String, subtitle: String, expanded: Boolean) {
+fun PageHeader(title: String, subtitle: String, expanded: Boolean,
+    actions: @Composable RowScope.() -> Unit = {}) {
     Column(Modifier.fillMaxWidth().testTag(if (expanded) "page-header" else "page-app-bar").padding(horizontal = T.margin)
-        .padding(vertical = if (expanded) T.viewingPadding else T.padding),
-        horizontalAlignment = if (expanded) Alignment.CenterHorizontally else Alignment.Start) {
-        Text(title, Modifier.semantics { heading() }, style = if (expanded) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.titleLarge,
-            textAlign = if (expanded) TextAlign.Center else TextAlign.Start)
+        .padding(vertical = T.padding), horizontalAlignment = Alignment.Start) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, Modifier.weight(1f).semantics { heading() },
+                style = if (expanded) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge)
+            actions()
+        }
         if (expanded && subtitle.isNotBlank()) Text(subtitle, Modifier.padding(top = T.small),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center)
+            textAlign = TextAlign.Start)
     }
 }
 
@@ -78,17 +105,15 @@ fun SectionHeading(title: String) {
 }
 
 @Composable
-fun EmptyStateCard(title: String, message: String, actionLabel: String?, onAction: () -> Unit,
-    modifier: Modifier = Modifier) {
-    ContentCard(modifier) {
-        Column(Modifier.fillMaxWidth().padding(vertical = T.section),
-            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(T.padding)) {
-            Text(title, Modifier.semantics { heading() }, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-            Text(message, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center)
-            if (actionLabel != null) ActionButton(actionLabel, onAction)
-        }
-    }
+fun EmptyListGuidance(title: String, message: String, actionLabel: String?, onAction: () -> Unit,
+    @DrawableRes iconRes: Int, modifier: Modifier = Modifier) {
+    EmptyCollectionState(title, message, icon = {
+        Icon(painterResource(iconRes), null, Modifier.size(T.padding * 2),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    }, modifier = modifier, actions = if (actionLabel != null) ({
+        GuidanceActionButton(actionLabel, onAction, Modifier.fillMaxWidth().testTag("create-record")
+            .semantics { contentDescription = actionLabel })
+    }) else null)
 }
 
 @Composable

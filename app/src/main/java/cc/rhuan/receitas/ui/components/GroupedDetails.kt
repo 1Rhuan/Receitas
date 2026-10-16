@@ -3,7 +3,8 @@ package cc.rhuan.receitas.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,9 +16,9 @@ import cc.rhuan.receitas.R
 import cc.rhuan.receitas.ui.theme.DesignTokens as T
 
 @Composable
-fun GroupedSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+fun GroupedSection(title: String, onEdit: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(T.small)) {
-        SectionHeading(title)
+        if (onEdit == null) SectionHeading(title) else ReviewSectionHeading(title, onEdit)
         Surface(shape = RoundedCornerShape(T.cardRadius), color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.fillMaxWidth(), content = content)
         }
@@ -25,9 +26,16 @@ fun GroupedSection(title: String, content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-fun GroupedValueRow(label: String, value: String, divider: Boolean = true) {
+fun GroupedValueRow(label: String, value: String, divider: Boolean = true, onEdit: (() -> Unit)? = null, stacked: Boolean = false) {
     if (divider) HorizontalDivider(Modifier.padding(horizontal = T.padding), color = MaterialTheme.colorScheme.outlineVariant)
-    if (LocalDensity.current.fontScale >= T.compactFontScale) {
+    if (onEdit != null) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+            Box(Modifier.weight(1f)) { GroupedValueRow(label, value, divider = false, stacked = stacked) }
+            ReviewEditButton(label, onEdit, Modifier.padding(top = T.small, end = T.small))
+        }
+        return
+    }
+    if (stacked || LocalDensity.current.fontScale >= T.compactFontScale) {
         Column(Modifier.fillMaxWidth().padding(T.padding), verticalArrangement = Arrangement.spacedBy(T.tight)) {
             Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(value, style = MaterialTheme.typography.bodyLarge)
@@ -51,15 +59,31 @@ fun ContextActionsButton(actions: List<ContextAction>, modifier: Modifier = Modi
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.heightIn(min = T.control),
             shape = RoundedCornerShape(T.buttonRadius)) {
             Text(stringResource(R.string.design_context_actions), style = MaterialTheme.typography.labelLarge)
-            Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(T.icon))
+            Icon(Icons.Rounded.ArrowDropDown, contentDescription = null, modifier = Modifier.size(T.icon))
         }
-        DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+        ContextActionMenu(expanded, { expanded = false }, actions)
+    }
+}
+
+@Composable
+fun OverflowActionsButton(label: String, actions: List<ContextAction>, modifier: Modifier = Modifier) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(modifier) {
+        IconButton({ expanded = true }, Modifier.size(T.control)) {
+            Icon(Icons.Rounded.MoreVert, label)
+        }
+        ContextActionMenu(expanded, { expanded = false }, actions)
+    }
+}
+
+@Composable
+private fun ContextActionMenu(expanded: Boolean, onDismiss: () -> Unit, actions: List<ContextAction>) {
+        ContextMenu(expanded, onDismissRequest = onDismiss) {
             actions.forEachIndexed { index, action ->
                 if (action.destructive && index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 DropdownMenuItem(text = {
                     Text(action.label, color = if (action.destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
-                }, onClick = { expanded = false; action.onClick() })
+                }, modifier = Modifier.heightIn(min = T.control), onClick = { onDismiss(); action.onClick() })
             }
         }
-    }
 }

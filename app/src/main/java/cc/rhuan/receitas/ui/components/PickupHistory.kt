@@ -26,14 +26,16 @@ fun PickupHistory(events: List<PickupEvent>, onCorrect: (String, LocalDate) -> U
     val context = LocalContext.current
     var deleting by remember { mutableStateOf<PickupEvent?>(null) }
     var correcting by remember { mutableStateOf<Pair<PickupEvent, LocalDate>?>(null) }
-    deleting?.let { event -> AlertDialog(onDismissRequest = { deleting = null }, title = { Text(stringResource(R.string.ui_excluir_retirada)) },
-        text = { Text(stringResource(R.string.ui_a_proxima_previsao_sera_recalculada_a_partir_dos_registros_restantes)) },
-        confirmButton = { TextButton(onClick = { onDelete(event.id); deleting = null }) { Text(stringResource(R.string.action_delete)) } },
-        dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.action_cancel)) } }) }
-    correcting?.let { (event, date) -> AlertDialog(onDismissRequest = { correcting = null }, title = { Text(stringResource(R.string.ui_corrigir_data_da_retirada)) },
-        text = { Text(stringResource(R.string.correct_pickup_date, date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))) },
-        confirmButton = { TextButton(onClick = { onCorrect(event.id, date); correcting = null }) { Text(stringResource(R.string.action_confirm)) } },
-        dismissButton = { TextButton(onClick = { correcting = null }) { Text(stringResource(R.string.action_cancel)) } }) }
+    deleting?.let { event -> ConfirmationSheet(
+        title = stringResource(R.string.ui_excluir_retirada),
+        message = stringResource(R.string.ui_a_proxima_previsao_sera_recalculada_a_partir_dos_registros_restantes),
+        confirmLabel = stringResource(R.string.action_delete), onConfirm = { onDelete(event.id); deleting = null },
+        onDismiss = { deleting = null }, destructive = true) }
+    correcting?.let { (event, date) -> ConfirmationSheet(
+        title = stringResource(R.string.ui_corrigir_data_da_retirada),
+        message = stringResource(R.string.correct_pickup_date, date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))),
+        confirmLabel = stringResource(R.string.action_confirm), onConfirm = { onCorrect(event.id, date); correcting = null },
+        onDismiss = { correcting = null }) }
     if (showHeading) SectionHeading(stringResource(R.string.ui_historico_de_retiradas))
     if (events.isEmpty()) Text(stringResource(R.string.ui_nenhuma_retirada_registrada))
     events.forEach { event ->

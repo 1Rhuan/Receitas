@@ -16,7 +16,7 @@ import cc.rhuan.receitas.ui.theme.DesignTokens as T
 
 /** Content-sized app bar so enlarged titles never depend on a fixed toolbar height. */
 @Composable
-fun DetailHeader(title: String, onBack: () -> Unit) {
+fun DetailHeader(title: String, onBack: () -> Unit, actions: @Composable RowScope.() -> Unit = {}) {
     Row(Modifier.fillMaxWidth().padding(horizontal = T.padding, vertical = T.small),
         verticalAlignment = Alignment.CenterVertically) {
         IconButton(onBack, Modifier.size(T.control)) {
@@ -24,6 +24,7 @@ fun DetailHeader(title: String, onBack: () -> Unit) {
         }
         Text(title, Modifier.weight(1f).padding(start = T.small).semantics { heading() },
             style = MaterialTheme.typography.titleLarge)
+        actions()
     }
 }
 
@@ -52,10 +53,32 @@ fun DetailIdentityHeader(title: String, actions: @Composable RowScope.() -> Unit
 }
 
 @Composable
-fun FormSection(title: String, onEdit: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
+fun FormSection(title: String, modifier: Modifier = Modifier, prominent: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(T.padding)) {
+        if (prominent) Text(title, modifier = Modifier.padding(top = T.section, bottom = T.gap).semantics { heading() },
+            style = MaterialTheme.typography.headlineSmall)
+        else SectionHeading(title)
+        content()
+    }
+}
+
+/** A card represents a record or a review summary, rather than editable fields. */
+@Composable
+fun RecordSummarySection(title: String, onEdit: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
     ContentCard {
         SectionHeading(title)
         if (onEdit != null) TextButton(onEdit) { Text(stringResource(R.string.action_edit)) }
+        content()
+    }
+}
+
+/** Keeps the values of each record together inside a shared review summary. */
+@Composable
+fun SummaryItemGroup(title: String, modifier: Modifier = Modifier, divider: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit) {
+    Column(modifier.fillMaxWidth().padding(vertical = T.small), verticalArrangement = Arrangement.spacedBy(T.small)) {
+        if (divider) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Text(title, Modifier.semantics { heading() }, style = MaterialTheme.typography.titleSmall)
         content()
     }
 }

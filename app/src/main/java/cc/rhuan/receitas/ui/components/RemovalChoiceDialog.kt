@@ -1,8 +1,6 @@
 package cc.rhuan.receitas.ui.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -14,14 +12,15 @@ import cc.rhuan.receitas.ui.theme.DesignTokens as T
 @Composable
 fun RemovalChoiceDialog(title: String, canArchive: Boolean, archiveDescription: String,
     deleteDescription: String, onArchive: () -> Unit, onDelete: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(title) }, text = {
-        Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(T.small)) {
-            if (canArchive) {
-                SecondaryActionButton(stringResource(R.string.action_archive), onArchive, Modifier.fillMaxWidth())
-                Text(archiveDescription, style = MaterialTheme.typography.bodySmall)
-            }
-            SecondaryActionButton(stringResource(R.string.ui_excluir_definitivamente), onDelete, Modifier.fillMaxWidth())
-            Text(deleteDescription, style = MaterialTheme.typography.bodySmall)
+    ActionSheet(title, onDismiss, actions = {
+        GuidanceActionButton(stringResource(R.string.action_cancel), onDismiss, Modifier.fillMaxWidth(), outlined = true)
+    }) {
+        if (canArchive) {
+            SheetActionButton(stringResource(R.string.action_archive), onArchive)
+            Text(archiveDescription, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(T.small))
         }
-    }, confirmButton = {}, dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } })
+        SheetActionButton(stringResource(R.string.ui_excluir_definitivamente), onDelete, destructive = true)
+        Text(deleteDescription, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }

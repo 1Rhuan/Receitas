@@ -18,6 +18,7 @@ fun MainScreenContent(
     showBottomBar: Boolean,
     onSelectDestination: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onCreateRecord: (() -> Unit)? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     DesignTheme {
@@ -29,7 +30,7 @@ fun MainScreenContent(
             }
             if (showBottomBar) Box(Modifier.align(Alignment.BottomCenter).onSizeChanged {
                 barHeight = with(density) { it.height.toDp() }
-            }) { TextNavigationBar(selectedRoute, onSelectDestination) }
+            }) { TextNavigationBar(selectedRoute, onSelectDestination, onCreateRecord) }
         }
     }
 }
