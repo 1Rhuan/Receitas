@@ -10,7 +10,6 @@ import cc.rhuan.receitas.ui.components.RecordSummarySection
 import cc.rhuan.receitas.ui.components.SummaryItemGroup
 import cc.rhuan.receitas.ui.components.FormRecordSection
 import cc.rhuan.receitas.ui.components.ContentCard
-import cc.rhuan.receitas.ui.components.OptionalDetailRow
 import cc.rhuan.receitas.ui.components.GroupedSection
 import cc.rhuan.receitas.ui.components.GroupedValueRow
 import cc.rhuan.receitas.ui.components.ReviewSection
@@ -126,7 +125,6 @@ internal fun PrescriptionWizardContent(state: PrescriptionWizardUiState, actions
             primaryButtonText = when {
                 state.isSaved -> if (standalone) stringResource(R.string.action_finish) else stringResource(R.string.view_prescription)
                 state.isLoading && state.currentStep == state.maxSteps -> stringResource(R.string.saving)
-                state.currentStep == state.maxSteps && state.medicationBelongsToPrescription -> stringResource(R.string.action_finish)
                 state.currentStep == state.maxSteps -> if (standalone) { if (state.editingMedicationId != null) stringResource(R.string.save_changes) else stringResource(R.string.save_medication) } else if (state.editingPrescriptionId != null) stringResource(R.string.save_changes) else stringResource(R.string.save_prescription)
                 state.reviewEditStep != null -> stringResource(R.string.return_to_review)
                 else -> stringResource(R.string.action_advance)
@@ -362,7 +360,7 @@ private fun PickupContextSection(state: PrescriptionWizardUiState, actions: Wiza
                 if (state.addToPrescriptionId != null) {
                     Text(state.addToPrescriptionTitle)
                 } else {
-                val offersCurrentRecipe = state.entryMode == WizardEntryMode.FULL_PRESCRIPTION || state.medicationBelongsToPrescription
+                val offersCurrentRecipe = state.entryMode == WizardEntryMode.FULL_PRESCRIPTION
                 val prescriptions = state.availablePrescriptions.filter { p -> p.id != state.previousPrescriptionId && p.medicationIds.contains(medication.id) }
                 val labels = listOf(stringResource(R.string.no_linked_prescription)) +
                     (if (offersCurrentRecipe) listOf(stringResource(if (state.previousPrescriptionId != null) R.string.continue_with_new_prescription else R.string.use_this_prescription)) else emptyList()) +

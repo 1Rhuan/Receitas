@@ -94,7 +94,7 @@ private fun NavigationTabs(selectedRoute: String?, onSelectDestination: (String)
     columns: Int, modifier: Modifier = Modifier) {
     FlowRow(modifier.selectableGroup(), maxItemsInEachRow = columns,
         verticalArrangement = Arrangement.spacedBy(T.small)) {
-        NavRoute.bottomNavItems.filter { it != NavRoute.Menu }.forEach { destination ->
+        NavRoute.bottomNavItems.forEach { destination ->
             val selected = destination.route == selectedRoute
             val selectionColor = animateColorAsState(
                 if (selected) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent,

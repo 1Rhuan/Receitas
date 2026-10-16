@@ -1,6 +1,5 @@
 package cc.rhuan.receitas.data.local
 
-import cc.rhuan.receitas.R
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase

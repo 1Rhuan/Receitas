@@ -31,13 +31,6 @@ sealed class NavRoute(
         selectedIconRes = R.drawable.ic_bold_pills,
     )
 
-    data object Menu : NavRoute(
-        route = "menu",
-        titleRes = R.string.nav_menu,
-        iconRes = R.drawable.ic_hamburger_menu,
-        selectedIconRes = R.drawable.ic_hamburger_menu,
-    )
-
     data object Notifications : NavRoute(
         route = "notifications",
         titleRes = R.string.nav_notifications,
@@ -58,7 +51,6 @@ sealed class NavRoute(
             Home,
             Prescriptions,
             Medications,
-            Menu,
         )
     }
 }

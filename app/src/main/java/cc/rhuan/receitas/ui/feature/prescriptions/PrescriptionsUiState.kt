@@ -21,7 +21,6 @@ enum class PrescriptionSortOrder(@StringRes val labelRes: Int) {
 
 data class PrescriptionsUiState(
     val medications: List<cc.rhuan.receitas.domain.model.MedicationItem> = emptyList(),
-    val purchaseError: Boolean = false,
     val prescriptions: List<PrescriptionItem> = emptyList(),
     val searchQuery: String = "",
     val selectedFilter: PrescriptionFilter = PrescriptionFilter.ALL,
@@ -30,9 +29,6 @@ data class PrescriptionsUiState(
     val errorMessage: String? = null,
     val medicationFilterId: String? = null,
 ) {
-    val nextPurchase: cc.rhuan.receitas.domain.model.MedicationItem?
-        get() = medications.filter { it.source == cc.rhuan.receitas.domain.model.MedicationSource.SELF_PURCHASE && it.nextAvailableRefillDate != null }
-            .minByOrNull { it.nextAvailableRefillDate!! }
     val filteredPrescriptions: List<PrescriptionItem>
         get() {
             val filtered = prescriptions.filter { prescription ->

@@ -28,22 +28,21 @@ class PrescriptionsViewModel @Inject constructor(
     val uiState: StateFlow<PrescriptionsUiState> = _uiState.asStateFlow()
 
     private var loadJob: Job? = null
-    private var purchaseJob: Job? = null
+    private var medicationJob: Job? = null
 
     init {
         loadPrescriptions()
     }
 
     fun loadPrescriptions() {
-        purchaseJob?.cancel()
-        purchaseJob = viewModelScope.launch {
-            _uiState.update { it.copy(purchaseError = false) }
+        medicationJob?.cancel()
+        medicationJob = viewModelScope.launch {
             try {
                 medicationRepository.getMedications().collect { list ->
                     _uiState.update { it.copy(medications = list) }
                 }
             } catch (e: CancellationException) { throw e
-            } catch (e: Exception) { _uiState.update { it.copy(purchaseError = true) } }
+            } catch (e: Exception) { android.util.Log.w("PrescriptionsViewModel", "Unable to load medication context", e) }
         }
         loadJob?.cancel()
         loadJob = viewModelScope.launch {

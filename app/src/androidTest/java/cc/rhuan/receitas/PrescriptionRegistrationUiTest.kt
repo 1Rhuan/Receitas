@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.room.withTransaction
-import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
 import android.os.Build
 import cc.rhuan.receitas.data.local.AppDatabase

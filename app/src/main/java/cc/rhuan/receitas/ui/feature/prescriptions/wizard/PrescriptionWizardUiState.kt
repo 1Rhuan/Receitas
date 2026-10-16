@@ -90,7 +90,6 @@ data class PrescriptionTypeDraft(
 
 data class PrescriptionWizardUiState(
     val entryMode: WizardEntryMode = WizardEntryMode.FULL_PRESCRIPTION,
-    val medicationBelongsToPrescription: Boolean = false,
     val editingPrescriptionId: String? = null,
     val previousPrescriptionId: String? = null,
     val recordState: RecordState = RecordState.ACTIVE,

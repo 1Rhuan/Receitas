@@ -3,7 +3,6 @@ package cc.rhuan.receitas.ui.feature.prescriptions
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,10 +25,9 @@ fun PrescriptionsPresentation(
     onSearchQueryChanged: (String) -> Unit, onFilterSelected: (PrescriptionFilter) -> Unit,
     onSortOrderSelected: (PrescriptionSortOrder) -> Unit, loadPrescriptions: () -> Unit,
     onPrescriptionClick: (PrescriptionItem) -> Unit = {}, onCreatePrescriptionClick: () -> Unit = {},
-    onPurchaseClick: (MedicationItem) -> Unit = {},
     onBack: (() -> Unit)? = null, onClearMedicationFilter: () -> Unit = {},
 ) = PrescriptionsScreenContent(uiState, onSearchQueryChanged, onFilterSelected, modifier,
-    onSortOrderSelected, onPrescriptionClick, onCreatePrescriptionClick, loadPrescriptions, onPurchaseClick,
+    onSortOrderSelected, onPrescriptionClick, onCreatePrescriptionClick, loadPrescriptions,
     onBack, onClearMedicationFilter)
 
 @Composable
@@ -38,7 +36,7 @@ fun PrescriptionsScreenContent(
     onFilterSelected: (PrescriptionFilter) -> Unit, modifier: Modifier = Modifier,
     onSortOrderSelected: (PrescriptionSortOrder) -> Unit = {},
     onPrescriptionClick: (PrescriptionItem) -> Unit = {}, onCreatePrescriptionClick: () -> Unit = {},
-    onRetry: () -> Unit = {}, onPurchaseClick: (MedicationItem) -> Unit = {},
+    onRetry: () -> Unit = {},
     onBack: (() -> Unit)? = null, onClearMedicationFilter: () -> Unit = {},
 ) {
     DesignTheme {

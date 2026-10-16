@@ -92,19 +92,17 @@ class PrescriptionsPreviewTest {
     }
     @Test fun callbacksRemainAvailable() {
         var created = 0
-        var purchased = ""
         var opened = ""
         compose.setContent { AppTheme {
             DesignTheme { Scaffold(bottomBar = { TextNavigationBar("prescriptions", {}, { created++ }) }) { padding ->
             PrescriptionsScreenContent(designPreviewState(TestTexts), {}, {}, Modifier.padding(padding),
-                onCreatePrescriptionClick = { created++ }, onPurchaseClick = { purchased = it.id },
+                onCreatePrescriptionClick = { created++ },
                 onPrescriptionClick = { opened = it.id })
             } }
         } }
         compose.onNodeWithContentDescription("Criar receita").performClick()
         assertEquals(1, created)
         compose.onNodeWithText("Próxima compra").assertDoesNotExist()
-        assertEquals("", purchased)
         compose.onNodeWithTag("prescription-list").performScrollToNode(hasText("Tratamento de uso contínuo"))
         compose.onNodeWithText("Tratamento de uso contínuo").performClick()
         assertEquals("preview-1", opened)

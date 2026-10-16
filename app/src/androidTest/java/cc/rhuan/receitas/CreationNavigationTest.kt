@@ -22,14 +22,14 @@ class CreationNavigationTest {
         compose.onNodeWithTag("floating-navigation").assertIsDisplayed()
         compose.onNodeWithContentDescription("Criar medicamento").assertDoesNotExist()
         compose.onNodeWithContentDescription("Criar receita").performClick()
-        compose.onNodeWithText("Vamos cadastrar sua receita").assertIsDisplayed()
+        compose.onNodeWithText("Como você quer chamar esta receita?").assertIsDisplayed()
     }
     @Test fun medicationsPageOpensStandaloneRegistration() {
-        compose.onNodeWithContentDescription("Medicamentos", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription("Remédios", useUnmergedTree = true).performClick()
         compose.onNodeWithTag("floating-navigation").assertIsDisplayed()
         compose.onNodeWithContentDescription("Criar receita").assertDoesNotExist()
         compose.onNodeWithContentDescription("Criar medicamento").performClick()
-        compose.onNodeWithText("Qual medicamento deseja acompanhar?").assertIsDisplayed()
+        compose.onNodeWithText("Qual é o nome do medicamento?").assertIsDisplayed()
     }
     @Test fun contextualActionMovesNavigationWithoutResizingItems() {
         fun bounds(label: String) = compose.onNodeWithContentDescription(label, useUnmergedTree = true)
@@ -38,15 +38,15 @@ class CreationNavigationTest {
         compose.waitForIdle()
         compose.onNodeWithTag("navigation-create").assertDoesNotExist()
         val initialCapsule = compose.onNodeWithTag("navigation-capsule").fetchSemanticsNode().boundsInRoot
-        val initial = listOf("Início", "Receitas", "Medicamentos").map(::bounds)
-        for (destination in listOf("Receitas", "Medicamentos")) {
+        val initial = listOf("Início", "Receitas", "Remédios").map(::bounds)
+        for (destination in listOf("Receitas", "Remédios")) {
             compose.onNodeWithContentDescription(destination, useUnmergedTree = true).performClick()
             compose.waitForIdle()
             compose.onNodeWithTag("navigation-create").assertIsDisplayed()
             val capsule = compose.onNodeWithTag("navigation-capsule").fetchSemanticsNode().boundsInRoot
             assertEquals(initialCapsule.width, capsule.width, 0.5f)
             assertTrue(capsule.left < initialCapsule.left)
-            val current = listOf("Início", "Receitas", "Medicamentos").map(::bounds)
+            val current = listOf("Início", "Receitas", "Remédios").map(::bounds)
             initial.zip(current).forEach { (before, after) ->
                 assertEquals(before.width, after.width, 0.5f)
                 assertEquals(before.height, after.height, 0.5f)

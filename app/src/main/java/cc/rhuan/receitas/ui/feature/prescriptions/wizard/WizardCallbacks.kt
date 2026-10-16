@@ -22,7 +22,7 @@ internal data class WizardCallbacks(
     val update: ((PrescriptionWizardUiState) -> PrescriptionWizardUiState) -> Unit = {},
     val next: () -> Unit = {}, val back: () -> Unit = {}, val close: () -> Unit = {},
     val retry: () -> Unit = {},
-    val save: () -> Unit = {}, val commitMedication: () -> Unit = {}, val addMedication: () -> Unit = {},
+    val save: () -> Unit = {}, val addMedication: () -> Unit = {},
     val editMedication: (Int) -> Unit = {}, val removeMedication: (Int) -> Unit = {},
     val cancelMedication: () -> Unit = {}, val goToStep: (Int) -> Unit = {}, val complete: () -> Unit = {},
 )

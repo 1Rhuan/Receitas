@@ -36,7 +36,6 @@ fun PrescriptionWizardScreen(
             updatePickupInterval = viewModel::updatePickupInterval,
             update = viewModel::updateForm, next = viewModel::nextStep,
             back = viewModel::previousStep, save = viewModel::savePrescription,
-            commitMedication = { viewModel.commitMedicationDraft() },
             addMedication = viewModel::startNewMedication, editMedication = viewModel::editMedication,
             removeMedication = viewModel::removeMedication, cancelMedication = viewModel::cancelMedicationEditor,
             retry = viewModel::retryInitialLoad, goToStep = viewModel::goToStep,

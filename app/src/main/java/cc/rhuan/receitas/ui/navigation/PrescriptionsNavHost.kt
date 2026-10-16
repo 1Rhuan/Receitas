@@ -10,7 +10,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import cc.rhuan.receitas.ui.feature.home.HomeScreen
 import cc.rhuan.receitas.ui.feature.medications.MedicationsScreen
-import cc.rhuan.receitas.ui.feature.menu.MenuScreen
 import cc.rhuan.receitas.ui.feature.notifications.NotificationsScreen
 import cc.rhuan.receitas.ui.feature.prescriptions.PrescriptionDetailScreen
 import cc.rhuan.receitas.ui.feature.prescriptions.PrescriptionsScreen
@@ -73,7 +72,6 @@ fun PrescriptionsNavHost(navController: NavHostController, modifier: Modifier = 
         }
         composable(NavRoute.Prescriptions.route) {
             PrescriptionsScreen(
-                onPurchaseClick = { navController.navigate("medication_detail/" + android.net.Uri.encode(it.id)) },
                 viewModel = hiltViewModel(),
                 onPrescriptionClick = { prescription ->
                     navController.navigate("prescription_detail/${prescription.id}")
@@ -140,13 +138,7 @@ fun PrescriptionsNavHost(navController: NavHostController, modifier: Modifier = 
             PrescriptionsScreen(viewModel = hiltViewModel(), medicationFilterId = entry.arguments?.getString("medicationId"),
                 onBack = { navController.popBackStack() },
                 onPrescriptionClick = { navController.navigate("prescription_detail/" + android.net.Uri.encode(it.id)) },
-                onCreatePrescriptionClick = { navController.navigate("prescription_wizard") },
-                onPurchaseClick = { navController.navigate("medication_detail/" + android.net.Uri.encode(it.id)) })
-        }
-        composable(NavRoute.Menu.route) {
-            MenuScreen {
-                navController.navigate(NavRoute.Notifications.route)
-            }
+                onCreatePrescriptionClick = { navController.navigate("prescription_wizard") })
         }
         composable(NavRoute.Notifications.route) {
             NotificationsScreen(

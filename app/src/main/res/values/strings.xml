@@ -51,8 +51,6 @@
     <string name="design_record_state">Situação</string>
     <string name="design_recipe_expiration">Vencimento</string>
     <string name="design_view_pickup_history">Ver histórico de retiradas</string>
-    <string name="design_recipe_identity">Emissão e tipo</string>
-    <string name="design_recipe_validity">Validade da receita</string>
     <string name="design_medications_title">Medicamentos</string>
     <string name="design_medication_search">Buscar medicamentos</string>
     <string name="design_your_medications">Seus medicamentos</string>
@@ -75,15 +73,9 @@
     <string name="design_tab_menu">Menu</string>
     <string name="design_search_short">Buscar receitas</string>
     <string name="design_clear_filters">Limpar busca e filtros</string>
-    <string name="design_purchase_date">Prevista para %1$s</string>
-    <string name="design_purchase_open">Abrir acompanhamento</string>
     <string name="design_empty_filtered">Altere os filtros ou limpe a busca para ver suas receitas.</string>
     <string name="label_prescription_list">Receitas</string>
-    <string name="design_next_purchase">Próxima compra</string>
     <string name="design_your_prescriptions">Suas receitas</string>
-    <string name="design_no_purchase">Nenhuma compra programada.</string>
-    <string name="design_purchase_error">Não foi possível consultar a próxima compra.</string>
-    <string name="design_retry">Tentar novamente</string>
     <string name="app_name">Receitas</string>
     <string name="search">Buscar</string>
     <string name="clear_search">Limpar busca</string>
@@ -141,8 +133,6 @@
     <string name="no_pickups_recorded">Nenhuma retirada registrada.</string>
     <string name="action_correct">Corrigir</string>
     <string name="action_back">Voltar</string>
-    <string name="prescription_registration">Cadastro de receita</string>
-    <string name="exit_registration">Sair do cadastro</string>
     <string name="nothing_scheduled_today">Nada programado para este dia</string>
     <string name="no_events_on_selected_date">Não há retiradas ou vencimentos para a data selecionada.</string>
     <string name="no_tracking_registered">Nenhum acompanhamento cadastrado</string>
@@ -170,19 +160,6 @@
     <string name="new_medication">Novo medicamento</string>
     <string name="no_medications_found">Nenhum medicamento encontrado</string>
     <string name="no_medications_registered">Nenhum medicamento cadastrado</string>
-    <string name="menu">Menu</string>
-    <string name="app_reminders_and_information">Lembretes e informações do aplicativo</string>
-    <string name="options">Opções</string>
-    <string name="my_profile">Meu perfil</string>
-    <string name="personal_details_coming_soon">Dados pessoais — em breve</string>
-    <string name="open_notification_center">Ver central de avisos e lembretes</string>
-    <string name="settings">Configurações</string>
-    <string name="preferences_coming_soon">Preferências — em breve</string>
-    <string name="general">Geral</string>
-    <string name="help_and_support">Ajuda e suporte</string>
-    <string name="help_coming_soon">Ajuda — em breve</string>
-    <string name="about_app">Sobre o Receitas</string>
-    <string name="app_description">Organize receitas e acompanhe retiradas</string>
     <string name="register_new_prescription">Registrar nova receita?</string>
     <string name="register_pickup">Registrar retirada?</string>
     <string name="prescription_renewal_guidance">Você poderá confirmar os dados da nova receita e escolher os acompanhamentos que continuarão.</string>
@@ -217,15 +194,11 @@
     <string name="prescription_updated">Receita atualizada</string>
     <string name="prescription_registered">Receita cadastrada</string>
     <string name="prescription_medications_question">Quais medicamentos estão na receita?</string>
-    <string name="tracked_medication_question">Qual medicamento deseja acompanhar?</string>
     <string name="medication_pickup_question">Quando você retira os medicamentos?</string>
     <string name="review_before_saving">Confira antes de salvar</string>
     <string name="register_renewal_heading">Vamos registrar sua nova receita</string>
     <string name="register_prescription_heading">Vamos cadastrar sua receita</string>
-    <string name="configured_reminders_summary">Tudo pronto. Confira abaixo os lembretes configurados.</string>
-    <string name="review_edit_guidance">Toque no lápis ao lado de uma informação para editá-la.</string>
     <string name="edit_medication">Editar medicamento</string>
-    <string name="medication_registration">Cadastro de medicamento</string>
     <string name="action_finish">Concluir</string>
     <string name="saving">Salvando…</string>
     <string name="save_changes">Salvar alterações</string>
@@ -234,7 +207,6 @@
     <string name="return_to_review">Voltar à revisão</string>
     <string name="registration_complete">Cadastro concluído</string>
     <string name="saved_record_guidance">Você pode consultar e atualizar estes dados pelo aplicativo.</string>
-    <string name="optional_notes">Observações da receita</string>
     <string name="recipe_notes_group">Observações da receita</string>
     <string name="review_edit_field">Editar %1$s</string>
     <string name="review_medication_edit_label">medicamento %1$s</string>
@@ -244,7 +216,6 @@
     <string name="review_no_notes">Nenhuma observação informada</string>
     <string name="optional_prescription_name">Nome da receita</string>
     <string name="prescription_name_example">Ex.: Receita de acompanhamento</string>
-    <string name="automatic_prescription_name_guidance">Se deixar em branco, usaremos o primeiro medicamento e a data de emissão. Sem medicamentos, usaremos Receita e a data.</string>
     <string name="issue_date">Data de emissão</string>
     <string name="prescription_type">Tipo de receita</string>
     <string name="validity_days">Validade em dias</string>
@@ -262,9 +233,6 @@
     <string name="medication_name">Nome do medicamento</string>
     <string name="medication_name_example">Ex.: Losartana</string>
     <string name="optional_concentration">Concentração</string>
-    <string name="concentration_example">Ex.: 50 mg</string>
-    <string name="hide_details">Ocultar detalhes</string>
-    <string name="optional_more_details">Mais detalhes</string>
     <string name="pharmaceutical_form">Forma farmacêutica</string>
     <string name="active_ingredient">Princípio ativo</string>
     <string name="optional_prescribed_quantity">Quantidade prescrita</string>
@@ -317,8 +285,6 @@
         <item quantity="other">Vence em %1$d dias</item>
         <item quantity="many">Vence em %1$d dias</item>
     </plurals>
-    <string name="wizard_step">Etapa %1$d de %2$d</string>
-    <string name="app_version">Versão %1$s</string>
     <string name="correct_pickup_date">Confirme a data real: %1$s. A previsão será recalculada.</string>
     <string name="medications_count">Medicamentos (%1$d)</string>
     <string name="professional_name">Profissional: %1$s</string>
@@ -349,26 +315,15 @@
         <item quantity="other">%1$d anos</item>
         <item quantity="many">%1$d anos</item>
     </plurals>
-    <string name="design_choose_expiration">Escolher a data de vencimento</string>
     <string name="design_number_error">Informe um valor de 1 a 3650.</string>
-    <string name="design_medication_help">Medicamentos são opcionais. Você pode adicioná-los agora ou depois, em Ver medicamentos.</string>
     <string name="recipe_medications_optional_summary">Nenhum medicamento adicionado. Você pode incluí-los depois em Ver medicamentos.</string>
     <string name="recipe_add_medication_requires_active">Reative a receita para adicionar medicamentos.</string>
     <string name="medication_destination_recipe">Adicionar à receita: %1$s</string>
-    <string name="guided_origin_pickup_context_help">Informe o local de retirada. Esta receita também será usada para verificar se a validade cobre a próxima retirada.</string>
-    <string name="design_standalone_help">Informe o nome e continue. Os outros detalhes são opcionais.</string>
-    <string name="design_pickup_help">Escolha se deseja receber lembretes de retirada ou compra para cada medicamento.</string>
     <string name="design_medication_details">Detalhes do medicamento</string>
     <string name="design_pickup_options_title">Como deseja receber os lembretes?</string>
-    <string name="design_pickup_options_help">Escolha quando receber o aviso de cada retirada prevista.</string>
     <string name="design_edit_reminders">Editar lembretes de retirada</string>
-    <string name="guided_recipe_details_title">Quer acrescentar informações à receita?</string>
-    <string name="guided_recipe_details_help">Informe o profissional e, se desejar, observações sobre a receita. Ambos são opcionais.</string>
     <string name="guided_pickup_context_title">Onde você retira os medicamentos?</string>
-    <string name="guided_pickup_context_help">Informe o local e, se desejar, escolha uma receita para acompanhar as retiradas. Estar na receita não cria esse vínculo.</string>
     <string name="guided_edit_context">Editar local e receita para retiradas</string>
-    <string name="guided_identity_help">Informe a emissão. Toque no tipo para escolher a categoria e definir a validade.</string>
-    <string name="guided_recipe_name_help">Comece pelo nome que ajudará você a reconhecer esta receita.</string>
     <string name="recipe_type_continuous_help">Para medicamentos usados de forma contínua.</string>
     <string name="recipe_type_antibiotic_help">Para receitas de medicamentos antibióticos.</string>
     <string name="recipe_type_controlled_help">Para receitas de medicamentos sujeitos a controle especial.</string>
@@ -381,11 +336,8 @@
     </plurals>
     <string name="recipe_type_custom_help">Defina a validade em dias ou escolha uma data de vencimento.</string>
     <string name="recipe_type_and_validity_title">Tipo e validade da receita</string>
-    <string name="recipe_type_and_validity_help">Toque em um tipo para usar o prazo sugerido e continuar. Em Personalizado, defina a validade em dias ou por data.</string>
     <string name="recipe_apply_custom_validity">Usar validade personalizada</string>
-    <string name="recipe_custom_validity_help">Em dias, informe o prazo a partir da emissão. Para usar o vencimento escrito na receita, ative a opção de data e escolha o dia.</string>
     <string name="recipe_renewal_options_title">Alertas de vencimento</string>
-    <string name="recipe_renewal_options_help">Escolha se deseja receber alertas e com quantos dias de antecedência.</string>
     <string name="action_advance">Avançar</string>
     <string name="action_skip">Pular</string>
     <string name="recipe_type_annual_help">Para contraceptivos de uso contínuo no Farmácia Popular e receitas com validade anual. Confirme o prazo no documento ou com a farmácia.</string>
@@ -399,7 +351,6 @@
     <string name="recipe_empty_medications_guidance">Adicione o primeiro medicamento à receita “%1$s” para consultar seus dados e organizar os acompanhamentos.</string>
     <string name="recipe_empty_medications_archived">A receita “%1$s” está arquivada e não contém medicamentos. Volte aos detalhes e reative-a para adicionar um medicamento.</string>
     <string name="recipe_empty_medications_readonly">A receita “%1$s” foi substituída e não contém medicamentos. Este documento permanece disponível para consulta.</string>
-    <string name="design_sort_prescriptions">Ordenar receitas</string>
     <string name="notification_list_actions">Opções de notificações</string>
     <string name="notification_item_actions">Ações da notificação</string>
     <string name="notification_unread">Não lida</string>
@@ -410,7 +361,6 @@
     <string name="optional_detail_done">Concluído</string>
     <string name="optional_details_title">Detalhes opcionais</string>
     <string name="form_required">Obrigatório</string>
-    <string name="form_name_required_help">Informe um nome para continuar.</string>
     <string name="registration_recipe_name_question">Como você quer chamar esta receita?</string>
     <string name="registration_issue_date_question">Quando a receita foi emitida?</string>
     <string name="registration_medication_name_question">Qual é o nome do medicamento?</string>
@@ -568,7 +518,6 @@
     <string name="nav_home">Início</string>
     <string name="nav_prescriptions">Receitas</string>
     <string name="nav_medications">Medicamentos</string>
-    <string name="nav_menu">Menu</string>
     <string name="nav_notifications">Notificações</string>
     <string name="nav_new_prescription">Nova receita</string>
     <string name="named_validation_error">%1$s: %2$s</string>

@@ -16,7 +16,6 @@ fun PrescriptionsScreen(
     viewModel: PrescriptionsViewModel = viewModel(),
     onPrescriptionClick: (PrescriptionItem) -> Unit = {},
     onCreatePrescriptionClick: () -> Unit = {},
-    onPurchaseClick: (cc.rhuan.receitas.domain.model.MedicationItem) -> Unit = {},
     medicationFilterId: String? = null,
     onBack: (() -> Unit)? = null,
 ) {
@@ -25,7 +24,6 @@ fun PrescriptionsScreen(
     PrescriptionsPresentation(
         uiState = uiState.copy(medicationFilterId = medicationFilterId.takeIf { filterApplied }),
         onBack = onBack, onClearMedicationFilter = { filterApplied = false },
-        onPurchaseClick = onPurchaseClick,
         modifier = modifier,
         onPrescriptionClick = onPrescriptionClick,
         onCreatePrescriptionClick = onCreatePrescriptionClick,

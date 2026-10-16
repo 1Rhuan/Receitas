@@ -9,7 +9,6 @@ import cc.rhuan.receitas.R
 import cc.rhuan.receitas.domain.model.PharmaceuticalForm
 import cc.rhuan.receitas.ui.components.*
 import cc.rhuan.receitas.ui.components.wizard.WizardQuestionScreen
-import cc.rhuan.receitas.ui.theme.DesignTokens as T
 import java.io.Serializable
 
 internal enum class OptionalDetailKind { PROFESSIONAL, NOTES, DOSAGE, FORM, INGREDIENT, QUANTITY, INSTRUCTIONS }
@@ -84,7 +83,7 @@ internal fun OptionalDetailsSection(state: PrescriptionWizardUiState, onOpen: (O
             OptionalDetailRow(detailLabel(OptionalDetailKind.INGREDIENT), item.activeIngredient) {
                 onOpen(OptionalDetailDraft(OptionalDetailKind.INGREDIENT, index, value = item.activeIngredient))
             }
-            if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION || state.medicationBelongsToPrescription || state.addToPrescriptionId != null) {
+            if (state.entryMode == WizardEntryMode.FULL_PRESCRIPTION || state.addToPrescriptionId != null) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 OptionalDetailRow(detailLabel(OptionalDetailKind.QUANTITY), item.prescribedQuantity) {
                     onOpen(OptionalDetailDraft(OptionalDetailKind.QUANTITY, index, value = item.prescribedQuantity))
