@@ -1,74 +1,44 @@
 package cc.rhuan.receitas.ui.feature.notifications
 
 import cc.rhuan.receitas.ui.theme.AppPalette
+import cc.rhuan.receitas.ui.theme.DesignTokens as T
+import cc.rhuan.receitas.ui.components.*
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ClearAll
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.NotificationsOff
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import cc.rhuan.receitas.ui.components.AppCard as Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import cc.rhuan.receitas.R
 import cc.rhuan.receitas.domain.model.NotificationAction
 import cc.rhuan.receitas.domain.model.NotificationItem
@@ -120,7 +90,7 @@ fun NotificationsPresentation(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun NotificationsScreenContent(
     uiState: NotificationsUiState,
@@ -137,16 +107,20 @@ fun NotificationsScreenContent(
     onNavigateToMedication: (String) -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    var confirmClear by remember { mutableStateOf(false) }
+    if (confirmClear) ConfirmationSheet(
+        title = stringResource(R.string.clear_notifications_title),
+        message = stringResource(R.string.clear_notifications_help),
+        confirmLabel = stringResource(R.string.clear_all_notifications),
+        onConfirm = { confirmClear = false; onClearAll() }, onDismiss = { confirmClear = false }, destructive = true)
     var pendingAction by remember { mutableStateOf<Pair<String, NotificationAction>?>(null) }
     pendingAction?.let { (id, action) ->
         val renewal = action == NotificationAction.RENEW_PRESCRIPTION
-        AlertDialog(
-            onDismissRequest = { pendingAction = null },
-            title = { Text(if (renewal) stringResource(R.string.ui_registrar_nova_receita) else stringResource(R.string.ui_registrar_retirada)) },
-            text = { Text(if (renewal) stringResource(R.string.ui_voce_podera_confirmar_os_dados_da_nova_receita_e_escolher_os_acompanhamento) else stringResource(R.string.ui_confirme_que_o_medicamento_ja_foi_retirado_a_proxima_retirada_sera_calculad)) },
-            confirmButton = { TextButton(onClick = { pendingAction = null; onPerformAction(id, action) }) { Text(stringResource(R.string.action_confirm)) } },
-            dismissButton = { TextButton(onClick = { pendingAction = null }) { Text(stringResource(R.string.action_cancel)) } },
-        )
+        ConfirmationSheet(
+            title = stringResource(if (renewal) R.string.ui_registrar_nova_receita else R.string.ui_registrar_retirada),
+            message = stringResource(if (renewal) R.string.ui_voce_podera_confirmar_os_dados_da_nova_receita_e_escolher_os_acompanhamento else R.string.ui_confirme_que_o_medicamento_ja_foi_retirado_a_proxima_retirada_sera_calculad),
+            confirmLabel = stringResource(R.string.action_confirm),
+            onConfirm = { pendingAction = null; onPerformAction(id, action) }, onDismiss = { pendingAction = null })
     }
 
     LaunchedEffect(uiState.snackbarMessage) {
@@ -156,237 +130,71 @@ fun NotificationsScreenContent(
         }
     }
 
-    val lazyListState = rememberLazyListState()
-    val isScrolled by remember {
-        derivedStateOf {
-            (lazyListState.firstVisibleItemIndex > 0) || (lazyListState.firstVisibleItemScrollOffset > 15)
-        }
-    }
-
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                // Header Section
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.notifications_title),
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 24.sp,
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-
-                            if (uiState.unreadCount > 0) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primary,
-                                ) {
-                                    Text(
-                                        text = uiState.unreadCount.toString(),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimary,
-                                        ),
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                    )
-                                }
+    val empty = !uiState.isLoading && uiState.errorMessage == null && uiState.notifications.isEmpty()
+    PullToRefreshBox(isRefreshing = uiState.isRefreshing, onRefresh = onRefresh, modifier = modifier.fillMaxSize()) {
+        RecordListScaffold(title = stringResource(R.string.notifications_title),
+            subtitle = if (empty) "" else stringResource(R.string.notifications_subtitle),
+            listTag = "notification-list", snackbarHost = { SnackbarHost(snackbarHostState) },
+            headerActions = {
+                if (uiState.notifications.isNotEmpty()) OverflowActionsButton(
+                    stringResource(R.string.notification_list_actions), buildList {
+                        if (uiState.unreadCount > 0) add(ContextAction(stringResource(R.string.mark_as_read), onClick = onMarkAllAsRead))
+                        add(ContextAction(stringResource(R.string.clear_all_notifications), destructive = true,
+                            onClick = { confirmClear = true }))
+                    })
+            }) {
+            if (!empty) item("filters") {
+                LazyRow(contentPadding = PaddingValues(horizontal = T.margin),
+                    horizontalArrangement = Arrangement.spacedBy(T.small)) {
+                    items(NotificationFilter.entries.toTypedArray()) { filter ->
+                        val count = when (filter) {
+                            NotificationFilter.ALL -> uiState.notifications.size
+                            NotificationFilter.UNREAD -> uiState.unreadCount
+                            NotificationFilter.MEDICATIONS -> uiState.notifications.count {
+                                it.type == NotificationType.MEDICATION_PICKUP || it.type == NotificationType.MEDICATION_STOCK
                             }
+                            NotificationFilter.PRESCRIPTIONS -> uiState.notifications.count { it.type == NotificationType.PRESCRIPTION_EXPIRING }
                         }
-
-                        Row {
-                            if (uiState.unreadCount > 0) {
-                                TextButton(
-                                    onClick = onMarkAllAsRead,
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.DoneAll,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = stringResource(R.string.mark_as_read),
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                }
-                            }
-
-                            if (uiState.notifications.isNotEmpty()) {
-                                IconButton(onClick = onClearAll) {
-                                    Icon(
-                                        imageVector = Icons.Default.ClearAll,
-                                        contentDescription = stringResource(R.string.clear_all_notifications),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    AnimatedVisibility(
-                        visible = !isScrolled,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut(),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.notifications_subtitle),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Filter Chips Row
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(NotificationFilter.entries.toTypedArray()) { filter ->
-                            val isSelected = uiState.selectedFilter == filter
-                            val count = when (filter) {
-                                NotificationFilter.ALL -> uiState.notifications.size
-                                NotificationFilter.UNREAD -> uiState.notifications.count { !it.isRead }
-                                NotificationFilter.MEDICATIONS -> uiState.notifications.count {
-                                    (it.type == NotificationType.MEDICATION_PICKUP) || (it.type == NotificationType.MEDICATION_STOCK)
-                                }
-                                NotificationFilter.PRESCRIPTIONS -> uiState.notifications.count {
-                                    it.type == NotificationType.PRESCRIPTION_EXPIRING
-                                }
-                            }
-
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { onFilterSelected(filter) },
-                                label = {
-                                    Text(
-                                        text = "${stringResource(filter.labelRes)} ($count)",
-                                        fontSize = 13.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    )
-                                },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                    containerColor = MaterialTheme.colorScheme.surface,
-                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                                border = FilterChipDefaults.filterChipBorder(
-                                    enabled = true,
-                                    selected = isSelected,
-                                    borderColor = MaterialTheme.colorScheme.outlineVariant,
-                                    selectedBorderColor = Color.Transparent,
-                                    borderWidth = 1.dp,
-                                ),
-                                shape = MaterialTheme.shapes.large,
-                            )
-                        }
-                    }
-                }
-
-                // Body List / States
-                PullToRefreshBox(
-                    isRefreshing = uiState.isRefreshing,
-                    onRefresh = onRefresh,
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    when {
-                        uiState.isLoading -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                CircularProgressIndicator()
-                            }
-                        }
-
-                        uiState.errorMessage != null -> {
-                            cc.rhuan.receitas.ui.components.LoadErrorPanel(uiState.errorMessage, onRefresh, Modifier.fillMaxSize())
-                        }
-                        uiState.filteredNotifications.isEmpty() -> {
-                            EmptyNotificationsState(
-                                filter = uiState.selectedFilter,
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        }
-
-                        else -> {
-                            LazyColumn(
-                                state = lazyListState,
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                items(
-                                    items = uiState.filteredNotifications,
-                                    key = { it.id },
-                                ) { notification ->
-                                    NotificationCard(
-                                        item = notification,
-                                        onCardClick = {
-                                            if (!notification.isRead) {
-                                                onMarkAsRead(notification.id)
-                                            }
-                                        },
-                                        onDeleteClick = { onDeleteNotification(notification.id) },
-                                        onActionClick = { action ->
-                                            when (action) {
-                                                NotificationAction.VIEW_PRESCRIPTION -> {
-                                                    onMarkAsRead(notification.id)
-                                                    notification.targetId?.let(onNavigateToPrescription)
-                                                }
-                                                NotificationAction.VIEW_MEDICATION -> {
-                                                    onMarkAsRead(notification.id)
-                                                    notification.targetId?.let(onNavigateToMedication)
-                                                }
-                                                else -> {
-                                                    if (action == NotificationAction.REGISTER_PICKUP || action == NotificationAction.RENEW_PRESCRIPTION) onPerformAction(notification.id, action) else pendingAction = notification.id to action
-                                                }
-                                            }
-                                        },
-                                    )
-                                }
-                            }
-                        }
+                        FilterPill(uiState.selectedFilter == filter,
+                            stringResource(filter.labelRes) + " ($count)", { onFilterSelected(filter) })
                     }
                 }
             }
-
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp),
-            ) { snackbarData ->
-                Snackbar(
-                    snackbarData = snackbarData,
-                    containerColor = MaterialTheme.colorScheme.onSurface,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = RoundedCornerShape(12.dp),
-                )
+            when {
+                uiState.isLoading -> item("loading") {
+                    Box(Modifier.fillMaxWidth().padding(T.section), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                }
+                uiState.errorMessage != null -> item("error") {
+                    LoadErrorPanel(uiState.errorMessage, onRefresh, Modifier.padding(horizontal = T.margin))
+                }
+                uiState.filteredNotifications.isEmpty() -> item("empty") {
+                    if (empty) CenteredListGuidance { EmptyNotificationsState(uiState.selectedFilter) { onFilterSelected(NotificationFilter.ALL) } }
+                    else Box(Modifier.padding(horizontal = T.margin)) {
+                        EmptyNotificationsState(uiState.selectedFilter) { onFilterSelected(NotificationFilter.ALL) }
+                    }
+                }
+                else -> items(uiState.filteredNotifications, key = { "alert:" + it.id }) { notification ->
+                    NotificationCard(item = notification, modifier = Modifier.padding(horizontal = T.margin),
+                        onCardClick = { if (!notification.isRead) onMarkAsRead(notification.id) },
+                        onDeleteClick = { onDeleteNotification(notification.id) },
+                        onActionClick = { action ->
+                            when (action) {
+                                NotificationAction.VIEW_PRESCRIPTION -> {
+                                    onMarkAsRead(notification.id)
+                                    notification.targetId?.let(onNavigateToPrescription)
+                                }
+                                NotificationAction.VIEW_MEDICATION -> {
+                                    onMarkAsRead(notification.id)
+                                    notification.targetId?.let(onNavigateToMedication)
+                                }
+                                else -> {
+                                    if (action == NotificationAction.REGISTER_PICKUP || action == NotificationAction.RENEW_PRESCRIPTION)
+                                        onPerformAction(notification.id, action)
+                                    else pendingAction = notification.id to action
+                                }
+                            }
+                        })
+                }
             }
         }
     }
@@ -400,238 +208,67 @@ private fun NotificationCard(
     onActionClick: (NotificationAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val (iconRes, iconColor, containerColor, categoryLabel) = when (item.phase) {
-        ReminderPhase.EXPIRED -> Quadruple(R.drawable.ic_bold_document_medicine, MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.errorContainer, stringResource(R.string.ui_receita_vencida))
-        ReminderPhase.EXPIRES_TODAY -> Quadruple(R.drawable.ic_bold_document_medicine, AppPalette.warning, AppPalette.warningContainer, stringResource(R.string.ui_vence_hoje))
-        ReminderPhase.RENEWAL -> Quadruple(R.drawable.ic_bold_document_medicine, AppPalette.warning, AppPalette.warningContainer, stringResource(R.string.ui_renovacao_de_receita))
-        ReminderPhase.PICKUP_UPCOMING -> Quadruple(R.drawable.ic_box, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer, stringResource(R.string.ui_retirada_proxima))
-        ReminderPhase.PICKUP_DUE -> Quadruple(R.drawable.ic_box, MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.tertiaryContainer, stringResource(R.string.ui_data_de_retirada))
-        null -> Quadruple(R.drawable.ic_bold_bell_bing, Color(0xFF7B1FA2), Color(0xFFF3E5F5), "AVISO")
+    val (iconRes, iconColor, categoryLabel) = when (item.phase) {
+        ReminderPhase.EXPIRED -> Triple(R.drawable.ic_bold_document_medicine, MaterialTheme.colorScheme.error, stringResource(R.string.ui_receita_vencida))
+        ReminderPhase.EXPIRES_TODAY -> Triple(R.drawable.ic_bold_document_medicine, AppPalette.warning, stringResource(R.string.ui_vence_hoje))
+        ReminderPhase.RENEWAL -> Triple(R.drawable.ic_bold_document_medicine, AppPalette.warning, stringResource(R.string.ui_renovacao_de_receita))
+        ReminderPhase.PRESCRIPTION_PICKUP_CONFLICT -> Triple(R.drawable.ic_bold_document_medicine, AppPalette.warning, stringResource(R.string.pickup_validity_warning))
+        ReminderPhase.PICKUP_UPCOMING -> Triple(R.drawable.ic_box, MaterialTheme.colorScheme.primary, stringResource(R.string.ui_retirada_proxima))
+        ReminderPhase.PICKUP_DUE -> Triple(R.drawable.ic_box, MaterialTheme.colorScheme.tertiary, stringResource(R.string.ui_data_de_retirada))
+        null -> Triple(R.drawable.ic_bold_bell_bing, MaterialTheme.colorScheme.primary, stringResource(R.string.notification_category_general))
     }
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onCardClick),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = if (!item.isRead) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surface,
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (!item.isRead) 2.dp else 1.dp,
-        ),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-        ) {
-            // Header row: Category Icon, Label, Timestamp, Unread Indicator, Delete
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = containerColor,
-                    modifier = Modifier.size(36.dp),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(id = iconRes),
-                            contentDescription = null,
-                            tint = iconColor,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Text(
-                            text = categoryLabel,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 10.sp,
-                                color = iconColor,
-                            ),
-                        )
-
-                        if (!item.isRead) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary),
-                            )
-                        }
-                    }
-
-                    Text(
-                        text = item.timestamp,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                IconButton(
-                    onClick = onDeleteClick,
-                    modifier = Modifier.size(28.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.delete_notification),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp),
-                    )
+    ContentCard(modifier.clickable(onClick = onCardClick)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(T.small)) {
+            Icon(painterResource(iconRes), null, Modifier.size(T.icon), tint = iconColor)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(T.tight)) {
+                Text(categoryLabel, style = MaterialTheme.typography.labelMedium, color = iconColor)
+                if (!item.isRead) Text(stringResource(R.string.notification_unread),
+                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            }
+            OverflowActionsButton(stringResource(R.string.notification_item_actions), buildList {
+                if (!item.isRead) add(ContextAction(stringResource(R.string.mark_notification_read), onClick = onCardClick))
+                add(ContextAction(stringResource(R.string.delete_notification), destructive = true, onClick = onDeleteClick))
+            })
+        }
+        Text(item.timestamp, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(item.title, style = MaterialTheme.typography.titleMedium)
+        Text(item.message, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        item.actionTaken?.let { status ->
+            Surface(shape = RoundedCornerShape(T.fieldRadius), color = MaterialTheme.colorScheme.tertiaryContainer) {
+                Row(Modifier.fillMaxWidth().padding(T.padding), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(T.small)) {
+                    Icon(Icons.Default.CheckCircle, null, Modifier.size(T.icon), tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                    Text(status, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
                 }
             }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Notification Title & Message
-            Text(
-                text = item.title,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = item.message,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp,
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            // Status Banner if action taken
-            if (item.actionTaken != null) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = item.actionTaken,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.tertiary,
-                            ),
-                        )
-                    }
-                }
-            }
-
-            if (item.actionTaken == null) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val prescription = item.id.startsWith("prescription:")
-                    if (item.targetId != null) {
-                        OutlinedButton(
-                            onClick = { onActionClick(if (prescription) NotificationAction.VIEW_PRESCRIPTION else NotificationAction.VIEW_MEDICATION) },
-                            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
-                        ) {
-                            Text(if (prescription) stringResource(R.string.ui_ver_receita) else stringResource(R.string.ui_ver_medicamentos))
-                        }
-                        Button(
-                            onClick = { onActionClick(if (prescription) NotificationAction.RENEW_PRESCRIPTION else NotificationAction.REGISTER_PICKUP) },
-                            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
-                        ) {
-                            Text(if (prescription) stringResource(R.string.action_register_new_prescription) else stringResource(R.string.action_register_pickup))
-                        }
-                    }
-                }
-            }
-
+        }
+        if (item.actionTaken == null && item.targetId != null) {
+            val prescription = item.targetType == "PRESCRIPTION"
+            SecondaryActionButton(stringResource(if (prescription) R.string.ui_ver_receita else R.string.ui_ver_medicamentos),
+                { onActionClick(if (prescription) NotificationAction.VIEW_PRESCRIPTION else NotificationAction.VIEW_MEDICATION) },
+                Modifier.fillMaxWidth())
+            if (item.phase != ReminderPhase.PRESCRIPTION_PICKUP_CONFLICT)
+                ActionButton(stringResource(if (prescription) R.string.action_register_new_prescription else R.string.action_register_pickup),
+                    { onActionClick(if (prescription) NotificationAction.RENEW_PRESCRIPTION else NotificationAction.REGISTER_PICKUP) },
+                    Modifier.fillMaxWidth())
         }
     }
 }
 
 @Composable
-private fun EmptyNotificationsState(
-    filter: NotificationFilter,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier.padding(24.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                modifier = Modifier.size(80.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.NotificationsOff,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(40.dp),
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = when (filter) {
-                    NotificationFilter.ALL -> stringResource(R.string.empty_notifications_all)
-                    NotificationFilter.UNREAD -> stringResource(R.string.empty_notifications_unread)
-                    NotificationFilter.MEDICATIONS -> stringResource(R.string.empty_notifications_medications)
-                    NotificationFilter.PRESCRIPTIONS -> stringResource(R.string.empty_notifications_prescriptions)
-                },
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = when (filter) {
-                    NotificationFilter.UNREAD -> stringResource(R.string.empty_notifications_unread_desc)
-                    else -> stringResource(R.string.empty_notifications_desc)
-                },
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
+private fun EmptyNotificationsState(filter: NotificationFilter, onShowAll: () -> Unit) {
+    EmptyListGuidance(title = stringResource(when (filter) {
+        NotificationFilter.ALL -> R.string.empty_notifications_all
+        NotificationFilter.UNREAD -> R.string.empty_notifications_unread
+        NotificationFilter.MEDICATIONS -> R.string.empty_notifications_medications
+        NotificationFilter.PRESCRIPTIONS -> R.string.empty_notifications_prescriptions
+    }), message = stringResource(if (filter == NotificationFilter.UNREAD) R.string.empty_notifications_unread_desc
+        else R.string.empty_notifications_desc),
+        actionLabel = if (filter == NotificationFilter.ALL) null else stringResource(R.string.show_all_notifications),
+        onAction = onShowAll, iconRes = R.drawable.ic_bold_bell_bing)
 }
-
-private data class Quadruple<A, B, C, D>(
-    val first: A,
-    val second: B,
-    val third: C,
-    val fourth: D,
-)
 
 @Preview(showBackground = true)
 @Composable
