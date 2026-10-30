@@ -61,7 +61,7 @@ class ExploratoryUseTest {
     }
 
     @Test fun pickupHistoryAndArchiveRemainConsistentDuringNavigationAndRecreation() {
-        compose.onNodeWithContentDescription("Medicamentos", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.design_tab_medications), useUnmergedTree = true).performClick()
         compose.onNodeWithText(title).performScrollTo().performClick()
         compose.onNodeWithText("Atenção à validade").performScrollTo().assertIsDisplayed()
         capture("exploratory-validity-conflict")

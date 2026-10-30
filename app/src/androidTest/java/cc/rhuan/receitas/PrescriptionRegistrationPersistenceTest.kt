@@ -113,7 +113,9 @@ class PrescriptionRegistrationPersistenceTest {
         assertEquals(OperationResult.Success, medications.registerPickup("m", today))
         val next = today.plusDays(30)
         assertEquals(OperationResult.Success, medications.registerPickup("m", today.minusDays(60)))
-        assertEquals(next, medications.getMedicationById("m")!!.nextAvailableRefillDate)
+        val afterRetroactivePickup = medications.getMedicationById("m")!!
+        assertEquals(next, afterRetroactivePickup.nextAvailableRefillDate)
+        assertEquals(1, afterRetroactivePickup.pickupHistory.count { it.occurredOn == today.minusDays(60) })
         assertEquals(OperationResult.AlreadyRecorded, medications.registerPickup("m", today))
         assertEquals(OperationResult.InvalidDate, medications.registerPickup("m", today.plusDays(1), true))
         assertEquals(OperationResult.ObsoleteCycle, medications.registerPickup("m", today.minusDays(1), true, today))

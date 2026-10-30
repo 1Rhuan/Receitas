@@ -326,6 +326,24 @@ class PrescriptionRegistrationFlowTest {
         assertEquals(PrescriptionType.ANTIBIOTIC, vm.uiState.value.type)
         assertEquals(10, vm.uiState.value.validityDays)
         assertEquals(vm.uiState.value.renewalOptionsStep, vm.uiState.value.currentStep)
+        // Independent confirmations cover every remaining suggested duration in C16.
+        val issue = LocalDate.of(2026, 10, 1)
+        listOf(
+            Triple(PrescriptionType.CONTROLLED, 30, LocalDate.of(2026, 10, 31)),
+            Triple(PrescriptionType.CONTINUOUS_USE, 180, LocalDate.of(2027, 3, 30)),
+            Triple(PrescriptionType.ANNUAL_USE, 365, LocalDate.of(2027, 10, 1)),
+        ).forEach { (type, days, expectedExpiry) ->
+            val independent = model(); runCurrent()
+            independent.updateForm { it.copy(issueDate = issue) }
+            independent.goToStep(requireNotNull(independent.uiState.value.recipeIdentityStep))
+            independent.openTypeEditor(); independent.selectPrescriptionType(type)
+            independent.confirmTypeEditor()
+            assertEquals(days, independent.uiState.value.validityDays)
+            independent.savePrescription(); runCurrent()
+            assertTrue(independent.uiState.value.isSaved)
+            assertEquals(type, registration.recipe!!.type)
+            assertEquals(expectedExpiry, registration.recipe!!.expirationDate)
+        }
     }
 
     @Test fun recipeNameIsRequiredBeforeAdvancingAndSaving() = runTest {
@@ -525,6 +543,9 @@ class PrescriptionRegistrationFlowTest {
         val date = LocalDate.of(2026, 1, 31)
         meds.items.value = listOf(MedicationItem("m", "Medicamento", hasRecurringPickup = true, lastRefillDate = date,
             refillCycleDays = 1, intervalUnit = IntervalUnit.MONTHS, linkedPrescriptionId = "chosen", pickupHistory = listOf(PickupEvent("e", date, 1L))))
+        val chosenRecipe = PrescriptionItem("chosen", "Receita", "", issueDate = date, customValidityDays = 40)
+        val evaluate = cc.rhuan.receitas.domain.usecase.EvaluateRemindersUseCase(TestTexts)
+        assertTrue(evaluate(listOf(chosenRecipe), meds.items.value, date).isEmpty())
         val vm = model(SavedStateHandle(mapOf("entryMode" to "STANDALONE_MEDICATION", "medicationId" to "m"))); runCurrent()
         vm.updatePickupInterval(0, "45")
         assertEquals(IntervalUnit.DAYS, vm.uiState.value.medications.single().intervalUnit)
@@ -535,6 +556,10 @@ class PrescriptionRegistrationFlowTest {
         assertEquals(45, registration.medications.single().refillCycleDays)
         assertEquals(date.plusDays(45), registration.medications.single().nextAvailableRefillDate)
         assertEquals("chosen", registration.medications.single().linkedPrescriptionId)
+        val revisedAlert = evaluate(listOf(chosenRecipe), registration.medications, date).single()
+        assertEquals(ReminderPhase.PRESCRIPTION_PICKUP_CONFLICT, revisedAlert.phase)
+        assertTrue(revisedAlert.message.contains("12/03/2026"))
+        assertTrue(revisedAlert.message.contains("17/03/2026"))
         val invalid = model(); runCurrent(); add(invalid, "Medicamento")
         invalid.updateMedicationPickup(0) { it.copy(hasRecurringPickup = true, lastPickupDate = date) }
         listOf("", "0", "3651").forEach { input ->

@@ -58,6 +58,8 @@ class HomeReadabilityTest {
         compose.onNodeWithText("$name 50 mg").performScrollTo().assertIsDisplayed()
     }
     @Test fun homeLightKeepsOneReadableActionAndImportantDate() { home(false, 1f, "home-readable-light") }
+    @Test fun homeLightDoubleFontKeepsActionAndLongNameReachable() { home(false, 2f, "home-readable-light-200") }
+    @Test fun homeDarkNormalFontKeepsActionAndLongNameReachable() { home(true, 1f, "home-readable-dark") }
     @Test fun homeDarkDoubleFontKeepsActionAndLongNameReachable() { home(true, 2f, "home-readable-dark-200") }
 
     @Test fun smallCalendarKeepsDaysSeparateAndSupportsSelectionAndPaging() {
