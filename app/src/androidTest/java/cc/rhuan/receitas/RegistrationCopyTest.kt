@@ -17,7 +17,6 @@ class RegistrationCopyTest {
     @Test fun monthlyPickupReviewUsesCalendarMonthAndSingularReminder() {
         val state = PrescriptionWizardUiState(
             entryMode = WizardEntryMode.STANDALONE_MEDICATION,
-            currentStep = 5,
             showMedicationEditor = false,
             medications = listOf(MedicationDraft(
                 title = "Medicamento de teste", hasRecurringPickup = true,
@@ -26,7 +25,7 @@ class RegistrationCopyTest {
                 pickupReminderDaysBefore = 1,
             )),
         )
-        compose.setContent { AppTheme { PrescriptionWizardContent(state, WizardCallbacks()) } }
+        compose.setContent { AppTheme { PrescriptionWizardContent(state.copy(currentStep = state.maxSteps), WizardCallbacks()) } }
         compose.onNodeWithText("Próxima retirada prevista: 28/02/2026").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Lembrete: 1 dia antes").performScrollTo().assertIsDisplayed()
     }

@@ -25,15 +25,21 @@ class GuidedReviewDesignTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val firstName = "Losartana potássica de uso contínuo"
     private val secondName = "Medicamento sem concentração informada"
-    private fun state(step: Int = 9) = PrescriptionWizardUiState(currentStep = step, prescriptionTitle = "Receita de acompanhamento",
+    private fun state(step: Int? = null, medicationFlow: Boolean = false): PrescriptionWizardUiState {
+        val state = PrescriptionWizardUiState(
+        entryMode = if (medicationFlow) WizardEntryMode.STANDALONE_MEDICATION else WizardEntryMode.FULL_PRESCRIPTION,
+        prescriptionTitle = "Receita de acompanhamento",
         notes = "Observações pertencentes à receita, mesmo sem profissional cadastrado.", showMedicationEditor = false,
-        medications = listOf(
+        availablePrescriptions = listOf(PrescriptionItem("recipe", "Receita de acompanhamento", "", medicationIds = listOf("a", "b"))),
+        medications = if (!medicationFlow) emptyList() else listOf(
             MedicationDraft(id = "a", title = firstName, dosageOverride = "50 mg", hasRecurringPickup = true,
                 lastPickupDate = LocalDate.of(2026, 10, 1), pickupIntervalDays = 30, pickupReminderDaysBefore = 1,
-                replenishmentQuantity = "2 caixas", sourceName = "UBS Central", linkToCurrentRecipe = true),
+                replenishmentQuantity = "2 caixas", sourceName = "UBS Central", linkedPrescriptionId = "recipe"),
             MedicationDraft(id = "b", title = secondName, hasRecurringPickup = true,
                 lastPickupDate = LocalDate.of(2026, 10, 2), pickupIntervalDays = 45, pickupReminderDaysBefore = 7,
                 replenishmentQuantity = "1 frasco", sourceName = "Farmácia do bairro")))
+        return state.copy(currentStep = step ?: state.maxSteps)
+    }
 
     private fun show(dark: Boolean = false, scale: Float = 1f, content: @Composable () -> Unit) {
         compose.setContent { AppTheme(darkTheme = dark) {
@@ -71,16 +77,24 @@ class GuidedReviewDesignTest {
         var editedStep = 0
         var editedMedication = -1
         var typeOpened = false
-        show { PrescriptionWizardContent(state(), WizardCallbacks(goToStep = { editedStep = it },
+        var displayed by mutableStateOf(state())
+        show { PrescriptionWizardContent(displayed, WizardCallbacks(goToStep = { editedStep = it },
             editMedication = { editedMedication = it }, openTypeEditor = { typeOpened = true })) }
         listOf("Nome da receita" to 1, "Data de emissão" to 2, "Alertas de vencimento" to 3,
-            "Profissional responsável" to 4, "Observações da receita" to 4, "Medicamentos (2)" to 5,
-            "Retiradas e lembretes" to 6).forEach { (label, step) ->
+            "Profissional responsável" to 4, "Observações da receita" to 4).forEach { (label, step) ->
             val button = compose.onNodeWithContentDescription("Editar $label")
             reveal(button); button.performClick(); assertEquals(step, editedStep)
         }
         val typeButton = compose.onNodeWithContentDescription("Editar Tipo e validade da receita")
         reveal(typeButton); typeButton.performClick(); assertTrue(typeOpened)
+        compose.onNodeWithTag("review-medication-0").assertDoesNotExist()
+        compose.onNodeWithTag("review-pickup-0").assertDoesNotExist()
+        compose.runOnIdle { displayed = state(medicationFlow = true) }
+        listOf("Medicamentos (2)" to displayed.medicationStep,
+            "Retiradas e lembretes" to displayed.pickupStep).forEach { (label, step) ->
+            val button = compose.onNodeWithContentDescription("Editar $label")
+            reveal(button); button.performClick(); assertEquals(step, editedStep)
+        }
         compose.onNodeWithTag("review-medication-0").assert(hasAnyDescendant(hasText(firstName)))
             .assert(hasAnyDescendant(hasText("50 mg")))
             .assert(hasAnyDescendant(hasContentDescription("Editar medicamento $firstName")))
@@ -97,16 +111,19 @@ class GuidedReviewDesignTest {
             .assert(hasAnyDescendant(hasText("Lembrete: 7 dias antes")))
             .assert(!hasAnyDescendant(hasText(firstName)))
         val context = compose.onNodeWithText("Editar local e receita para retiradas")
-        reveal(context); context.performClick(); assertEquals(8, editedStep)
+        reveal(context); context.performClick(); assertEquals(displayed.pickupContextStep, editedStep)
         val reminders = compose.onNodeWithText("Editar lembretes de retirada")
-        reveal(reminders); reminders.performClick(); assertEquals(7, editedStep)
+        reveal(reminders); reminders.performClick(); assertEquals(displayed.pickupOptionsStep, editedStep)
         capture("review-pickups-light")
     }
 
     @Test fun largeReviewSeparatesRecordsWithoutInventingDosage() {
-        show(dark = true, scale = 2f) { PrescriptionWizardContent(state(), WizardCallbacks()) }
+        var displayed by mutableStateOf(state())
+        show(dark = true, scale = 2f) { PrescriptionWizardContent(displayed, WizardCallbacks()) }
         reveal(compose.onNodeWithText(state().notes))
         capture("review-recipe-dark-200")
+        compose.onNodeWithText("Salvar receita").assertIsDisplayed()
+        compose.runOnIdle { displayed = state(medicationFlow = true) }
         reveal(compose.onNode(hasText(firstName) and hasAnyAncestor(hasTestTag("review-medication-0"))))
         capture("review-medication-dark-200")
         compose.onNodeWithTag("review-medication-1").assert(!hasAnyDescendant(hasText("Concentração não informada")))
@@ -114,11 +131,12 @@ class GuidedReviewDesignTest {
         capture("review-pickup-first-dark-200")
         reveal(compose.onNode(hasText(secondName) and hasAnyAncestor(hasTestTag("review-pickup-1"))))
         capture("review-pickup-second-dark-200")
-        compose.onNodeWithText("Salvar receita").assertIsDisplayed()
+        compose.onNodeWithText("Salvar medicamento").assertIsDisplayed()
     }
 
-    @Test fun stepsSevenAndEightKeepEachMedicationAndItsSettingsTogether() {
-        var latest = state(7)
+    @Test fun medicationReminderAndContextStepsKeepEachMedicationAndItsSettingsTogether() {
+        val initial = state(medicationFlow = true)
+        var latest = initial.copy(currentStep = requireNotNull(initial.pickupOptionsStep))
         show(dark = true, scale = 2f) {
             var current by remember { mutableStateOf(latest) }
             PrescriptionWizardContent(current, WizardCallbacks(next = { current = current.copy(currentStep = current.currentStep + 1); latest = current },
@@ -135,7 +153,7 @@ class GuidedReviewDesignTest {
         assertEquals(7, latest.medications[1].pickupReminderDaysBefore)
         capture("reminder-radio-dark-200")
         reveal(compose.onNode(hasText(secondName) and hasAnyAncestor(hasTestTag("pickup-options-1"))))
-        capture("step-seven-dark-200")
+        capture("medication-reminders-dark-200")
         compose.onNodeWithText("Avançar").performClick()
         compose.onNodeWithTag("pickup-context-0").assert(hasAnyDescendant(hasText("UBS Central")))
             .assert(!hasAnyDescendant(hasText("Farmácia do bairro")))
@@ -153,9 +171,11 @@ class GuidedReviewDesignTest {
         assertEquals("UBS Nova", latest.medications[0].sourceName)
         assertEquals("Farmácia do bairro", latest.medications[1].sourceName)
         reveal(compose.onNode(hasText(secondName) and hasAnyAncestor(hasTestTag("pickup-context-1"))))
-        capture("step-eight-dark-200")
+        capture("medication-context-dark-200")
         compose.onNodeWithText("Avançar").performClick()
-        assertEquals(9, latest.currentStep)
+        assertEquals(latest.optionalDetailsStep, latest.currentStep)
+        compose.onNodeWithText("Avançar").performClick()
+        assertEquals(latest.maxSteps, latest.currentStep)
         compose.onNodeWithTag("review-pickup-0").assert(hasAnyDescendant(hasText("Local: UBS Nova")))
         compose.onNodeWithTag("review-pickup-1").assert(hasAnyDescendant(hasText("Local: Farmácia do bairro")))
     }

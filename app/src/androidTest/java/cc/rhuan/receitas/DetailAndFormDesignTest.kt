@@ -25,6 +25,19 @@ import org.junit.Assert.*
 class DetailAndFormDesignTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val longTitle = "Cloridrato de metformina de liberação prolongada para acompanhamento"
+    private fun fillField(label: String, value: String) {
+        compose.onNodeWithContentDescription(label).performScrollTo().assertIsDisplayed().performTextInput(value)
+        compose.runOnIdle {
+            (compose.activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
+                .hideSoftInputFromWindow(compose.activity.window.decorView.windowToken, 0)
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) != true
+        }
+        InstrumentationRegistry.getInstrumentation().uiAutomation.waitForIdle(100, 5_000)
+        compose.waitForIdle()
+    }
     private fun clickFormOption(label: String, description: Boolean = false) {
         val node = (if (description) compose.onNodeWithContentDescription(label) else compose.onNodeWithText(label)).performScrollTo()
         val actionTop = compose.onNodeWithTag("wizard-primary-action").fetchSemanticsNode().boundsInRoot.top
@@ -57,9 +70,11 @@ class DetailAndFormDesignTest {
     @Test fun recipeEntryShowsEssentialsAndOptionalFieldsRemainAvailable() {
         show {
             var state by remember { mutableStateOf(PrescriptionWizardUiState()) }
-            PrescriptionWizardContent(state, WizardCallbacks(next = { state = state.copy(currentStep = state.currentStep + 1) }))
+            PrescriptionWizardContent(state, WizardCallbacks(
+                update = { state = it(state) },
+                next = { state = state.copy(currentStep = state.currentStep + 1) }))
         }
-        compose.onNodeWithText("Nome da receita").performScrollTo().assertIsDisplayed()
+        fillField("Nome da receita", "Receita de acompanhamento")
         compose.onNodeWithText("Avançar").assertIsDisplayed()
         compose.onNodeWithText("Data de emissão").assertDoesNotExist()
         compose.onNodeWithText("Validade da receita").assertDoesNotExist()
@@ -71,21 +86,21 @@ class DetailAndFormDesignTest {
         capture("recipe-validity-light")
         compose.onNodeWithText("Avançar").performClick()
         clickFormOption("Adicionar Profissional responsável", description = true)
-        compose.onNodeWithText("Nome do profissional").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("Nome do profissional").performScrollTo().assertIsDisplayed()
         capture("recipe-optional-light")
     }
     @Test fun recipeEntryDarkLargeFontKeepsValidityAndContinueReachable() {
         var continued = false
         show(dark = true, scale = 2f) {
             var state by remember { mutableStateOf(PrescriptionWizardUiState()) }
-            PrescriptionWizardContent(state, WizardCallbacks(next = {
+            PrescriptionWizardContent(state, WizardCallbacks(update = { state = it(state) }, next = {
                 if (state.currentStep == state.recipeDetailsStep) continued = true
                 else state = state.copy(currentStep = state.currentStep + 1)
             }))
         }
         compose.onNodeWithText("Etapa 1 de 6").assertDoesNotExist()
         compose.onNodeWithText("Avançar").assertIsDisplayed()
-        compose.onNodeWithText("Nome da receita").performScrollTo().assertIsDisplayed()
+        fillField("Nome da receita", "Receita de acompanhamento")
         capture("recipe-entry-dark-200")
         compose.onNodeWithText("Avançar").performClick()
         compose.onNodeWithText("Data de emissão").performScrollTo().assertIsDisplayed()
@@ -94,22 +109,41 @@ class DetailAndFormDesignTest {
         capture("recipe-validity-dark-200")
         compose.onNodeWithText("Avançar").performClick()
         clickFormOption("Adicionar Profissional responsável", description = true)
-        compose.onNodeWithText("Nome do profissional").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("Nome do profissional").performScrollTo().assertIsDisplayed()
         capture("recipe-optional-dark-200")
+        compose.onNodeWithText("Concluído").performClick()
+        compose.onNodeWithContentDescription("Adicionar Profissional responsável").assertExists()
         compose.onNodeWithText("Avançar").performClick()
         assertTrue(continued)
     }
     @Test fun standaloneLargeFontKeepsOptionalDetailsForTheFinalScreen() {
         var continued = false
+        var state by mutableStateOf(PrescriptionWizardUiState(entryMode = WizardEntryMode.STANDALONE_MEDICATION))
         show(dark = true, scale = 2f) {
-            PrescriptionWizardContent(PrescriptionWizardUiState(entryMode = WizardEntryMode.STANDALONE_MEDICATION),
-                WizardCallbacks(next = { continued = true }))
+            PrescriptionWizardContent(state, WizardCallbacks(update = { state = it(state) }, next = {
+                if (state.currentStep == state.optionalDetailsStep) continued = true
+                else {
+                    if (state.currentStep == state.medicationStep) state = state.copy(
+                        medications = state.allMedications, currentMedicationDraft = MedicationDraft(), showMedicationEditor = false)
+                    state = state.copy(currentStep = state.currentStep + 1)
+                }
+            }))
         }
         compose.onNodeWithText("Avançar").assertIsDisplayed()
-        compose.onNodeWithText("Nome do medicamento").performScrollTo().assertIsDisplayed()
+        fillField("Nome do medicamento", longTitle)
+        compose.onNodeWithContentDescription("Adicionar Princípio ativo").assertDoesNotExist()
         capture("medication-form-dark-200")
+        compose.onNodeWithText("Avançar").performClick()
+        compose.onNodeWithContentDescription("Adicionar Princípio ativo").assertDoesNotExist()
+        compose.onNodeWithText("Avançar").performClick()
         clickFormOption("Adicionar Princípio ativo", description = true)
-        compose.onNode(hasText("Princípio ativo") and hasSetTextAction()).performScrollTo().assertIsDisplayed()
+        fillField("Princípio ativo", "Metformina")
+        compose.onNodeWithText("Concluído").performClick()
+        assertEquals("Metformina", state.medications.single().activeIngredient)
+        compose.onNodeWithContentDescription("Editar Princípio ativo").assertExists()
+        compose.onNodeWithText("Metformina").performScrollTo().assertIsDisplayed()
+        assertEquals(state.optionalDetailsStep, state.currentStep)
+        capture("medication-optional-confirmed-dark-200")
         compose.onNodeWithText("Avançar").performClick()
         assertTrue(continued)
     }
@@ -119,7 +153,7 @@ class DetailAndFormDesignTest {
             PrescriptionWizardContent(state, WizardCallbacks(update = { change -> state = change(state) }))
         }
         clickFormOption("Adicionar Profissional responsável", description = true)
-        compose.onNodeWithContentDescription("Nome do profissional").performScrollTo().performTextInput("Dra. Ana")
+        fillField("Nome do profissional", "Dra. Ana")
         compose.onNodeWithText("Concluído").performClick()
         compose.onNodeWithText("Dra. Ana").assertIsDisplayed()
         compose.onNodeWithText("Nome do profissional").assertDoesNotExist()
@@ -130,15 +164,16 @@ class DetailAndFormDesignTest {
     @Test fun reviewLargeFontKeepsEditAndSaveReachable() {
         var edited = 0
         var saved = false
+        val recipeTitle = "Receita de acompanhamento com identificação extensa para verificar a leitura"
         show(scale = 2f) {
-            PrescriptionWizardContent(PrescriptionWizardUiState(currentStep = 7, showMedicationEditor = false,
-                medications = listOf(MedicationDraft(title = longTitle))),
+            val state = PrescriptionWizardUiState(prescriptionTitle = recipeTitle, showMedicationEditor = false)
+            PrescriptionWizardContent(state.copy(currentStep = state.maxSteps),
                 WizardCallbacks(goToStep = { edited = it }, save = { saved = true }))
         }
         compose.onNodeWithText("Salvar receita").assertIsDisplayed()
         compose.onNodeWithContentDescription("Editar Nome da receita").performScrollTo().performClick()
         assertEquals(1, edited)
-        compose.onAllNodesWithText(longTitle)[0].performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(recipeTitle).performScrollTo().assertIsDisplayed()
         capture("review-light-200")
         compose.onNodeWithText("Salvar receita").performClick()
         assertTrue(saved)
